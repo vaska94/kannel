@@ -1,0 +1,24 @@
+[Unit]
+Description=Kannel Bearerbox Service
+After=network.target
+Documentation=man:bearerbox(8)
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/bearerbox -v 1 /etc/kannel/kannel.conf
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+TimeoutStartSec=30
+TimeoutStopSec=30
+User=kannel
+Group=kannel
+
+# Security settings
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/kannel /var/spool/kannel /var/run/kannel
+
+[Install]
+WantedBy=multi-user.target
