@@ -1,0 +1,72 @@
+Steps to follow when making a release of the gateway; if there is a
+problem, fix it, and re-start from beginning:
+
+	* Decide on the version number.
+
+	* Prepare the software for release.
+	
+		* Make sure everything is committed to SVN trunk.
+		
+		* Make sure everything is working.
+
+			* Run "make -s check"
+
+			* Test with a real phone.
+		
+		* Make sure documentation is up to date.
+		
+		* Make sure NEWS is up to date.
+	
+	* Add an entry to ChangeLog that says you're making release
+	  such and such.
+
+    * Branch SVN trunk to branches/stable_X_Y_Z for packaging.
+    
+	* Update in branches/stable_X_Y_Z file VERSION to have the version 
+	  number you want.
+
+	* Bootstrap a checkout of branches/stable_X_Y_Z on dedicated distro.
+	  Currently we're using Debian 8 (amd64).
+	  
+	* Add file compile, depcomp, ltmain.sh and missing.
+	
+	* Commit VERSION, and all modified/added files after bootstrapping.
+
+	* Tag the release from branches/stable_X_Y_Z to tags/version_X_Y_Z.
+	
+	* Use tag/version_X_Y_Z is used for distribution tarball packaging.
+
+	* Make distribution files.
+	
+		* Use "makedist" script, with the version number as
+		  argument. Run it in an empty directory, not directly
+		  from the SVN checkout directory.
+	
+	* Put new files on www.kannel.org, and otherwise update the
+	  site to reflect the new release.
+
+		* makedist output goes in ~kannel/public_html/download/$V,
+	 	  where $V is the new version number.
+
+        * Use the www.kannel.org SVN repository to change the html 
+          files, and checkout in the corresponding htdocs directory
+          after committing.
+
+		* Announce new version on index.shtml, and describe it
+		  on news.html.  Include an extract from the NEWS file.
+
+		* Change the links in download.shtml, and update the
+		  "Old versions" section.
+
+		* Check changes locally before committing.  Note, this
+		  will not work for the links on the download page.
+
+	* Send out the announce to appropriate places.  Remember to
+	  set Reply-To to the devel list.  Include an extract from the
+	  NEWS file.
+	
+		* announce@kannel.org
+		
+		* linux-announce@news.ornl.gov  (not for all versions)
+	
+		* Freshmeat  (not for all versions)
