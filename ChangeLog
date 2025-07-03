@@ -1,4 +1,11 @@
 2025-01-03  @vaska94 and Claude
+    * gwlib/conn.c: fix OpenSSL deprecation warnings for Rocky Linux 10
+      - Wrap ERR_remove_state() and ENGINE_cleanup() calls in version checks
+      - Only call deprecated functions on OpenSSL < 1.1.0
+      - Fixes build errors with OpenSSL 3.x on modern systems
+      - Version bumped to 1.6.2
+
+2025-01-03  @vaska94 and Claude
     * gwlib/charset.c: fix deprecated libxml2 API usage warnings
       - Replace deprecated 'content' and 'use' struct members with 
         xmlBufferContent() and xmlBufferLength() functions

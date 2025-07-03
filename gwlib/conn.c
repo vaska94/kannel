@@ -1364,8 +1364,10 @@ void conn_shutdown_ssl(void)
         SSL_CTX_free(global_ssl_context);
     
     CONF_modules_free();
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     ERR_remove_state(0);
     ENGINE_cleanup();
+#endif
     CONF_modules_unload(1);
     ERR_free_strings();
     EVP_cleanup();
@@ -1378,8 +1380,10 @@ void server_shutdown_ssl(void)
         SSL_CTX_free(global_server_ssl_context);
 
     CONF_modules_free();
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     ERR_remove_state(0);
     ENGINE_cleanup();
+#endif
     CONF_modules_unload(1);
     ERR_free_strings();
     EVP_cleanup();
