@@ -1,0 +1,137 @@
+# Build artifacts
+*.o
+*.lo
+*.la
+*.so
+*.a
+core
+core.*
+*.core
+
+# Autotools generated files
+Makefile
+Makefile.in
+aclocal.m4
+autom4te.cache/
+config.guess
+config.sub
+config.h
+config.h.in
+config.log
+config.status
+configure
+depcomp
+install-sh
+libtool
+ltmain.sh
+missing
+mkinstalldirs
+compile
+stamp-*
+.deps/
+.libs/
+
+# Kannel specific generated files
+gw-config.h
+gw-config.h.in
+gwlib/gw_uuid_types.h
+
+# Built binaries
+bearerbox
+smsbox
+run_kannel_box
+mtbatch
+decode_emimsg
+
+# Compiled test binaries (but not .c source files)
+test/drive_smpp
+test/fakesmsc
+test/test_boxc
+test/test_cfg
+test/test_charset
+test/test_cimd2
+test/test_conn
+test/test_date
+test/test_dbpool
+test/test_dict
+test/test_file_traversal
+test/test_hash
+test/test_hmac
+test/test_http
+test/test_http_server
+test/test_list
+test/test_mem
+test/test_msg
+test/test_octstr_dump
+test/test_octstr_format
+test/test_octstr_immutables
+test/test_pcre
+test/test_prioqueue
+test/test_regex
+test/test_smsc
+test/test_store_dump
+test/test_timerset
+test/test_udp
+test/test_urltrans
+test/test_uuid
+test/test_wakeup
+test/test_xmlrpc
+test/timestamp
+test/udpfeed
+
+# Compiled check binaries (but not .c source files)
+checks/check_counter
+checks/check_date
+checks/check_ipcheck
+checks/check_list
+checks/check_octstr
+
+# Backup and temporary files
+*~
+*.orig
+*.rej
+*.bak
+.#*
+#*#
+.depend
+
+# Distribution packages
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.zip
+*.deb
+*.rpm
+*.dmg
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Version control
+.svn/
+CVS/
+
+# Documentation build artifacts
+doc/*.html
+doc/*.pdf
+doc/*.ps
+
+# Log files
+*.log
+
+# Generated configuration
+config.nice
+gw-config
