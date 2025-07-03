@@ -1,4 +1,15 @@
 2025-01-03  @vaska94 and Claude
+    * contrib/systemd: add modern systemd service integration
+      - Added kannel-bearerbox.service and kannel-smsbox.service files
+      - Implement security hardening (NoNewPrivileges, ProtectSystem, ProtectHome)
+      - Services run as dedicated 'kannel' user instead of root
+      - Automated user setup script (setup-kannel-user.sh)
+      - Status monitoring script with HTTP admin interface support
+      - Proper service dependencies (smsbox requires bearerbox)
+      - Comprehensive documentation and troubleshooting guide
+      - Version bumped to 1.6.3
+
+2025-01-03  @vaska94 and Claude
     * gwlib/conn.c: fix OpenSSL deprecation warnings for Rocky Linux 10
       - Wrap ERR_remove_state() and ENGINE_cleanup() calls in version checks
       - Only call deprecated functions on OpenSSL < 1.1.0
