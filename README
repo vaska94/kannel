@@ -1,43 +1,43 @@
-README for Kannel: Open Source WAP and SMS Gateway
+README for Kannel: Open Source SMS Gateway
 
 
 Abstract
 
-	This README describes Kannel, the Open Source WAP and SMS gateway,
+	This README describes Kannel v1.6.1, the Open Source SMS gateway,
 	and how it can be used and installed.
 
 Introduction
 
-	The Kannel Open Source WAP and SMS gateway works as both an SMS
-	gateway, for implementing keyword based services via GSM text
-	messages, and a WAP gateway, via UDP. The SMS part is fairly
-	mature, the WAP part is early in its development. In this release,
-	the GET request for WML pages and WMLScript files via HTTP works,
-	including compilation for WML and WMLScript to binary forms. Only
-	the data call bearer (UDP) is supported, not SMS.
+	This is a streamlined version of Kannel focused on SMS gateway
+	functionality. All legacy WAP components have been removed to create
+	a modern, lightweight SMS-only gateway suitable for contemporary
+	deployments. The SMS functionality is mature and production-ready.
 	
 Requirements
 
-	You need a Unix-like operating system that supports POSIX threads
-	(pthreads.h). We use RedHat/CentOS Linux and Debian/Ubuntu GNU/Linux 
-	systems as main targets.
-    
-	There is also support for the Cygwin POSIX emulation layer for the 
-	Win32 platforms.
-	
-	You need GNU make, other make's tend not to work. For example,
-	the FreeBSD and Solaris versions of make do not work. Check the
-	version of your make with "make --version"; if it does not reply
-	with "GNU Make version x.y.z", then it is not GNU make.
-	
-	On Solaris, you probably want to install gcc, GNU make and GNU
-	binutils from www.sunfreeware.com.
-	
-	On MacOS X, you may have problems in compiling the latest libxml
-	(2.4.23). There may be linking errors for those library. A work-
-	arround is either using an older version of libxml (2.3.9 for 
-	example) or to build it as static library without the dynamic one 
-	being built.
+	• Unix-like operating system with POSIX threads support
+	• GNU make (check with: make --version)
+	• GNU autotools (autoconf, automake, libtool)
+	• libxml2 development headers
+	• Optional: SSL/TLS support (OpenSSL)
+	• Optional: Database support (MySQL, PostgreSQL, SQLite3, Redis)
+
+Build Dependencies
+
+	Debian/Ubuntu:
+		sudo apt install build-essential autotools-dev autoconf automake \
+		                 libtool libxml2-dev libssl-dev pkg-config \
+		                 libmysqlclient-dev libpq-dev libsqlite3-dev \
+		                 libhiredis-dev
+
+	RHEL/CentOS/Fedora:
+		sudo dnf install gcc make autoconf automake libtool libxml2-devel \
+		                 openssl-devel pkgconfig mysql-devel postgresql-devel \
+		                 sqlite-devel hiredis-devel
+
+	Arch Linux:
+		sudo pacman -S base-devel autoconf automake libtool libxml2 openssl \
+		               mariadb-libs postgresql-libs sqlite hiredis
 
 Documentation
 
@@ -106,25 +106,51 @@ Getting the gateway sources
 	depending on how it is configured. You need at least version
 	2.2.0
 
-Compiling and installing the gateway
+Quick Build Instructions
 
-	See the file INSTALL for generic installation instructions.
-	The short form:
-	
+	1. Bootstrap the build system:
 		autoreconf -fvi -I /usr/share/gettext/m4
-		./configure --disable-ssl ac_cv_sys_file_offset_bits=64
-		touch .depend
-		make depend
-		make
-		make bindir=/somewhere/suitable install
-	
-	Note: The autoreconf command is required to fix AM_ICONV macro issues
-	with newer autotools. The ac_cv_sys_file_offset_bits=64 parameter fixes
-	a configure bug with file offset detection on modern systems.
 
-	See the User Guide (doc/userguide/ or
-	http://www.kannel.org/userguide.shtml) for Kannel specific
-	options to configure.
+	2. Configure with desired options:
+		./configure --enable-ssl --with-ssl=/usr --disable-ssl-thread-test \
+		            --with-mysql --with-pgsql --with-sqlite3 --with-redis \
+		            ac_cv_sys_file_offset_bits=64
+
+	3. Build the gateway:
+		make
+
+	4. Install (optional):
+		sudo make install
+
+Configuration Options
+
+	Essential options:
+		--enable-ssl              Enable SSL/TLS support
+		--with-ssl=/usr          SSL library location
+		--disable-ssl-thread-test Disable SSL threading test
+
+	Database support:
+		--with-mysql             Enable MySQL support
+		--with-pgsql             Enable PostgreSQL support  
+		--with-sqlite3           Enable SQLite3 support
+		--with-redis             Enable Redis support
+
+	Special parameters:
+		ac_cv_sys_file_offset_bits=64  Fix file offset detection on modern systems
+
+	For minimal build (SMS only, no databases):
+		./configure ac_cv_sys_file_offset_bits=64
+
+Built Programs
+
+	After compilation, you'll have:
+		gw/bearerbox      - Main SMS gateway daemon
+		gw/smsbox         - SMS box service
+		utils/mtbatch     - Batch MT sender utility
+		utils/run_kannel_box - Box runner utility
+		utils/decode_emimsg  - EMI message decoder
+
+	See the User Guide in doc/userguide/ for configuration details.
 
 For developers only: autoconf, configure, config.status, and Makefile
 
