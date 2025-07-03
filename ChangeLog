@@ -1,4 +1,4 @@
-2025-01-03  Vasil Jamalashvili (github.com/vaska94) and Claude
+2025-01-03  @vaska94 and Claude
     * gwlib/charset.c: fix deprecated libxml2 API usage warnings
       - Replace deprecated 'content' and 'use' struct members with 
         xmlBufferContent() and xmlBufferLength() functions
@@ -8,7 +8,7 @@
       - Eliminates -Wold-style-definition compiler warnings
       - Version bumped to 1.6.1
 
-2025-01-03  Vasil Jamalashvili (github.com/vaska94) and Claude
+2025-01-03  @vaska94 and Claude
     * MAJOR: Removed legacy WAP gateway functionality 
       - Deleted directories: wap/, wmlscript/, radius/, soap/, debian/
       - Removed WAP/WML/OTA source files and implementations
