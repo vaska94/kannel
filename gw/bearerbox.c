@@ -84,15 +84,11 @@
 List *incoming_sms;
 List *outgoing_sms;
 
-List *incoming_wdp;
-List *outgoing_wdp;
 
 Counter *incoming_sms_counter;
 Counter *outgoing_sms_counter;
 Counter *incoming_dlr_counter;
 Counter *outgoing_dlr_counter;
-Counter *incoming_wdp_counter;
-Counter *outgoing_wdp_counter;
 
 /* incoming/outgoing sms queue control */
 long max_incoming_sms_qlength;
@@ -254,65 +250,8 @@ static int start_smsc(Cfg *cfg)
 }
 
 
-static void wdp_router(void *arg)
-{
-    Msg *msg;
-
-    gwlist_add_producer(flow_threads);
-    
-    while (bb_status != BB_DEAD) {
-
-        if ((msg = gwlist_consume(outgoing_wdp)) == NULL)
-            break;
-
-        gw_assert(msg_type(msg) == wdp_datagram);
-	
-        /*
-        if (msg->list == sms)
-            smsc_addwdp(msg);
-        else
-        */
-
-        udp_addwdp(msg);
-    }
-    udp_die();
-    /* smsc_endwdp(); */
-
-    gwlist_remove_producer(flow_threads);
-}
 
 
-static int start_wap(Cfg *cfg)
-{
-    static int started = 0;
-
-    if (started) 
-        return 0;
-    
-    wapbox_start(cfg);
-
-    debug("bb", 0, "starting WDP router");
-    if (gwthread_create(wdp_router, NULL) == -1)
-        panic(0, "Failed to start a new thread for WDP routing");
-
-    started = 1;
-    return 0;
-}
-
-
-static int start_udp(Cfg *cfg)
-{
-    static int started = 0;
-
-    if (started) 
-        return 0;
-
-    udp_start(cfg);
-
-    start_wap(cfg);
-    started = 1;
-    return 0;
-}
 
 
 /*
@@ -321,7 +260,7 @@ static int start_udp(Cfg *cfg)
 static int check_config(Cfg *cfg)
 {
     CfgGroup *grp;
-    long smsp, wapp;
+    long smsp;
 
     grp = cfg_get_single_group(cfg, octstr_imm("core"));
     if (grp == NULL)
@@ -329,8 +268,6 @@ static int check_config(Cfg *cfg)
 
     if (cfg_get_integer(&smsp, grp, octstr_imm("smsbox-port")) == -1)
     	smsp = -1;
-    if (cfg_get_integer(&wapp, grp, octstr_imm("wapbox-port")) == -1)
-    	wapp = -1;
     
 #ifndef NO_SMS    
     grp = cfg_get_single_group(cfg, octstr_imm("smsbox"));
@@ -342,15 +279,6 @@ static int check_config(Cfg *cfg)
     warning(0, "Kannel was compiled without SMS support");
 #endif
     
-#ifndef NO_WAP	
-    grp = cfg_get_single_group(cfg, octstr_imm("wapbox"));
-    if (wapp != -1 && grp == NULL) {
-        error(0, "No 'wapbox' group in configuration, but wapbox-port set");
-        return -1;
-    }
-#else
-    warning(0, "Kannel was compiled without WAP support");
-#endif
     
     return 0;
 }
@@ -494,7 +422,6 @@ static Cfg *init_bearerbox(Cfg *cfg)
        /* we are fine, at least files are specified in the configuration */
     } else {
         cfg_get_bool(&ssl_enabled, grp, octstr_imm("smsbox-port-ssl"));
-        cfg_get_bool(&ssl_enabled, grp, octstr_imm("wapbox-port-ssl"));
         if (ssl_enabled) {
 	       panic(0, "You MUST specify cert and key files within core group for SSL-enabled inter-box connections!");
         }
@@ -507,15 +434,11 @@ static Cfg *init_bearerbox(Cfg *cfg)
 
     outgoing_sms = gwlist_create();
     incoming_sms = gwlist_create();
-    outgoing_wdp = gwlist_create();
-    incoming_wdp = gwlist_create();
 
     outgoing_sms_counter = counter_create();
     incoming_sms_counter = counter_create();
     incoming_dlr_counter = counter_create();
     outgoing_dlr_counter = counter_create();
-    outgoing_wdp_counter = counter_create();
-    incoming_wdp_counter = counter_create();
 
     status_mutex = mutex_create();
 
@@ -582,16 +505,6 @@ static Cfg *init_bearerbox(Cfg *cfg)
     }
 #endif
     
-#ifndef NO_WAP
-    grp = cfg_get_single_group(cfg, octstr_imm("core"));
-    val = cfg_get(grp, octstr_imm("wdp-interface-name"));
-    if (val != NULL && octstr_len(val) > 0)
-        start_udp(cfg);
-    octstr_destroy(val);
-
-    if (cfg_get_single_group(cfg, octstr_imm("wapbox")) != NULL)
-        start_wap(cfg);
-#endif
 
     if (http_proxy_host != NULL && http_proxy_port > 0) {
     	http_use_proxy(http_proxy_host, http_proxy_port, http_proxy_ssl,
@@ -613,26 +526,8 @@ static void empty_msg_lists(void)
 {
     Msg *msg;
 
-#ifndef NO_WAP
-    if (gwlist_len(incoming_wdp) > 0 || gwlist_len(outgoing_wdp) > 0)
-        warning(0, "Remaining WDP: %ld incoming, %ld outgoing",
-                gwlist_len(incoming_wdp), gwlist_len(outgoing_wdp));
-
-    info(0, "Total WDP messages: received %ld, sent %ld",
-         counter_value(incoming_wdp_counter),
-         counter_value(outgoing_wdp_counter));
-#endif
     
-    while ((msg = gwlist_extract_first(incoming_wdp)) != NULL)
-        msg_destroy(msg);
-    while ((msg = gwlist_extract_first(outgoing_wdp)) != NULL)
-        msg_destroy(msg);
 
-    gwlist_destroy(incoming_wdp, NULL);
-    gwlist_destroy(outgoing_wdp, NULL);
-
-    counter_destroy(incoming_wdp_counter);
-    counter_destroy(outgoing_wdp_counter);
     
 #ifndef NO_SMS
     /* XXX we should record these so that they are not forever lost... */
@@ -849,10 +744,6 @@ int bb_shutdown(void)
     debug("bb", 0, "shutting down smsc");
     smsc2_shutdown();
 #endif
-#ifndef NO_WAP
-    debug("bb", 0, "shutting down udp");
-    udp_shutdown();
-#endif
     
     return 0;
 }
@@ -1023,8 +914,6 @@ Octstr *bb_print_status(int status_type)
     if (status_type == BBSTATUS_HTML) {
         frmt = "%s</p>\n\n"
                " <p>Status: %s, uptime %ldd %ldh %ldm %lds</p>\n\n"
-               " <p>WDP: received %ld (%ld queued), sent %ld "
-               "(%ld queued)</p>\n\n"
                " <p>SMS: received %ld (%ld queued), sent %ld "
                "(%ld queued), store size %ld<br>\n"
                " SMS: inbound (%.2f,%.2f,%.2f) msg/sec, "
@@ -1033,29 +922,9 @@ Octstr *bb_print_status(int status_type)
                " DLR: inbound (%.2f,%.2f,%.2f) msg/sec, outbound (%.2f,%.2f,%.2f) msg/sec<br>\n"
                " DLR: %ld queued, using %s storage</p>\n\n";
         footer = "<p>";
-    } else if (status_type == BBSTATUS_WML) {
-        frmt = "%s</p>\n\n"
-               "   <p>Status: %s, uptime %ldd %ldh %ldm %lds</p>\n\n"
-               "   <p>WDP: received %ld (%ld queued)<br/>\n"
-               "      WDP: sent %ld (%ld queued)</p>\n\n"
-               "   <p>SMS: received %ld (%ld queued)<br/>\n"
-               "      SMS: sent %ld (%ld queued)<br/>\n"
-               "      SMS: store size %ld<br/>\n"
-               "      SMS: inbound (%.2f,%.2f,%.2f) msg/sec<br/>\n"
-               "      SMS: outbound (%.2f,%.2f,%.2f) msg/sec</p>\n"
-               "   <p>DLR: received %ld<br/>\n"
-               "      DLR: sent %ld<br/>\n"
-               "      DLR: inbound (%.2f,%.2f,%.2f) msg/sec<br/>\n"
-               "      DLR: outbound (%.2f,%.2f,%.2f) msg/sec<br/>\n"
-               "      DLR: %ld queued<br/>\n"
-               "      DLR: using %s storage</p>\n\n";
-        footer = "<p>";
     } else if (status_type == BBSTATUS_XML) {
         frmt = "<version>%s</version>\n"
                "<status>%s, uptime %ldd %ldh %ldm %lds</status>\n"
-               "\t<wdp>\n\t\t<received><total>%ld</total><queued>%ld</queued>"
-               "</received>\n\t\t<sent><total>%ld</total><queued>%ld</queued>"
-               "</sent>\n\t</wdp>\n"
                "\t<sms>\n\t\t<received><total>%ld</total><queued>%ld</queued>"
                "</received>\n\t\t<sent><total>%ld</total><queued>%ld</queued>"
                "</sent>\n\t\t<storesize>%ld</storesize>\n\t\t"
@@ -1070,7 +939,6 @@ Octstr *bb_print_status(int status_type)
         footer = "";
     } else {
         frmt = "%s\n\nStatus: %s, uptime %ldd %ldh %ldm %lds\n\n"
-               "WDP: received %ld (%ld queued), sent %ld (%ld queued)\n\n"
                "SMS: received %ld (%ld queued), sent %ld (%ld queued), store size %ld\n"
                "SMS: inbound (%.2f,%.2f,%.2f) msg/sec, "
                "outbound (%.2f,%.2f,%.2f) msg/sec\n\n"
@@ -1083,9 +951,6 @@ Octstr *bb_print_status(int status_type)
     ret = octstr_format(frmt,
         octstr_get_cstr(version),
         s, t/3600/24, t/3600%24, t/60%60, t%60,
-        counter_value(incoming_wdp_counter),
-        gwlist_len(incoming_wdp) + boxc_incoming_wdp_queue(),
-        counter_value(outgoing_wdp_counter), gwlist_len(outgoing_wdp) + udp_outgoing_queue(),
         counter_value(incoming_sms_counter), gwlist_len(incoming_sms),
         counter_value(outgoing_sms_counter), gwlist_len(outgoing_sms),
         store_messages(),
@@ -1111,8 +976,6 @@ char *bb_status_linebreak(int status_type)
     switch (status_type) {
         case BBSTATUS_HTML:
             return "<br>\n";
-        case BBSTATUS_WML:
-            return "<br/>\n";
         case BBSTATUS_TEXT:
             return "\n";
         case BBSTATUS_XML:

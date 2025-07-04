@@ -772,16 +772,7 @@ AC_ARG_ENABLE(start-stop-daemon,
 AM_CONDITIONAL(BUILD_STARTSTOPDAEMON, test x$buildbin = xtrue)
 
 
-dnl Implement --disable-wap and --disable-sms options.
-
-AC_ARG_ENABLE(wap,
-[  --disable-wap           disables WAP gateway parts in bearerbox], [
-  if test "$enableval" = "no"
-  then
-    echo disabling WAP gateway parts in bearerbox
-    AC_DEFINE(NO_WAP, 1, [disabling WAP gateway parts in bearerbox])
-  fi
-])
+dnl Implement --disable-sms option.
 
 AC_ARG_ENABLE(sms,
 [  --disable-sms           disables SMS gateway parts in bearerbox], [

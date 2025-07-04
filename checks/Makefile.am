@@ -12,7 +12,6 @@ noinst_PROGRAMS = \
 	check_octstr
 
 dist_noinst_SCRIPTS = \
-	check_compiler.sh \
 	check_fakesmsc.sh \
 	check_headers.sh \
 	check_http.sh \

@@ -408,11 +408,7 @@ static void httpd_serve(HTTPClient *client, Octstr *ourl, List *headers,
 
     /* Set default reply format according to client
      * Accept: header */
-    if (http_type_accepted(headers, "text/vnd.wap.wml")) {
-        status_type = BBSTATUS_WML;
-        content_type = "text/vnd.wap.wml";
-    }
-    else if (http_type_accepted(headers, "text/html")) {
+    if (http_type_accepted(headers, "text/html")) {
         status_type = BBSTATUS_HTML;
         content_type = "text/html";
     }
@@ -454,10 +450,6 @@ static void httpd_serve(HTTPClient *client, Octstr *ourl, List *headers,
             status_type = BBSTATUS_XML;
             content_type = "application/xml";
         }
-        else if (octstr_str_compare(tmp, "wml") == 0) {
-            status_type = BBSTATUS_WML;
-            content_type = "text/vnd.wap.wml";
-        }
 
         octstr_destroy(tmp);
     }
@@ -485,13 +477,6 @@ static void httpd_serve(HTTPClient *client, Octstr *ourl, List *headers,
  	    "<html>\n<title>" GW_NAME "</title>\n<body>\n<p>";
 	footer = "</p>\n</body></html>\n";
 	content_type = "text/html";
-    } else if (status_type == BBSTATUS_WML) {
-	header = "<?xml version=\"1.0\"?>\n"
-            "<!DOCTYPE wml PUBLIC \"-//WAPFORUM//DTD WML 1.1//EN\" "
-            "\"http://www.wapforum.org/DTD/wml_1.1.xml\">\n"
-            "\n<wml>\n <card>\n  <p>";
-	footer = "  </p>\n </card>\n</wml>\n";
-	content_type = "text/vnd.wap.wml";
     } else if (status_type == BBSTATUS_XML) {
 	header = "<?xml version=\"1.0\"?>\n"
             "<gateway>\n";

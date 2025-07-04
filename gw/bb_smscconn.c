@@ -1379,7 +1379,7 @@ Octstr *smsc2_status(int status_type)
     if ((lb = bb_status_linebreak(status_type)) == NULL)
         return octstr_create("Un-supported format");
 
-    if (status_type == BBSTATUS_HTML || status_type == BBSTATUS_WML)
+    if (status_type == BBSTATUS_HTML)
         para = 1;
 
     if (!smsc_running) {

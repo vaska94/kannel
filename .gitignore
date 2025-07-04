@@ -134,4 +134,4 @@ doc/*.ps
 
 # Generated configuration
 config.nice
-gw-config
+gw-config*.dirstamp
