@@ -84,8 +84,7 @@ enum {
 enum {
     BBSTATUS_HTML = 0,
     BBSTATUS_TEXT = 1,
-    BBSTATUS_WML = 2,
-    BBSTATUS_XML = 3
+    BBSTATUS_XML = 2
 };
 
 /*---------------------------------------------------------------
@@ -95,25 +94,20 @@ enum {
  *
  * XXX_start(Cfg *config) - start the module
  * XXX_restart(Cfg *config) - restart the module, according to new config
- * XXX_shutdown() - start the avalanche - started from UDP/SMSC
+ * XXX_shutdown() - start the avalanche - started from SMSC
  * XXX_die() - final cleanup
  *
- * XXX_addwdp() - only for SMSC/UDP: add a new WDP message to outgoing system
  */
 
 
 /*---------------
- * bb_boxc.c (SMS and WAPBOX connections)
+ * bb_boxc.c (SMS box connections)
  */
 
 int smsbox_start(Cfg *config);
 int smsbox_restart(Cfg *config);
 
-int wapbox_start(Cfg *config);
-
 Octstr *boxc_status(int status_type);
-/* tell total number of messages in separate wapbox incoming queues */
-int boxc_incoming_wdp_queue(void);
 
 /* Clean up after box connections have died. */
 void boxc_cleanup(void);
@@ -127,20 +121,6 @@ void boxc_cleanup(void);
 int route_incoming_to_boxc(Msg *msg);
 
 
-/*---------------
- * bb_udp.c (UDP receiver/sender)
- */
-
-int udp_start(Cfg *config);
-/* int udp_restart(Cfg *config); */
-int udp_shutdown(void);
-int udp_die(void);	/* called when router dies */
-
-/* add outgoing WDP. If fails, return -1 and msg is untouched, so
- * caller must think of new uses for it */
-int udp_addwdp(Msg *msg);
-/* tell total number of messages in separate UDP outgoing port queues */
-int udp_outgoing_queue(void);
 
 
 

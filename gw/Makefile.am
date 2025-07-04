@@ -46,7 +46,6 @@ bearerbox_SOURCES = \
 	bb_boxc.c \
 	bb_http.c \
 	bb_smscconn.c \
-	bb_udp.c \
 	smscconn.c \
 	smsc/smsc.c \
 	smsc/smsc_at.c \

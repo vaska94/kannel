@@ -75,7 +75,12 @@ static void check_reversible(void)
     Octstr *date, *canondate;
     long timeval;
 
-    dates = octstr_read_file("checks/test_dates");
+    /* Try to read from current directory first (when run from checks dir) */
+    dates = octstr_read_file("test_dates");
+    if (dates == NULL) {
+        /* Try from checks subdirectory (when run from root) */
+        dates = octstr_read_file("checks/test_dates");
+    }
     if (dates == NULL)
         return;
 

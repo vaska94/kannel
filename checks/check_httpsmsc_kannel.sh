@@ -5,25 +5,34 @@
 set -e
 #set -x
 
+# Cleanup function
+cleanup() {
+    kill -INT $sbbpid $cbbpid $ssbpid $csbpid 2>/dev/null || true
+    wait 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+
 times=10
 interval=0
 loglevel=0
 host=127.0.0.1
 
-gw/bearerbox -v $loglevel gw/smskannel.conf > check_httpsmsc_kannel_sbb.log 2>&1 &
+../gw/bearerbox -v $loglevel ../gw/smskannel.conf > check_httpsmsc_kannel_sbb.log 2>&1 &
 sbbpid=$!
 sleep 1
 
-gw/bearerbox -v $loglevel gw/other_smskannel.conf > check_httpsmsc_kannel_cbb.log 2>&1 &
+../gw/bearerbox -v $loglevel ../gw/other_smskannel.conf > check_httpsmsc_kannel_cbb.log 2>&1 &
 cbbpid=$!
 sleep 2
 
-test/fakesmsc -H $host -i $interval -m $times '123 234 text relay nop' \
+../test/fakesmsc -H $host -i $interval -m $times '123 234 text relay nop' \
     > check_httpsmsc_kannel_fake.log 2>&1 &
 sleep 1
 
-gw/smsbox -v $loglevel gw/smskannel.conf > check_httpsmsc_kannel_ssb.log 2>&1 &
-gw/smsbox -v $loglevel gw/other_smskannel.conf > check_httpsmsc_kannel_csb.log 2>&1 &
+../gw/smsbox -v $loglevel ../gw/smskannel.conf > check_httpsmsc_kannel_ssb.log 2>&1 &
+ssbpid=$!
+../gw/smsbox -v $loglevel ../gw/other_smskannel.conf > check_httpsmsc_kannel_csb.log 2>&1 &
+csbpid=$!
 
 running="yes"
 while [ $running = "yes" ]
@@ -35,8 +44,7 @@ do
     fi
 done
 
-kill -INT $sbbpid
-kill -INT $cbbpid
+kill -INT $sbbpid $cbbpid $ssbpid $csbpid
 wait
 
 if grep 'WARNING:|ERROR:|PANIC:' check_httpsmsc_kannel_*.log >/dev/null

@@ -5,6 +5,13 @@
 set -e
 #set -x
 
+# Cleanup function to kill processes on exit
+cleanup() {
+    kill -INT $bbpid $smspid $fakepid 2>/dev/null || true
+    wait 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+
 host=127.0.0.1
 times=10
 interval=0
@@ -17,16 +24,18 @@ password=foobar
 url="http://$host:$sendsmsport/cgi-bin/sendsms?from=123&to=234&\
 text=test&username=$username&password=$password"
 
-gw/bearerbox -v $loglevel gw/smskannel.conf > check_sendsms_bb.log 2>&1 &
+../gw/bearerbox -v $loglevel ../gw/smskannel.conf > check_sendsms_bb.log 2>&1 &
 bbpid=$!
 
 sleep 2
 
-test/fakesmsc -H $host -r 20000 -i $interval -m $times '123 234 text nop' \
+../test/fakesmsc -H $host -r 20000 -i $interval -m $times '123 234 text nop' \
     > check_sendsms_smsc.log 2>&1 &
+fakepid=$!
 
 sleep 1
-gw/smsbox -v $loglevel gw/smskannel.conf > check_sendsms_sms.log 2>&1 &
+../gw/smsbox -v $loglevel ../gw/smskannel.conf > check_sendsms_sms.log 2>&1 &
+smspid=$!
 
 sleep 2
 
@@ -37,7 +46,7 @@ text=test&username=$username&password=$password"
 i=0
 while [ $i -lt $times ]
 do
-    test/test_http $url >> check_sendsms.log 2>&1
+    ../../test/test_http $url >> check_sendsms.log 2>&1
     i=`expr $i + 1`
 done
 
@@ -56,7 +65,7 @@ fi
 url="http://$host:$sendsmsport/cgi-bin/sendsms?from=123&to=234&\
 text=&username=$username&password=$password"
 
-test/test_http $url >> check_sendsms.log 2>&1
+../test/test_http $url >> check_sendsms.log 2>&1
 sleep 1
 
 if grep 'WARNING:|ERROR:|PANIC:' check_sendsms*.log >/dev/null
@@ -70,7 +79,7 @@ fi
 url="http://$host:$sendsmsport/cgi-bin/sendsms?from=&to=234&\
 text=test&username=$username&password=$password"
 
-test/test_http $url >> check_sendsms.log 2>&1
+../test/test_http $url >> check_sendsms.log 2>&1
 sleep 1
 
 if grep 'WARNING:|ERROR:|PANIC:' check_sendsms*.log >/dev/null ||
@@ -85,7 +94,7 @@ fi
 url="http://$host:$sendsmsport/cgi-bin/sendsms?from=123&to=&\
 text=&username=$username&password=$password"
 
-test/test_http $url >> check_sendsms.log 2>&1
+../test/test_http $url >> check_sendsms.log 2>&1
 sleep 1
 
 if grep 'WARNING:|ERROR:|PANIC:' check_sendsms*.log >/dev/null ||
@@ -100,7 +109,7 @@ fi
 url="http://$host:$sendsmsport/cgi-bin/sendsms?from=123&to=234&\
 text=&username=&password=$password"
 
-test/test_http $url >> check_sendsms.log 2>&1
+../test/test_http $url >> check_sendsms.log 2>&1
 sleep 1
 
 if grep 'WARNING:|ERROR:|PANIC:' check_sendsms*.log >/dev/null ||
@@ -116,6 +125,9 @@ fi
 url="http://$host:$sendsmsport/cgi-bin/sendsms?from=123&to=234&\
 text=&username=$username&password="
 
+../test/test_http $url >> check_sendsms.log 2>&1
+sleep 1
+
 if grep 'WARNING:|ERROR:|PANIC:' check_sendsms*.log >/dev/null ||
    [ 1 -ne `grep -c '<Authorization failed for sendsms>' \
        check_sendsms_sms.log` ]
@@ -125,7 +137,7 @@ then
 	exit 1
 fi
 
-kill -INT $bbpid
+kill -INT $bbpid $smspid $fakepid
 wait
 
 # Do we panic when going down ?

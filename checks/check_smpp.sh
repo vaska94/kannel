@@ -5,12 +5,17 @@
 set -e
 #set -x
 
-times=10
-
-test/drive_smpp -v 0 -m $times 2> check_smpp_drive.log 1>&2 & 
+# Clean up any stuck processes first
+pkill -f "bearerbox.*drive_smpp.conf" 2>/dev/null || true
+pkill -f "drive_smpp" 2>/dev/null || true
 sleep 1
 
-gw/bearerbox -v 0 test/drive_smpp.conf 2> check_smpp_bb.log 1>&2 &  
+times=10
+
+../test/drive_smpp -v 0 -m $times 2> check_smpp_drive.log 1>&2 & 
+sleep 1
+
+../gw/bearerbox -v 0 ../test/drive_smpp.conf 2> check_smpp_bb.log 1>&2 &  
 bbpid=$!
 
 running=yes
@@ -26,6 +31,10 @@ sleep 5
 
 kill -INT $bbpid
 sleep 15
+
+# Clean up any remaining processes
+pkill -f "bearerbox.*drive_smpp.conf" 2>/dev/null || true
+pkill -f "drive_smpp" 2>/dev/null || true
 
 if grep 'WARNING:|ERROR:|PANIC:' check_smpp*.log >/dev/null
 then

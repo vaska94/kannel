@@ -119,7 +119,10 @@ Quick Build Instructions
 	3. Build the gateway:
 		make
 
-	4. Install (optional):
+	4. Generate SSL certificates for testing (optional):
+		make ssl-certs
+
+	5. Install (optional):
 		sudo make install
 
 Configuration Options
@@ -140,6 +143,15 @@ Configuration Options
 
 	For minimal build (SMS only, no databases):
 		./configure ac_cv_sys_file_offset_bits=64
+
+SSL Certificates
+
+	For SSL/TLS functionality, generate test certificates:
+		make ssl-certs          - Generate 2048-bit RSA certificates with SHA256
+		make ssl-certs-clean    - Remove generated certificates
+
+	Note: Generated certificates are self-signed for testing only.
+	Use proper CA-signed certificates in production.
 
 Built Programs
 

@@ -57,8 +57,8 @@
 /*
  * bb_boxc.c : bearerbox box connection module
  *
- * handles start/restart/stop/suspend/die operations of the sms and
- * wapbox connections
+ * handles start/restart/stop/suspend/die operations of the sms
+ * box connections
  *
  * Kalle Marjola 2000 for project Kannel
  * Alexander Malysh (various fixes)
@@ -88,8 +88,6 @@ extern volatile sig_atomic_t bb_status;
 extern volatile sig_atomic_t restart;
 extern List *incoming_sms;
 extern List *outgoing_sms;
-extern List *incoming_wdp;
-extern List *outgoing_wdp;
 
 extern List *flow_threads;
 extern List *suspended;
@@ -101,8 +99,6 @@ extern long max_incoming_sms_qlength;
 /* our own thingies */
 
 static volatile sig_atomic_t smsbox_running;
-static volatile sig_atomic_t wapbox_running;
-static List	*wapbox_list;
 static List	*smsbox_list;
 static RWLock   *smsbox_list_rwlock;
 
@@ -116,8 +112,6 @@ static Octstr *smsbox_by_default;
 static long	smsbox_port;
 static int smsbox_port_ssl;
 static Octstr *smsbox_interface;
-static long	wapbox_port;
-static int wapbox_port_ssl;
 
 /* max pending messages on the line to smsbox */
 static long smsbox_max_pending;
@@ -134,7 +128,6 @@ static long sms_dequeue_thread;
 
 typedef struct _boxc {
     Connection	*conn;
-    int               is_wap;
     long            id;
     int               load;
     time_t        connect_time;
@@ -328,7 +321,7 @@ static void boxc_receiver(void *arg)
             continue;
         }
 
-        if (msg_type(msg) == sms && conn->is_wap == 0) {
+        if (msg_type(msg) == sms) {
             debug("bb.boxc", 0, "boxc_receiver: sms received");
 
             /* deliver message to queue */
@@ -339,24 +332,7 @@ static void boxc_receiver(void *arg)
                 /* wakeup the dequeue thread */
                 gwthread_wakeup(sms_dequeue_thread);
             }
-        } else if (msg_type(msg) == wdp_datagram && conn->is_wap) {
-            debug("bb.boxc", 0, "boxc_receiver: got wdp from wapbox");
 
-            /* XXX we should block these in SHUTDOWN phase too, but
-               we need ack/nack msgs implemented first. */
-            gwlist_produce(conn->outgoing, msg);
-
-        } else if (msg_type(msg) == sms && conn->is_wap) {
-            debug("bb.boxc", 0, "boxc_receiver: got sms from wapbox");
-
-            /* should be a WAP push message, so tried it the same way */
-            deliver_sms_to_queue(msg, conn);
-
-            if (conn->routable == 0) {
-                conn->routable = 1;
-                /* wakeup the dequeue thread */
-                gwthread_wakeup(sms_dequeue_thread);
-            }
         } else {
             if (msg_type(msg) == heartbeat) {
                 if (msg->heartbeat.load != conn->load)
@@ -486,7 +462,7 @@ static void boxc_sent_push(Boxc *conn, Msg *m)
     Octstr *os;
     char id[UUID_STR_LEN + 1];
 
-    if (conn->is_wap || !conn->sent || !m || msg_type(m) != sms)
+    if (!conn->sent || !m || msg_type(m) != sms)
         return;
 
     uuid_unparse(m->sms.id, id);
@@ -507,7 +483,7 @@ static void boxc_sent_pop(Boxc *conn, Msg *m, Msg **orig)
     char id[UUID_STR_LEN + 1];
     Msg *msg;
 
-    if (conn->is_wap || !conn->sent || !m || (msg_type(m) != ack && msg_type(m) != sms))
+    if (!conn->sent || !m || (msg_type(m) != ack && msg_type(m) != sms))
         return;
 
     if (orig != NULL)
@@ -590,7 +566,6 @@ static Boxc *boxc_create(int fd, Octstr *ip, int ssl)
     Boxc *boxc;
 
     boxc = gw_malloc(sizeof(Boxc));
-    boxc->is_wap = 0;
     boxc->load = 0;
     boxc->conn = conn_wrap_fd(fd, ssl);
     boxc->id = counter_increase(boxid);
@@ -758,218 +733,15 @@ cleanup:
 
 
 
-static void run_wapbox(void *arg)
-{
-    Boxc *newconn;
-    List *newlist;
-    long sender;
-
-    gwlist_add_producer(flow_threads);
-    newconn = arg;
-    newconn->is_wap = 1;
-
-    /*
-     * create a new incoming list for just that box,
-     * and add it to list of list pointers, so we can start
-     * to route messages to it.
-     */
-
-    debug("bb", 0, "setting up systems for new wapbox");
-
-    newlist = gwlist_create();
-    /* this is released by the sender/receiver if it exits */
-    gwlist_add_producer(newlist);
-
-    newconn->incoming = newlist;
-    newconn->retry = incoming_wdp;
-    newconn->outgoing = outgoing_wdp;
-
-    sender = gwthread_create(boxc_sender, newconn);
-    if (sender == -1) {
-	    error(0, "Failed to start a new thread, disconnecting client <%s>",
-	          octstr_get_cstr(newconn->client_ip));
-	    goto cleanup;
-    }
-    gwlist_append(wapbox_list, newconn);
-    gwlist_add_producer(newconn->outgoing);
-    boxc_receiver(newconn);
-
-    /* cleanup after receiver has exited */
-
-    gwlist_remove_producer(newconn->outgoing);
-    gwlist_lock(wapbox_list);
-    gwlist_delete_equal(wapbox_list, newconn);
-    gwlist_unlock(wapbox_list);
-
-    while (gwlist_producer_count(newlist) > 0)
-	    gwlist_remove_producer(newlist);
-
-    newconn->alive = 0;
-
-    gwthread_join(sender);
-
-cleanup:
-    gw_assert(gwlist_len(newlist) == 0);
-    gwlist_destroy(newlist, NULL);
-    boxc_destroy(newconn);
-
-    gwlist_remove_producer(flow_threads);
-}
 
 
 /*------------------------------------------------
  * main single thread functions
  */
 
-typedef struct _addrpar {
-    Octstr *address;
-    int	port;
-    int wapboxid;
-} AddrPar;
-
-static void ap_destroy(AddrPar *addr)
-{
-    octstr_destroy(addr->address);
-    gw_free(addr);
-}
-
-static int cmp_route(void *ap, void *ms)
-{
-    AddrPar *addr = ap;
-    Msg *msg = ms;
-
-    if (msg->wdp_datagram.source_port == addr->port  &&
-	    octstr_compare(msg->wdp_datagram.source_address, addr->address)==0)
-	return 1;
-
-    return 0;
-}
-
-static int cmp_boxc(void *bc, void *ap)
-{
-    Boxc *boxc = bc;
-    AddrPar *addr = ap;
-
-    if (boxc->id == addr->wapboxid) return 1;
-        return 0;
-}
-
-static Boxc *route_msg(List *route_info, Msg *msg)
-{
-    AddrPar *ap;
-    Boxc *conn, *best;
-    int i, b, len;
-
-    ap = gwlist_search(route_info, msg, cmp_route);
-    if (ap == NULL) {
-	    debug("bb.boxc", 0, "Did not find previous routing info for WDP, "
-	    	  "generating new");
-route:
-
-	    if (gwlist_len(wapbox_list) == 0)
-	        return NULL;
-
-	    gwlist_lock(wapbox_list);
-
-	/* take random wapbox from list, and then check all wapboxes
-	 * and select the one with lowest load level - if tied, the first
-	 * one
-	 */
-	    len = gwlist_len(wapbox_list);
-	    b = gw_rand() % len;
-	    best = gwlist_get(wapbox_list, b);
-
-	    for(i = 0; i < gwlist_len(wapbox_list); i++) {
-	        conn = gwlist_get(wapbox_list, (i+b) % len);
-	        if (conn != NULL && best != NULL)
-		        if (conn->load < best->load)
-		            best = conn;
-	    }
-	    if (best == NULL) {
-	        warning(0, "wapbox_list empty!");
-	        gwlist_unlock(wapbox_list);
-	        return NULL;
-	    }
-	    conn = best;
-	    conn->load++;	/* simulate new client until we get new values */
-
-	    ap = gw_malloc(sizeof(AddrPar));
-	    ap->address = octstr_duplicate(msg->wdp_datagram.source_address);
-	    ap->port = msg->wdp_datagram.source_port;
-	    ap->wapboxid = conn->id;
-	    gwlist_produce(route_info, ap);
-
-	    gwlist_unlock(wapbox_list);
-    } else
-	    conn = gwlist_search(wapbox_list, ap, cmp_boxc);
-
-    if (conn == NULL) {
-	/* routing failed; wapbox has disappeared!
-	 * ..remove routing info and re-route   */
-
-	    debug("bb.boxc", 0, "Old wapbox has disappeared, re-routing");
-
-	    gwlist_delete_equal(route_info, ap);
-	    ap_destroy(ap);
-	    goto route;
-    }
-    return conn;
-}
 
 
-/*
- * this thread listens to incoming_wdp list
- * and then routs messages to proper wapbox
- */
-static void wdp_to_wapboxes(void *arg)
-{
-    List *route_info;
-    AddrPar *ap;
-    Boxc *conn;
-    Msg *msg;
-    int i;
 
-    gwlist_add_producer(flow_threads);
-    gwlist_add_producer(wapbox_list);
-
-    route_info = gwlist_create();
-
-
-    while(bb_status != BB_DEAD) {
-
-	    gwlist_consume(suspended);	/* block here if suspended */
-
-	    if ((msg = gwlist_consume(incoming_wdp)) == NULL)
-	         break;
-
-	    gw_assert(msg_type(msg) == wdp_datagram);
-
-	    conn = route_msg(route_info, msg);
-	    if (conn == NULL) {
-	        warning(0, "Cannot route message, discard it");
-	        msg_destroy(msg);
-	        continue;
-	    }
-	    gwlist_produce(conn->incoming, msg);
-    }
-    debug("bb", 0, "wdp_to_wapboxes: destroying lists");
-    while((ap = gwlist_extract_first(route_info)) != NULL)
-	ap_destroy(ap);
-
-    gw_assert(gwlist_len(route_info) == 0);
-    gwlist_destroy(route_info, NULL);
-
-    gwlist_lock(wapbox_list);
-    for(i=0; i < gwlist_len(wapbox_list); i++) {
-	    conn = gwlist_get(wapbox_list, i);
-	    gwlist_remove_producer(conn->incoming);
-	    conn->alive = 0;
-    }
-    gwlist_unlock(wapbox_list);
-
-    gwlist_remove_producer(wapbox_list);
-    gwlist_remove_producer(flow_threads);
-}
 
 
 static void wait_for_connections(int fd, void (*function) (void *arg),
@@ -1074,46 +846,6 @@ static void smsboxc_run(void *arg)
 }
 
 
-static void wapboxc_run(void *arg)
-{
-    int fd, port;
-
-    gwlist_add_producer(flow_threads);
-    gwthread_wakeup(MAIN_THREAD_ID);
-    port = (int) *((long*)arg);
-
-    fd = make_server_socket(port, NULL);
-    	/* XXX add interface_name if required */
-
-    if (fd < 0) {
-	    panic(0, "Could not open wapbox port %d", port);
-    }
-
-    wait_for_connections(fd, run_wapbox, incoming_wdp, wapbox_port_ssl);
-
-    /* continue avalanche */
-
-    gwlist_remove_producer(outgoing_wdp);
-
-
-    /* wait for all connections to die and then remove list
-     */
-
-    while(gwlist_wait_until_nonempty(wapbox_list) == 1)
-        gwthread_sleep(1.0);
-
-    /* wait for wdp_to_wapboxes to exit */
-    while(gwlist_consume(wapbox_list)!=NULL)
-	;
-
-    /* close listen socket */
-    close(fd);
-
-    gwlist_destroy(wapbox_list, NULL);
-    wapbox_list = NULL;
-
-    gwlist_remove_producer(flow_threads);
-}
 
 #define RELOAD_PANIC(...) \
     if (reload) { error(__VA_ARGS__); continue; } \
@@ -1334,53 +1066,6 @@ int smsbox_restart(Cfg *cfg)
 
 
 
-/* WAPBOX */
-
-int wapbox_start(Cfg *cfg)
-{
-    CfgGroup *grp;
-
-    if (wapbox_running) return -1;
-
-    debug("bb", 0, "starting wapbox connection module");
-
-    grp = cfg_get_single_group(cfg, octstr_imm("core"));
-
-    if (cfg_get_integer(&wapbox_port, grp, octstr_imm("wapbox-port")) == -1) {
-	    error(0, "Missing wapbox-port variable, cannot start WAP");
-	    return -1;
-    }
-#ifdef HAVE_LIBSSL
-    cfg_get_bool(&wapbox_port_ssl, grp, octstr_imm("wapbox-port-ssl"));
-#endif /* HAVE_LIBSSL */
-
-    if (box_allow_ip == NULL) {
-        box_allow_ip = cfg_get(grp, octstr_imm("box-allow-ip"));
-        if (box_allow_ip == NULL)
-     	    box_allow_ip = octstr_create("");
-    }
-    if (box_deny_ip == NULL) {
-        box_deny_ip = cfg_get(grp, octstr_imm("box-deny-ip"));
-        if (box_deny_ip == NULL)
-    	    box_deny_ip = octstr_create("");
-    }
-    if (box_allow_ip != NULL && box_deny_ip == NULL)
-	    info(0, "Box connection allowed IPs defined without any denied...");
-
-    wapbox_list = gwlist_create();	/* have a list of connections */
-    gwlist_add_producer(outgoing_wdp);
-    if (!boxid)
-        boxid = counter_create();
-
-    if (gwthread_create(wdp_to_wapboxes, NULL) == -1)
- 	    panic(0, "Failed to start a new thread for wapbox routing");
-
-    if (gwthread_create(wapboxc_run, &wapbox_port) == -1)
-	    panic(0, "Failed to start a new thread for wapbox connections");
-
-    wapbox_running = 1;
-    return 0;
-}
 
 
 Octstr *boxc_status(int status_type)
@@ -1409,7 +1094,7 @@ Octstr *boxc_status(int status_type)
     else
 	    ws = "";
 
-    if (status_type == BBSTATUS_HTML || status_type == BBSTATUS_WML)
+    if (status_type == BBSTATUS_HTML)
 	    para = 1;
 
     if (status_type == BBSTATUS_XML) {
@@ -1420,41 +1105,6 @@ Octstr *boxc_status(int status_type)
         tmp = octstr_format("%sBox connections:%s", para ? "<p>" : "", lb);
     boxes = 0;
 
-    if (wapbox_list) {
-	    gwlist_lock(wapbox_list);
-	    for(i=0; i < gwlist_len(wapbox_list); i++) {
-	        bi = gwlist_get(wapbox_list, i);
-	        if (bi->alive == 0)
-		        continue;
-	        t = orig - bi->connect_time;
-            if (status_type == BBSTATUS_XML)
-	            octstr_format_append(tmp,
-		        "<box>\n\t\t<type>wapbox</type>\n\t\t<IP>%s</IP>\n"
-                "\t\t<status>on-line %ldd %ldh %ldm %lds</status>\n"
-                "\t\t<ssl>%s</ssl>\n\t</box>\n",
-				octstr_get_cstr(bi->client_ip),
-				t/3600/24, t/3600%24, t/60%60, t%60,
-#ifdef HAVE_LIBSSL
-                conn_get_ssl(bi->conn) != NULL ? "yes" : "no"
-#else
-                "not installed"
-#endif
-                );
-            else
-	            octstr_format_append(tmp,
-		        "%swapbox, IP %s (on-line %ldd %ldh %ldm %lds) %s %s",
-				ws, octstr_get_cstr(bi->client_ip),
-				t/3600/24, t/3600%24, t/60%60, t%60,
-#ifdef HAVE_LIBSSL
-                conn_get_ssl(bi->conn) != NULL ? "using SSL" : "",
-#else
-                "",
-#endif
-                lb);
-	            boxes++;
-	       }
-	       gwlist_unlock(wapbox_list);
-        }
         if (smsbox_list) {
             gw_rwlock_rdlock(smsbox_list_rwlock);
 	    for(i=0; i < gwlist_len(smsbox_list); i++) {
@@ -1507,21 +1157,6 @@ Octstr *boxc_status(int status_type)
 }
 
 
-int boxc_incoming_wdp_queue(void)
-{
-    int i, q = 0;
-    Boxc *boxc;
-
-    if (wapbox_list) {
-	    gwlist_lock(wapbox_list);
-	    for(i=0; i < gwlist_len(wapbox_list); i++) {
-	        boxc = gwlist_get(wapbox_list, i);
-	        q += gwlist_len(boxc->incoming);
-	    }
-	    gwlist_unlock(wapbox_list);
-    }
-    return q;
-}
 
 
 void boxc_cleanup(void)
