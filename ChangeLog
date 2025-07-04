@@ -1,3 +1,17 @@
+2025-07-04  @vaska94 and Claude
+    * Complete WAP/WDP removal and infrastructure modernization
+      - Remove all WAP functionality: deleted wap/, wmlscript/, radius/, soap/, debian/ directories
+      - Remove WDP infrastructure: deleted bb_udp.c, cleaned up bearerbox.c and bb_boxc.c
+      - Remove --disable-wap configure flag and NO_WAP preprocessor blocks
+      - Update SSL certificates: replace 1024-bit RSA+MD5 with 2048-bit RSA+SHA256 for OpenSSL 3.5.0 compatibility
+      - Add SSL certificate generation targets: 'make ssl-certs' and 'make ssl-certs-clean'
+      - Fix test infrastructure: add process cleanup handlers to prevent hanging processes
+      - Fix test script paths: update relative paths to work from checks directory
+      - Update documentation: add SSL certificate generation instructions to README
+      - Add .gitignore entry for build artifacts (*.dirstamp)
+      - Resolve all SSL PANIC errors and test hanging issues
+      - Version bumped to 1.6.4
+
 2025-01-03  @vaska94 and Claude
     * contrib/systemd: add modern systemd service integration
       - Added kannel-bearerbox.service and kannel-smsbox.service files
