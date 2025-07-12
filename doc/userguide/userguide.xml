@@ -4624,8 +4624,8 @@ send-url = "http://localhost:20022"
    <row><entry><literal>system-type (m)</literal></entry>
      <entry><literal>string</literal></entry>
      <entry valign="bottom">
-        Type of HTTP connection. Currently supported are: 'kannel', 
-		  'brunet', 'xidris', 'clickatell' and 'generic'.
+        Type of HTTP connection. Currently supported are: 'kannel' 
+		  and 'generic'.
      </entry></row>
 
    <row><entry><literal>send-url (m)</literal></entry>
@@ -4695,17 +4695,7 @@ send-url = "http://localhost:20022"
        10 (default) requests are outstanding at any time.
     </entry></row>
 
-   <row><entry><literal>system-id</literal></entry>
-   <entry><literal>string</literal></entry>
-   <entry valign="bottom">
-      Clickatell only: API id.
-   </entry></row>
 
-   <row><entry><literal>mobile-originated</literal></entry>
-   <entry><literal>integer</literal></entry>
-   <entry valign="bottom">
-      Clickatell only: 'mo' parameter used for a two-way service (0 or 1).
-   </entry></row>
 
    <row><entry><literal>use-post</literal></entry>
      <entry><literal>boolean</literal></entry>

@@ -103,9 +103,6 @@ typedef struct conndata {
     Octstr *alt_charset;/* alternative charset use */
     List *msg_to_send;  /* our send queue */
 
-    /* Clickatell specific options */
-    Octstr *system_id;     /* API id */
-    int mobile_originated; /* 'mo' parameter for a two-way service (0 or 1) */
 
     /* callback functions set by HTTP-SMSC type */
     struct smsc_http_fn_callbacks *callbacks;
