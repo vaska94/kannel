@@ -144,7 +144,6 @@ static void conndata_destroy(ConnData *conndata)
     octstr_destroy(conndata->dlr_url);
     octstr_destroy(conndata->username);
     octstr_destroy(conndata->password);
-    octstr_destroy(conndata->system_id);
     octstr_destroy(conndata->alt_charset);
     counter_destroy(conndata->open_sends);
     gwlist_destroy(conndata->msg_to_send, NULL);
@@ -518,11 +517,9 @@ int smsc_http_create(SMSCConn *conn, CfgGroup *cfg)
     conndata->send_url = cfg_get(cfg, octstr_imm("send-url"));
     conndata->username = cfg_get(cfg, octstr_imm("smsc-username"));
     conndata->password = cfg_get(cfg, octstr_imm("smsc-password"));
-    conndata->system_id = cfg_get(cfg, octstr_imm("system-id"));
     cfg_get_bool(&conndata->no_sender, cfg, octstr_imm("no-sender"));
     cfg_get_bool(&conndata->no_coding, cfg, octstr_imm("no-coding"));
     cfg_get_bool(&conndata->no_sep, cfg, octstr_imm("no-sep"));
-    cfg_get_bool(&conndata->mobile_originated, cfg, octstr_imm("mobile-originated"));
     cfg_get_bool(&ssl, cfg, octstr_imm("use-ssl"));
     conndata->dlr_url = cfg_get(cfg, octstr_imm("dlr-url"));
     conndata->alt_charset = cfg_get(cfg, octstr_imm("alt-charset"));

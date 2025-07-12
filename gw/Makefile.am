@@ -55,11 +55,8 @@ bearerbox_SOURCES = \
 	smsc/smsc_emi.c \
 	smsc/smsc_emi_x25.c \
 	smsc/smsc_fake.c \
-	smsc/http/brunet.c \
-	smsc/http/clickatell.c \
 	smsc/http/generic.c \
 	smsc/http/kannel.c \
-	smsc/http/xidris.c \
 	smsc/smsc_http.c \
 	smsc/smsc_loopback.c \
 	smsc/smsc_ois.c \

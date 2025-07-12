@@ -31,14 +31,14 @@ while test "$1"; do
 done
 
 test "$cflags" = yes && cat << FOO
--I/usr/local/include/kannel -g -O2 -D_XOPEN_SOURCE=600 -D_BSD_SOURCE -D_DEFAULT_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES= -DBROKEN_PTHREADS=1 -I/usr/include/libxml2
+-I/usr/local/include/kannel -g -O2 -D_XOPEN_SOURCE=600 -D_BSD_SOURCE -D_DEFAULT_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES= -DBROKEN_PTHREADS=1 -I/usr/include/libxml2 -I/usr/include -I/usr/include/mysql -I/usr/include/mysql/mysql -I/usr/include -I/usr/include/hiredis
 FOO
 
 test "$libs" = yes && cat << FOO
--L/usr/local/lib -lgw -lgwlib -lrt -lresolv -lnsl -lm  -lpthread -liconv -lxml2 -lm -pthread -lz -llzma -pthread -lpthread -licuuc -licudata -lpthread -lm
+-L/usr/local/lib -lgw -lgwlib -lpq -lmysqlclient_r -lssl -lrt -lresolv -lnsl -lm  -lpthread -liconv -lxml2 -lm -pthread -lz -llzma -pthread -lpthread -licuuc -licudata -lpthread -lm -L/usr/lib -lcrypto -L/usr/lib/ -lmariadb -L/usr/local/lib -lsqlite3 -L/usr/lib -L/usr/lib -lhiredis
 FOO
 
 test "$version" = yes && cat << FOO
-1.5.1
+1.6.4
 FOO
 

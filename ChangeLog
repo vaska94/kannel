@@ -1,3 +1,12 @@
+2025-07-12  @vaska94 and Claude
+    * Remove legacy SMS HTTP connectors and modernize codebase
+      - Remove deprecated Clickatell SMS connector (API moved to One API)
+      - Remove defunct Brunet SMS aggregator (German, circa 2003)  
+      - Remove defunct Xidris SMS aggregator (Austrian, circa 2003-2004)
+      - Clean up build system and documentation references
+      - Reduce codebase size and maintenance overhead
+      - Only modern 'kannel' and 'generic' HTTP connectors remain active
+
 2025-07-04  @vaska94 and Claude
     * Complete WAP/WDP removal and infrastructure modernization
       - Remove all WAP functionality: deleted wap/, wmlscript/, radius/, soap/, debian/ directories
