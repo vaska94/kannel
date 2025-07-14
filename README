@@ -124,6 +124,8 @@ Quick Build Instructions
 
 	5. Install (optional):
 		sudo make install
+		or better
+		make install-exec install-data-am
 
 Configuration Options
 
