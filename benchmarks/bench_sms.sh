@@ -13,15 +13,15 @@ esac
 
 function gather_data {
     rm -f bench_sms_*.log
-    
+
     test/test_smsc -m "$1" -r $times 2> bench_sms_smsc.log &
-    sleep 1
+    sleep 3
     gw/bearerbox -v 4 benchmarks/bench_sms.conf &
-    sleep 1
+    sleep 3
     gw/smsbox -v 4 benchmarks/bench_sms.conf &
-    
+
     wait
-    
+
     check_for_errors bench_sms_*.log
 }
 

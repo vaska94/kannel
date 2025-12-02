@@ -344,6 +344,16 @@ static void smpp_emu_handle_pdu(struct smpp_emu_arg *p, SMPP_PDU *pdu)
 	    	panic(0, "Couldn't create SMPP helper thread.");
     	    break;
 
+    	case bind_transceiver:
+	    resp = smpp_pdu_create(bind_transceiver_resp,
+				   pdu->u.bind_transceiver.sequence_number);
+    	    eq_append(p->eq, eq_create_event(got_smsc));
+	    gw_assert(p->writer_id == -1);
+	    p->writer_id = gwthread_create(smpp_emu_writer, p);
+	    if (p->writer_id == -1)
+	    	panic(0, "Couldn't create SMPP helper thread.");
+    	    break;
+
     	case submit_sm:
 	    eq_append(p->eq, 
 	    	eq_create_submit(p->conn, pdu->u.submit_sm.sequence_number,

@@ -6,8 +6,8 @@ OUT=benchmarks/report.xml
 
 rm -f $OUT
 
-sed "s/#DATE#/`date +%Y-%m-%d`/g" < $BEGIN |
-sed "s/#UNAME#/`uname -a`/g" > $OUT
+sed "s|#DATE#|`date +%Y-%m-%d`|g" < $BEGIN |
+sed "s|#UNAME#|`uname -a`|g" > $OUT
 
 case "$1" in
 --fast) fast="--fast"; shift ;;

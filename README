@@ -159,6 +159,28 @@ For developers only: adding new SMS Center protocol support
 	When doing this, read interface specification in gw/smscconn_p.h.
 	Drivers should stick to these rules as good as they can.
 
+For developers only: Running benchmarks
+
+	Kannel includes performance benchmarks for HTTP and SMS/SMPP:
+
+	Requirements:
+		• gnuplot (for generating graphs)
+		• SSL certificates generated (make ssl-certs)
+
+	Run all benchmarks:
+		./benchmarks/run-benchmarks benchmarks/bench_http.sh benchmarks/bench_sms.sh
+
+	Run with fast mode (1,000 iterations instead of 100,000):
+		./benchmarks/run-benchmarks --fast benchmarks/bench_http.sh benchmarks/bench_sms.sh
+
+	Run individual benchmarks:
+		./benchmarks/bench_http.sh          # HTTP benchmark (100,000 requests)
+		./benchmarks/bench_http.sh --fast   # HTTP benchmark (1,000 requests)
+		./benchmarks/bench_sms.sh           # SMS/SMPP benchmark (100,000 messages)
+		./benchmarks/bench_sms.sh --fast    # SMS/SMPP benchmark (1,000 messages)
+
+	Results are written to benchmarks/report.xml with PNG graphs.
+
 For developers only: "make check"
 
 	The Kannel Makefile contains a target called "check", which
