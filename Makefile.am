@@ -1,11 +1,10 @@
 AUTOMAKE_OPTIONS = foreign
 
-SUBDIRS = gwlib gw utils test doc checks benchmarks
+SUBDIRS = gwlib gw utils test checks benchmarks
 
 # TODO:
 # install test (conditionally)
 # test soap
-# test doc
 
 
 EXTRA_DIST = AUTHORS ChangeLog COPYING INSTALL LICENSE NEWS README STATUS VERSION contrib 
