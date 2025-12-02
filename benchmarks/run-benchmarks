@@ -2,12 +2,12 @@
 
 BEGIN=benchmarks/report-begin.txt
 END=benchmarks/report-end.txt
-OUT=benchmarks/report.xml
+OUT=benchmarks/report.html
 
 rm -f $OUT
 
-sed "s|#DATE#|`date +%Y-%m-%d`|g" < $BEGIN |
-sed "s|#UNAME#|`uname -a`|g" > $OUT
+sed -e "s|#DATE#|`date '+%Y-%m-%d %H:%M:%S'`|g" \
+    -e "s|#UNAME#|`uname -a`|g" < $BEGIN > $OUT
 
 case "$1" in
 --fast) fast="--fast"; shift ;;
@@ -28,3 +28,5 @@ done
 
 
 cat < $END >>$OUT
+
+echo "Report generated: $OUT"

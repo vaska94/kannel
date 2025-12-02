@@ -1,37 +1,29 @@
-<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Kannel Benchmark Results</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; }
+        h1 { color: #333; border-bottom: 2px solid #007acc; padding-bottom: 10px; }
+        h2 { color: #555; margin-top: 30px; }
+        .stats { background: #f5f5f5; padding: 15px 20px; border-radius: 8px; margin: 20px 0; }
+        .stats h3 { margin: 0 0 10px 0; color: #007acc; }
+        .stat-value { font-size: 2em; font-weight: bold; color: #333; }
+        .stat-unit { font-size: 0.9em; color: #666; }
+        .system-info { background: #e8f4f8; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 0.9em; }
+        figure { margin: 20px 0; text-align: center; }
+        figure img { max-width: 100%; border: 1px solid #ddd; border-radius: 4px; }
+        figcaption { color: #666; margin-top: 8px; font-style: italic; }
+        .timestamp { color: #888; font-size: 0.9em; }
+    </style>
+</head>
+<body>
 
-<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN"
-     [
-<!ENTITY figtype "#FIGTYPE#">
-<!ENTITY timestamp "#DATE#">
-<!ENTITY version "#VERSION#">
-]>
+<h1>Kannel Benchmark Results</h1>
 
-<article>
+<p class="timestamp">Generated: #DATE#</p>
 
-<artheader>
-	<title>Benchmark results for Kannel &version;</title>
-	<corpauthor>Kannel Project</corpauthor>
-</artheader>
+<h2>System Information</h2>
+<div class="system-info">#UNAME#</div>
 
-<sect1>
-<title>Automated Kannel benchmarks</title>
-
-<para>The goal of the automated Kannel benchmarks (known as <command>make
-bench</command>) is to make it easy to regularly measure the speed at
-which Kannel performs. This is important so that the developers have a way
-to check that the changes they make don't make Kannel slower without the
-developers knowing it. Also, when optimizing Kannel (i.e., when trying
-to make it run faster), they can see that their changes really do have
-that effect. The benchmarks will also produce numbers that will make
-marketing people make funny sounds.</para>
-
-</sect1>
-
-<sect1>
-<title>System information</title>
-
-<para>This benchmark was run on &timestamp; a system identified as
-<literal>#UNAME#</literal>.</para>
-
-</sect1>

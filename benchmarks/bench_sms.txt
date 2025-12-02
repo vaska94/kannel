@@ -1,48 +1,20 @@
-<sect1>
-<title>SMS SMPP benchmark: #TIMES# messages</title>
+<h2>SMS/SMPP Benchmark</h2>
 
-<para>This benchmark sends #TIMES# SMS requests using the SMPP protocol.
-Each SMS request results in one HTTP request, and one SMS response message.
-<xref linkend="fig.n-messages.per-second"> shows the number of completed
-requests during each second of the benchmark.
-<xref linkend="fig.n-messages.rtt"> shows the round trip time of each
-completed request, that is, the time from when the message was sent to
-the time the reply message was received.
-</para>
+<p>This benchmark sends <strong>#TIMES#</strong> SMS messages using the SMPP protocol. Each SMS triggers an HTTP request and generates a response message.</p>
 
-<figure id="fig.n-messages.per-second">
-<title>Requests per second during benchmark</title>
-<graphic fileref="bench_sms_n_messages&figtype;"></graphic>
-</figure>
-
-<figure id="fig.n-messages.rtt">
-<title>SMPP request average round trip time</title>
-<graphic fileref="bench_sms_rtt_n_messages&figtype;"></graphic>
-</figure>
-
-</sect1>
-
-
-
-<!--
-
-<sect1>
-<title>SMS SMPP benchmark: sustained traffic level</title>
-
-<para>This benchmark attempts to measure the sustained traffic level
-Kannel can handle over SMPP. 
-</para>
+<div class="stats">
+    <h3>Performance</h3>
+    <span class="stat-value">#AVG_MPS#</span> <span class="stat-unit">messages/sec (avg)</span><br>
+    <span class="stat-value">#DURATION#</span> <span class="stat-unit">seconds total</span><br>
+    <span class="stat-value">#AVG_RTT#</span> <span class="stat-unit">ms avg round-trip time</span>
+</div>
 
 <figure>
-<title>SMPP requests per second during benchmark</title>
-<graphic fileref="bench_sms_sustained_level&figtype;"></graphic>
+    <img src="bench_sms_n_messages.png" alt="SMS requests per second">
+    <figcaption>SMS requests per second during benchmark</figcaption>
 </figure>
 
 <figure>
-<title>SMPP request average round trip time</title>
-<graphic fileref="bench_sms_rtt_sustained_level&figtype;"></graphic>
+    <img src="bench_sms_rtt_n_messages.png" alt="Round trip time">
+    <figcaption>SMPP message round trip time</figcaption>
 </figure>
-
-</sect1>
-
--->

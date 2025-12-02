@@ -134,6 +134,13 @@ doc/*.html
 doc/*.pdf
 doc/*.ps
 
+# Benchmark output files
+benchmarks/report.html
+benchmarks/report.xml
+benchmarks/*.png
+benchmarks/*.ps
+benchmarks/*.dat
+
 # Log files
 *.log
 
