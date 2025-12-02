@@ -207,7 +207,9 @@ AC_CHECK_LIB(bind, inet_ntop)
 if test -z "$pthread"; then
     AC_CHECK_LIB(pthread, pthread_exit, [LIBS="$LIBS -lpthread"])
 fi
-AC_CHECK_LIB(iconv, libiconv, [LIBS="$LIBS -liconv"])
+dnl Check if iconv is in libc first, only add -liconv if needed
+AC_CHECK_FUNC(iconv_open, [],
+  [AC_CHECK_LIB(iconv, iconv_open, [LIBS="$LIBS -liconv"])])
 
 dnl Checks for header files.
 
