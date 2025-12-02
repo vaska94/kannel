@@ -75,10 +75,13 @@ Quick Build Instructions
 	3. Build the gateway:
 		make
 
-	4. Generate SSL certificates for testing (optional):
+	4. Generate SSL certificates for testing (required for make check):
 		make ssl-certs
 
-	5. Install (optional):
+	5. Run tests (optional):
+		make check
+
+	6. Install (optional):
 		sudo make install
 		or better
 		make install-exec install-data-am
