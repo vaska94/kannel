@@ -22,7 +22,7 @@ test/test_http -q -v 2 -r $times http://localhost:$port/foo
 test/test_http -q -v 2 http://localhost:$port/quit
 wait
 
-awk '/DEBUG: Request for/ { print $1, $2 }' bench_http.log  |
+awk '/INFO: Request for/ { print $1, $2 }' bench_http.log  |
 test/timestamp | uniq -c | 
 awk '
     NR == 1 { first = $2 }

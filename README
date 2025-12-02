@@ -30,6 +30,7 @@ Requirements
 	• libxml2 development headers
 	• Optional: SSL/TLS support (OpenSSL)
 	• Optional: Database support (MySQL, PostgreSQL, SQLite3, Redis)
+	• Optional: gnuplot (for benchmark graphs)
 
 Build Dependencies
 
