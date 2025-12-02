@@ -1,4 +1,7 @@
 2025-12-02  Vasil Jamalashvili <shapeless@pm.me>
+    * Version 1.6.5 - Production release
+      - Deployed and running in production at sender.ge
+      - sqlbox addon compiles and works without issues
     * Remove obsolete documentation infrastructure
       - Remove legacy ChangeLog files, alligata, arch, doxygen docs
       - Remove doc/Makefile.am, simplify to HTML-only documentation
@@ -6,6 +9,10 @@
     * Fix iconv library detection for Linux systems
       - Check libc first before adding -liconv
       - Fixes sqlbox and addon builds on Linux
+    * Clean up project metadata
+      - Remove NEWS, STATUS, AUTHORS, COPYING files
+      - Remove SSL certificates from repo (use make ssl-certs)
+      - Remove backup files and obsolete references
 
 2025-07-12  @vaska94 and Claude
     * Remove legacy SMS HTTP connectors and modernize codebase
