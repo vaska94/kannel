@@ -1,4 +1,5 @@
 AUTOMAKE_OPTIONS = foreign
+ACLOCAL_AMFLAGS = -I /usr/share/gettext/m4
 
 SUBDIRS = gwlib gw utils test checks benchmarks
 

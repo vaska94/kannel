@@ -65,7 +65,7 @@ Getting the gateway sources
 Quick Build Instructions
 
 	1. Bootstrap the build system:
-		autoreconf -fvi -I /usr/share/gettext/m4
+		autoreconf -fi
 
 	2. Configure with desired options:
 		./configure --enable-ssl --with-ssl=/usr --disable-ssl-thread-test \
