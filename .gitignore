@@ -36,6 +36,11 @@ gw-config.h
 gw-config.h.in
 gwlib/gw_uuid_types.h
 
+# SSL certificates (generate with: make ssl-certs)
+gw/cert.pem
+gw/key.pem
+*.pem
+
 # Built binaries
 bearerbox
 smsbox
