@@ -3,8 +3,17 @@ README for Kannel: Open Source SMS Gateway
 
 Abstract
 
-	This README describes Kannel v1.6.1, the Open Source SMS gateway,
+	This README describes Kannel, the Open Source SMS gateway,
 	and how it can be used and installed.
+
+Disclaimer
+
+	This is an independent fork of Kannel maintained at:
+	https://github.com/vaska94/kannel
+
+	This project has NO affiliation with the original Kannel project
+	(kannel.org). It is a community-maintained modification focused on
+	modernization and continued development.
 
 Introduction
 
@@ -41,70 +50,17 @@ Build Dependencies
 
 Documentation
 
-	The user manual is in the doc/userguide directory and although it
-	is not complete, explain almost all parts of Kannel. Developer
-	documentation (currently very outdated) is in the doc/arch
-	directory.
-	
-	In order to convert the documentation from DocBook (a mark-up
-	language) to HTML and PostScript, you need some tools. Please 
-	find here the required packages:
-	
-    Debian 8 GNU/Linux:
-	
-        $ sudo apt-get install openjade jadetex transfig imagemagick \
-            docbook-dsssl docbook-utils
-    
-    Red Hat Linux 7 (RHEL/CentOS):
-    
-        $ sudo yum install openjade texlive-jadetex transfig ImageMagick \
-            docbook-style-dsssl texlive 
-    	
-    Fedora Core 7 (and higher): 
-    
-        $ sudo yum install openjade jadetex transfig ImageMagick \
-            docbook-style-dsssl 
-
-    Gentoo:
-
-        $ sudo emerge transfig jadetex docbook-dsssl-stylesheets
-
-    Mandrake:
-		
-        $ urpmi transfig jadetex docbook-style-dsssl
-
-	Then apply this change to /usr/share/texmf/web2c/texmf.cnf:
-	
-		hash_extra.jadetex = 15000
-		hash_extra.pdfjadetex = 15000
-		pool_size.jadetex = 500000
-		pool_size.pdfjadetex = 500000
-		string_vacancies.jadetex = 45000
-		string_vacancies.pdfjadetex = 45000
-		max_strings.jadetex = 55000
-		max_strings.pdfjadetex = 55000
-		pool_free.jadetex = 47500
-		pool_free.pdfjadetex = 47500
-		nest_size.jadetex = 500
-		nest_size.pdfjadetex = 500
-		param_size.jadetex = 1500
-		param_size.pdfjadetex = 1500
-		save_size.jadetex = 5000
-		save_size.pdfjadetex = 5000
-		stack_size.jadetex = 1500
-		stack_size.pdfjadetex = 1500
-	
-	On other systems, you'll have to figure it out yourself.
+	The user manual is in the doc/userguide directory. Documentation
+	is provided in HTML format only. Legacy documentation formats
+	(PostScript, PDF, RTF) and build tooling have been removed.
 	
 Getting the gateway sources
 
-	You can download the sources from
-	http://www.kannel.org/download.shtml.
-	
-	Note that you also need the Gnome-xml library from
-	http://xmlsoft.org/xml.html. That one probably requires zlib,
-	depending on how it is configured. You need at least version
-	2.2.0
+	Clone the repository from GitHub:
+
+		git clone https://github.com/vaska94/kannel.git
+
+	Note: This fork has no affiliation with the original Kannel project.
 
 Quick Build Instructions
 
@@ -244,16 +200,7 @@ For developers only: Source tree organization
 		|-- test	programs for testing the gateway
 		`-- utils	utility programs
 
-For developers only: WMLScript references
-
-	WMLScript Specification
-		      Wireless Application Protocol WMLScript Language
-		      Specification Version 1.1 http://www.wapforum.org/
-
-	WMLScript Standard Libraries Specification
-		      Wireless Aplication Protocol WMLScript
-		      Standard Libraries Specification Version 1.1
-		      http://www.wapforum.org/
+For developers only: References
 
 	RFC-2279	UTF-8, a transformation format of ISO 10646
 
@@ -269,61 +216,11 @@ For developers only: WMLScript references
 
 Configuring and running the gateway
 
-	See the user guide in doc/userguide or on the web at
-	http://www.kannel.org/doc.shtml.
-	
-	For test use, you can see sample configurations
-	gw/smskannel.conf (SMS gateway) and gw/wapkannel.conf (WAP gateway).
+	See the user guide in doc/userguide for configuration details.
 
-Using the gateway with a Nokia 7110
+	Sample configurations are available in doc/examples/.
 
-	To configure a Nokia 7110 to use the gateway, fill in the
-	following (note that you need to provide your own dialup
-	line):
-	
-		Home page: http://www.kannel.org/wap/hello.wml
-		(or any other WML page)
-		Connection type: continuous
-		Connection security: off
-		Bearer: data
-		Dial-up number: <your dialup line>
-		IP address: <IP number of the host running bearer box>
-		Authentication type: normal
-		Data call type: <analog or isdn, depending on your line>
-		Data call speed: 9600
-		User name: <username for your dialup line>
-		Password: <password for your dialup line>
-		
-	After you have modified the profile, activate it and load the
-	home page. If you use the sample page above, you should see
-	"hello, world" on the screen after a few moments.
+Feedback and issues
 
-Modifications to old Kannel (0.8 and older)
-
-	After release 0.8 Kannel architecture has been modified
-	considerably, resulting changes in basic running of the standard
-	WAP or WAP gateway.
-
-	In new design, there is only one configuration file (to be more
-	exact, you can have several of them, one for each kind of box,
-	but that is advanced feature, which is not very usable) for
-	bearerbox, smsboxes and wapboxes. Details of that file is in
-	doc/userguide/newconf.txt.  As a quick reference, you just put
-	all your old configuration files into same file, remove some
-	rows and add 'group = xxx' variables into it.
-
-	Moreover, there is no internal smsbox in new Kannel. So, when
-	running SMS services you MUST run separate smsbox. This is most
-	easily done with Kannel as daemon, launched with init.d. See
-	utils/ directory for any supplied systems.
-
-Feedback and more information
-
-	You may want to subscribe the announce and devel lists at
-	www.kannel.org. If you need help or want to participate in the 
-        development of Kannel. Send e-mail to
-	
-		announce-subscribe@kannel.org
-		devel-subscribe@kannel.org
-
-	(You'll get further instructions via automatic reply mails.)
+	Report issues and contribute at:
+	https://github.com/vaska94/kannel/issues
