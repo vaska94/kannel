@@ -48,6 +48,12 @@ run_kannel_box
 mtbatch
 decode_emimsg
 
+# Addon build artifacts
+addons/*/gw/sqlbox
+addons/*/gw/opensmppbox
+addons/*/sb-config.h
+addons/*/rpm/*.spec
+
 # Compiled test binaries (but not .c source files)
 test/drive_smpp
 test/fakesmsc
