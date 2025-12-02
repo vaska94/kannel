@@ -7,7 +7,7 @@ SUBDIRS = gwlib gw utils test checks benchmarks
 # test soap
 
 
-EXTRA_DIST = AUTHORS ChangeLog COPYING INSTALL LICENSE NEWS README STATUS VERSION contrib 
+EXTRA_DIST = ChangeLog INSTALL LICENSE README VERSION contrib 
 
 BUILT_SOURCES = gw-config.h
 
