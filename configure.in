@@ -832,10 +832,10 @@ if test "$ssl" = "yes" ; then
         fi
       done
     fi
-    for loc in /usr/include/ssl /usr/include/openssl /usr/local/ssl/include \
-               /usr/local/openssl/include; do
-      if test -d "$loc"; then
+    for loc in /usr/include /usr/local/ssl/include /usr/local/openssl/include; do
+      if test -f "$loc/openssl/ssl.h"; then
         sslinc="$loc"
+        break
       fi
     done
   fi

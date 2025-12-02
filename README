@@ -69,7 +69,7 @@ Quick Build Instructions
 		autoreconf -fi
 
 	2. Configure with desired options:
-		./configure --enable-ssl --with-ssl=/usr --disable-ssl-thread-test \
+		./configure --enable-ssl --disable-ssl-thread-test \
 		            --with-mysql --with-pgsql --with-sqlite3 --with-redis \
 		            ac_cv_sys_file_offset_bits=64
 
