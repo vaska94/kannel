@@ -21,6 +21,15 @@ Introduction
 	functionality. All legacy WAP components have been removed to create
 	a modern, lightweight SMS-only gateway suitable for contemporary
 	deployments. The SMS functionality is mature and production-ready.
+
+Performance
+
+	Benchmark results on WSL2 (AMD Ryzen 9, virtualized):
+	• HTTP:     ~2,500 requests/sec
+	• SMS/SMPP: ~2,850 messages/sec, 369ms avg RTT
+
+	On bare metal Linux, expect significantly higher throughput.
+	Run benchmarks yourself: ./benchmarks/run-benchmarks
 	
 Requirements
 
