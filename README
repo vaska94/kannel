@@ -42,9 +42,8 @@ Build Dependencies
 
 	RHEL/CentOS/Fedora:
 		sudo dnf install gcc make autoconf automake libtool libxml2-devel \
-		                 openssl-devel pkgconfig mysql-devel postgresql-devel \
-		                 sqlite-devel hiredis-devel gettext-devel
-
+            			openssl-devel pkgconfig mariadb-devel libpq-devel \
+            			libsqlite3x-devel hiredis-devel gettext-devel
 	Arch Linux:
 		sudo pacman -S base-devel autoconf automake libtool libxml2 openssl \
 		               mariadb-libs postgresql-libs sqlite hiredis
