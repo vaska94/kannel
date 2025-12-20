@@ -5,7 +5,7 @@
     compress
     delaycompress
     notifempty
-    create 640 kannel kannel
+    create 644 kannel kannel
     sharedscripts
     postrotate
         killall -HUP bearerbox smsbox > /dev/null 2> /dev/null || true
