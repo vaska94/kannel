@@ -73,6 +73,11 @@ print_status "  - /var/spool/kannel (kannel:kannel, 755)"
 print_status "  - /var/run/kannel (kannel:kannel, 755)"
 print_status "  - /etc/kannel (root:root, 755)"
 
+# Create tmpfiles.d configuration for /var/run/kannel persistence
+print_status "Creating tmpfiles.d configuration..."
+echo 'd /var/run/kannel 0755 kannel kannel -' > /etc/tmpfiles.d/kannel.conf
+print_status "✓ Created /etc/tmpfiles.d/kannel.conf"
+
 # Verify setup
 print_status "Verifying setup..."
 

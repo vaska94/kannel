@@ -28,6 +28,11 @@ This directory contains systemd service files for running Kannel components as s
    sudo chmod 755 /etc/kannel
    ```
 
+3. Create tmpfiles.d configuration (ensures /var/run/kannel persists after reboot):
+   ```bash
+   echo 'd /var/run/kannel 0755 kannel kannel -' | sudo tee /etc/tmpfiles.d/kannel.conf
+   ```
+
 ### Alternative: Automated User Setup
 
 For convenience, you can use this one-liner to set up everything:
