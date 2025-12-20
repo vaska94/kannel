@@ -24,12 +24,13 @@ Introduction
 
 Performance
 
-	Benchmark results on WSL2 (AMD Ryzen 9, virtualized):
-	• HTTP:     ~2,500 requests/sec
-	• SMS/SMPP: ~2,850 messages/sec, 369ms avg RTT
+	Benchmark results on WSL2 (AMD Ryzen 9 5550X, virtualized):
+	• HTTP:     ~2,778 requests/sec
+	• SMS/SMPP: ~3,125 messages/sec, 339ms avg RTT
 
 	On bare metal Linux, expect significantly higher throughput.
-	Run benchmarks yourself: ./benchmarks/run-benchmarks
+	Run benchmarks yourself:
+		./benchmarks/run-benchmarks benchmarks/bench_http.sh benchmarks/bench_sms.sh
 	
 Requirements
 
