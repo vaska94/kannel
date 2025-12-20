@@ -1,0 +1,13 @@
+/var/log/kannel/*.log {
+    daily
+    missingok
+    rotate 365
+    compress
+    delaycompress
+    notifempty
+    create 640 kannel kannel
+    sharedscripts
+    postrotate
+        killall -HUP bearerbox smsbox > /dev/null 2> /dev/null || true
+    endscript
+}

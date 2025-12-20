@@ -54,7 +54,12 @@ sudo /usr/src/Kannel/contrib/systemd/setup-kannel-user.sh
    sudo chmod +x /usr/local/bin/kannel-status.sh
    ```
 
-3. Reload systemd configuration:
+3. Install logrotate configuration:
+   ```bash
+   sudo cp kannel.logrotate /etc/logrotate.d/kannel
+   ```
+
+4. Reload systemd configuration:
    ```bash
    sudo systemctl daemon-reload
    ```
