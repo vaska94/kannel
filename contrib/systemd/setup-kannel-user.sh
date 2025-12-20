@@ -1,10 +1,16 @@
 #!/bin/bash
 #
-# Kannel User and Directory Setup Script
-# This script creates the kannel user and required directories for systemd services
+# Kannel Setup Script
+# This script creates the kannel user, directories, and installs systemd services
 #
 
 set -e
+
+# Get script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# GitHub raw URL for downloading files
+GITHUB_RAW="https://raw.githubusercontent.com/vaska94/kannel/main/contrib/systemd"
 
 # Colors for output
 RED='\033[0;31m'
@@ -23,6 +29,29 @@ print_warning() {
 
 print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Function to get file (local or download from GitHub)
+get_file() {
+    local filename="$1"
+    local dest="$2"
+
+    if [[ -f "$SCRIPT_DIR/$filename" ]]; then
+        cp "$SCRIPT_DIR/$filename" "$dest"
+        return 0
+    else
+        # Try to download from GitHub
+        if command -v curl >/dev/null 2>&1; then
+            if curl -sSf "$GITHUB_RAW/$filename" -o "$dest" 2>/dev/null; then
+                return 0
+            fi
+        elif command -v wget >/dev/null 2>&1; then
+            if wget -q "$GITHUB_RAW/$filename" -O "$dest" 2>/dev/null; then
+                return 0
+            fi
+        fi
+    fi
+    return 1
 }
 
 # Check if running as root
@@ -78,6 +107,42 @@ print_status "Creating tmpfiles.d configuration..."
 echo 'd /var/run/kannel 0755 kannel kannel -' > /etc/tmpfiles.d/kannel.conf
 print_status "✓ Created /etc/tmpfiles.d/kannel.conf"
 
+# Install systemd service files
+print_status "Installing systemd service files..."
+if get_file "kannel-bearerbox.service" "/etc/systemd/system/kannel-bearerbox.service"; then
+    print_status "✓ Installed kannel-bearerbox.service"
+else
+    print_error "Failed to install kannel-bearerbox.service"
+    exit 1
+fi
+
+if get_file "kannel-smsbox.service" "/etc/systemd/system/kannel-smsbox.service"; then
+    print_status "✓ Installed kannel-smsbox.service"
+else
+    print_error "Failed to install kannel-smsbox.service"
+    exit 1
+fi
+
+# Install status script
+if get_file "kannel-status.sh" "/usr/local/bin/kannel-status.sh"; then
+    chmod +x /usr/local/bin/kannel-status.sh
+    print_status "✓ Installed kannel-status.sh to /usr/local/bin/"
+else
+    print_warning "Failed to install kannel-status.sh (optional)"
+fi
+
+# Install logrotate configuration
+if get_file "kannel.logrotate" "/etc/logrotate.d/kannel"; then
+    print_status "✓ Installed logrotate configuration"
+else
+    print_warning "Failed to install logrotate configuration (optional)"
+fi
+
+# Reload systemd
+print_status "Reloading systemd daemon..."
+systemctl daemon-reload
+print_status "✓ Systemd daemon reloaded"
+
 # Verify setup
 print_status "Verifying setup..."
 
@@ -111,11 +176,11 @@ for dir in /var/lib/kannel /var/log/kannel /var/spool/kannel /var/run/kannel /et
 done
 
 print_status ""
-print_status "🎉 Kannel user and directory setup completed successfully!"
+print_status "🎉 Kannel setup completed successfully!"
 print_status ""
 print_status "Next steps:"
-print_status "1. Install systemd service files"
-print_status "2. Place your kannel.conf in /etc/kannel/"
-print_status "3. Start the services with: systemctl start kannel-bearerbox"
+print_status "1. Place your kannel.conf in /etc/kannel/"
+print_status "2. Enable services: systemctl enable kannel-bearerbox kannel-smsbox"
+print_status "3. Start services: systemctl start kannel-bearerbox kannel-smsbox"
 print_status ""
-print_status "For more information, see: /usr/src/Kannel/contrib/systemd/README.md"
+print_status "For more information, see the README.md in contrib/systemd/"
