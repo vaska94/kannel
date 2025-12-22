@@ -50,10 +50,18 @@ Build Dependencies
 		                 libmysqlclient-dev libpq-dev libsqlite3-dev \
 		                 libhiredis-dev
 
-	RHEL/CentOS/Fedora:
+	RHEL/Rocky/AlmaLinux (EL9+):
+		sudo dnf install epel-release
+		sudo crb enable
 		sudo dnf install gcc make autoconf automake libtool libxml2-devel \
-            			openssl-devel pkgconfig mariadb-devel libpq-devel \
-            			libsqlite3x-devel hiredis-devel gettext-devel
+		                 openssl-devel pkgconfig mariadb-devel libpq-devel \
+		                 libsqlite3x-devel hiredis-devel gettext-devel
+
+	Fedora:
+		sudo dnf install gcc make autoconf automake libtool libxml2-devel \
+		                 openssl-devel pkgconfig mariadb-devel libpq-devel \
+		                 libsqlite3x-devel hiredis-devel gettext-devel
+
 	Arch Linux:
 		sudo pacman -S base-devel autoconf automake libtool libxml2 openssl \
 		               mariadb-libs postgresql-libs sqlite hiredis
