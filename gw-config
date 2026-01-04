@@ -1,44 +1,11 @@
 #!/bin/sh
-
-usage()
-{
-	echo "usage: $0 [--cflags] [--libs] [--version]"
-	exit 0
-}
-
-cflags=no
-libs=no
-version=no
-
+usage() { echo "usage: $0 [--cflags] [--libs] [--version]"; exit 0; }
 test "$1" || usage
-
 while test "$1"; do
-	case "$1" in
-	--cflags )
-		cflags=yes
-		;;
-	--libs )
-		libs=yes
-		;;
-	--version )
-		version=yes
-		;;
-	* )
-		usage
-		;;
-	esac
-	shift
+  case "$1" in
+    --cflags) echo "-I/usr/local/include/kannel -g -O2 -D_XOPEN_SOURCE=600 -D_BSD_SOURCE -D_DEFAULT_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES= -I/usr/include/libxml2 -I/usr/include -I/usr/include/mysql -I/usr/include/mysql/mysql -I/usr/include -I/usr/include/hiredis" ;;
+    --libs) echo "-L/usr/local/lib -lgw -lgwlib -lpq -lmysqlclient_r -lssl -lrt -lresolv -lnsl -lm  -lpthread -lxml2 -lm -pthread -lz -licuuc -licudata -lpthread -lm -L/usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib -lcrypto -lssl -L/usr/lib/ -lmariadb -L/usr/local/lib -lsqlite3 -L/usr/lib -L/usr/lib -lhiredis" ;;
+    --version) echo "1.6.6" ;;
+    *) usage ;;
+  esac; shift
 done
-
-test "$cflags" = yes && cat << FOO
--I/usr/local/include/kannel -g -O2 -D_XOPEN_SOURCE=600 -D_BSD_SOURCE -D_DEFAULT_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES= -DBROKEN_PTHREADS=1 -I/usr/include/libxml2 -I/usr/include -I/usr/include/mysql -I/usr/include/mysql/mysql -I/usr/include -I/usr/include/hiredis
-FOO
-
-test "$libs" = yes && cat << FOO
--L/usr/local/lib -lgw -lgwlib -lpq -lmysqlclient_r -lssl -lrt -lresolv -lnsl -lm  -lpthread -liconv -lxml2 -lm -pthread -lz -llzma -pthread -lpthread -licuuc -licudata -lpthread -lm -L/usr/lib -lcrypto -L/usr/lib/ -lmariadb -L/usr/local/lib -lsqlite3 -L/usr/lib -L/usr/lib -lhiredis
-FOO
-
-test "$version" = yes && cat << FOO
-1.6.4
-FOO
-

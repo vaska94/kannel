@@ -96,18 +96,9 @@ AC_DEFUN([AC_GIT_REVISION],
 ])
 
 
-dnl Available from the GNU Autoconf Macro Archive at:
-dnl http://www.gnu.org/software/ac-archive/htmldoc/ac_caolan_func_which_gethostbyname_r.html
-dnl Modified by Alexander Malysh for Kannel Project.
-dnl
+dnl Check for gethostbyname_r with 6 arguments (Linux/glibc)
 AC_DEFUN([AC_FUNC_WHICH_GETHOSTBYNAME_R],
-[AC_CACHE_CHECK(for which type of gethostbyname_r, ac_cv_func_which_gethostname_r, [
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <netdb.h>]], [[
-        char *name;
-        struct hostent *he;
-        struct hostent_data data;
-        (void) gethostbyname_r(name, he, &data);
-     ]])], [ac_cv_func_which_gethostname_r=3], [
+[AC_CACHE_CHECK(for gethostbyname_r with 6 arguments, ac_cv_func_gethostbyname_r_6, [
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <netdb.h>]], [[
         char *name;
         struct hostent *he, *res;
@@ -115,25 +106,9 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <netdb.h>]], [[
         int buflen = 2048;
         int h_errnop;
         (void) gethostbyname_r(name, he, buffer, buflen, &res, &h_errnop);
-     ]])], [ac_cv_func_which_gethostname_r=6], [
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <netdb.h>]], [[
-        char *name;
-        struct hostent *he;
-        char buffer[2048];
-        int buflen = 2048;
-        int h_errnop;
-        (void) gethostbyname_r(name, he, buffer, buflen, &h_errnop);
-     ]])], [ac_cv_func_which_gethostname_r=5], [ac_cv_func_which_gethostname_r=0])]
-   )]
-)])
-if test $ac_cv_func_which_gethostname_r -eq 6; then
-  AC_DEFINE(HAVE_FUNC_GETHOSTBYNAME_R_6, 1, [gethostbyname have 6 arguments])
-elif test $ac_cv_func_which_gethostname_r -eq 5; then
-  AC_DEFINE(HAVE_FUNC_GETHOSTBYNAME_R_5, 1, [gethostbyname have 5 arguments])
-elif test $ac_cv_func_which_gethostname_r -eq 3; then
-  AC_DEFINE(HAVE_FUNC_GETHOSTBYNAME_R_3, 1, [gethostbyname have 3 arguments])
-elif test $ac_cv_func_which_gethostname_r -eq 0; then
-  ac_cv_func_which_gethostname_r = no
+     ]])], [ac_cv_func_gethostbyname_r_6=yes], [ac_cv_func_gethostbyname_r_6=no])])
+if test $ac_cv_func_gethostbyname_r_6 = yes; then
+  AC_DEFINE(HAVE_FUNC_GETHOSTBYNAME_R_6, 1, [gethostbyname_r has 6 arguments])
 fi
 ])
 

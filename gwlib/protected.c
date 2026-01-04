@@ -211,33 +211,6 @@ int gw_gethostbyname(struct hostent *ent, const char *name, char **buff)
 
     return res;
 }
-#elif HAVE_FUNC_GETHOSTBYNAME_R_5
-/* solaris */
-int gw_gethostbyname(struct hostent *ent, const char *name, char **buff)
-{
-    int herr = 0;
-    size_t bufflen = 1024;
-    int res = 0;
-    struct hostent *tmphp = NULL;
-
-    *buff = gw_malloc(bufflen);
-    while ((tmphp = gethostbyname_r(name, ent, *buff, bufflen, &herr)) == NULL && (errno == ERANGE)) {
-        /* Enlarge the buffer. */
-        bufflen *= 2;
-        *buff = (char *) gw_realloc(*buff, bufflen);
-    }
-
-    if (tmphp == NULL) {
-        error(herr, "Error while gw_gethostbyname occurs.");
-        gw_free(*buff);
-        *buff = NULL;
-        res = -1;
-    }
-
-    return res;
-}
-/* not yet implemented, no machine for testing (alex) */
-/* #elif HAVE_FUNC_GETHOSTBYNAME_R_3 */
 #else
 /*
  * Hmm, we don't have a gethostbyname_r(), this is bad...

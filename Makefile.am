@@ -19,11 +19,19 @@ include_HEADERS = \
 
 bin_SCRIPTS = gw-config
 
-gw-config: utils/foobar-config.sh
-	./utils/foobar-config.sh "-I$(includedir) @CFLAGS@" \
-		"-L$(libdir) -lgw -lgwlib $(LIBS)" \
-		"@VERSION@" > gw-config
-	chmod 0755 gw-config
+gw-config: Makefile
+	@echo '#!/bin/sh' > $@
+	@echo 'usage() { echo "usage: $$0 [--cflags] [--libs] [--version]"; exit 0; }' >> $@
+	@echo 'test "$$1" || usage' >> $@
+	@echo 'while test "$$1"; do' >> $@
+	@echo '  case "$$1" in' >> $@
+	@echo '    --cflags) echo "-I$(includedir) @CFLAGS@" ;;' >> $@
+	@echo '    --libs) echo "-L$(libdir) -lgw -lgwlib $(LIBS)" ;;' >> $@
+	@echo '    --version) echo "@VERSION@" ;;' >> $@
+	@echo '    *) usage ;;' >> $@
+	@echo '  esac; shift' >> $@
+	@echo 'done' >> $@
+	chmod 0755 $@
 
 
 nag:

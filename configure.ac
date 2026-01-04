@@ -96,14 +96,6 @@ AC_DISABLE_STATIC
 LT_INIT
 dnl AC_SUBST(LIBTOOL_DEPS)
 
-dnl Solaris pkgadd support definitions
-PKGADD_PKG="KANNELgateway"
-PKGADD_NAME="Kannel - WAP and SMS gateway"
-PKGADD_VENDOR="www.kannel.org"
-AC_SUBST(PKGADD_PKG)
-AC_SUBST(PKGADD_NAME)
-AC_SUBST(PKGADD_VENDOR)
-
 dnl Target installation directory for documentation
 AC_SUBST(docdir)
 docdir='${prefix}/share/doc/kannel'
@@ -134,9 +126,6 @@ dnl Apply system specific rules.
 dnl Executable extension for systems that need one, i.e. Cygwin
 EXE_EXT=""
 case "$host" in
-  *-sun-solaris*)
-    CFLAGS="$CFLAGS -DSunOS=1"
-    ;;
   *-cygwin*)
     EXE_EXT=".exe"
     LDFLAGS="$LDFLAGS -Wl,--enable-auto-import"
@@ -248,7 +237,6 @@ AM_ICONV
 dnl Checks for library functions.
 
 AC_CHECK_FUNCS(gettimeofday select socket strdup getopt_long localtime_r gmtime_r backtrace srandom strtoll strtoq setpriority initgroups)
-AC_CHECK_FUNC(getopt, [], [AC_LIBOBJ([utils/attgetopt])])
 AC_CHECK_FUNC(dlopen, [], AC_CHECK_LIB(dl, dlopen, LDFLAGS="$LDFLAGS -ldl"))
 
 dnl Check if we have reentrant gethostbyname and which one
@@ -352,7 +340,6 @@ pthread_rwlock_destroy(&lock);
   [AC_MSG_RESULT(no)])
 
 dnl checking for native semaphore support
-dnl Solaris & HP-UX needs librt.
 AC_CHECK_LIB(rt, sem_init)
 AC_MSG_CHECKING([for semaphore support])
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
@@ -636,26 +623,6 @@ AC_ARG_ENABLE(keepalive,
   echo enabling HTTP/1.1 keep-alive
   AC_DEFINE(USE_KEEPALIVE, 1, [Enable HTTP Keep-Alive])
 ])
-
-
-dnl --enable-start-stop-daemon option.
-
-AC_MSG_CHECKING([whether to compile start-stop-daemon])
-AC_ARG_ENABLE(start-stop-daemon,
-[  --enable-start-stop-daemon  compile/install the start-stop-daemon program @<:@disabled@:>@], [
-  case "${enableval}" in
-    yes)
-      buildbin=true
-      AC_MSG_RESULT(enabled)
-      ;;
-    no)
-      buildbin=false
-      AC_MSG_RESULT(disabled)
-      ;;
-    *) AC_MSG_ERROR(bad value ${enableval} for --enable-start-stop-daemon) ;;
-  esac
-],[ buildbin=false ; AC_MSG_RESULT(disabled)])
-AM_CONDITIONAL(BUILD_STARTSTOPDAEMON, test x$buildbin = xtrue)
 
 
 dnl Implement --disable-sms option.

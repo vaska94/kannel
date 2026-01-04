@@ -18,12 +18,3 @@ decode_emimsg_SOURCES = \
 run_kannel_box_LDADD = $(top_builddir)/gwlib/libgwlib.la $(top_builddir)/gw/libgw.la
 run_kannel_box_SOURCES = \
 		run_kannel_box.c
-
-if BUILD_STARTSTOPDAEMON
-
-sbin_PROGRAMS += start-stop-daemon
-start_stop_daemon_LDADD = $(top_builddir)/gwlib/libgwlib.la $(top_builddir)/gw/libgw.la
-start_stop_daemon_SOURCES = \
-		start-stop-daemon.c
-
-endif

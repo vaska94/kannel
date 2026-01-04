@@ -442,7 +442,7 @@ retry:
             }
             break;
         case EINVAL:
-            /* Solaris catchall "It didn't work" error, lets apply
+            /* Catchall "It didn't work" error, lets apply
              * some tests and see if we can catch it. */
 
             /* First up, try invalid timeout*/
