@@ -124,12 +124,26 @@ sudo pacman -S base-devel autoconf automake libtool libxml2 openssl \
 
 ## Build Options
 
+Full build with all features:
 ```bash
-./configure --enable-ssl              # Enable SSL/TLS
-            --with-mysql              # MySQL support
-            --with-pgsql              # PostgreSQL support
-            --with-sqlite3            # SQLite3 support
-            --with-redis              # Redis/Valkey support
+./configure --enable-ssl --disable-ssl-thread-test \
+            --with-mysql --with-pgsql --with-sqlite3 --with-redis \
+            ac_cv_sys_file_offset_bits=64
+```
+
+| Option | Description |
+|--------|-------------|
+| `--enable-ssl` | Enable SSL/TLS support |
+| `--disable-ssl-thread-test` | Skip SSL threading test (recommended) |
+| `--with-mysql` | MySQL/MariaDB support |
+| `--with-pgsql` | PostgreSQL support |
+| `--with-sqlite3` | SQLite3 support |
+| `--with-redis` | Redis/Valkey support |
+| `ac_cv_sys_file_offset_bits=64` | Fix file offset detection on modern 64-bit systems |
+
+Minimal build (no databases):
+```bash
+./configure ac_cv_sys_file_offset_bits=64
 ```
 
 ## Performance
