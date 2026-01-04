@@ -26,7 +26,7 @@ Open source SMS gateway supporting SMPP, CIMD, EMI/UCP, HTTP, and GSM modems.
 # Install dependencies (RHEL/Rocky/AlmaLinux 10)
 sudo dnf install epel-release
 sudo crb enable
-sudo dnf install gcc make autoconf automake libtool libxml2-devel \
+sudo dnf install gcc make autoconf automake libtool \
     openssl-devel pkgconfig hiredis-devel gettext-devel
 
 # Build
@@ -88,7 +88,7 @@ curl "http://localhost:13013/cgi-bin/sendsms?user=tester&pass=foobar&to=+1234567
 ```bash
 sudo dnf install epel-release
 sudo crb enable
-sudo dnf install gcc make autoconf automake libtool libxml2-devel \
+sudo dnf install gcc make autoconf automake libtool \
     openssl-devel pkgconfig mariadb-devel libpq-devel \
     libsqlite3x-devel hiredis-devel gettext-devel
 ```
@@ -98,7 +98,7 @@ sudo dnf install gcc make autoconf automake libtool libxml2-devel \
 <summary>Fedora</summary>
 
 ```bash
-sudo dnf install gcc make autoconf automake libtool libxml2-devel \
+sudo dnf install gcc make autoconf automake libtool \
     openssl-devel pkgconfig mariadb-devel libpq-devel \
     libsqlite3x-devel hiredis-devel gettext-devel
 ```
@@ -109,7 +109,7 @@ sudo dnf install gcc make autoconf automake libtool libxml2-devel \
 
 ```bash
 sudo apt install build-essential autotools-dev autoconf automake \
-    libtool libxml2-dev libssl-dev pkg-config \
+    libtool libssl-dev pkg-config \
     libmysqlclient-dev libpq-dev libsqlite3-dev libhiredis-dev
 ```
 </details>
@@ -118,7 +118,7 @@ sudo apt install build-essential autotools-dev autoconf automake \
 <summary>Arch Linux</summary>
 
 ```bash
-sudo pacman -S base-devel autoconf automake libtool libxml2 openssl \
+sudo pacman -S base-devel autoconf automake libtool openssl \
     mariadb-libs postgresql-libs sqlite hiredis
 ```
 </details>

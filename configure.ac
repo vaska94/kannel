@@ -499,18 +499,6 @@ pam) echo PAM authentication is enabled. ;;
 esac
 
 
-dnl Implement --enable-debug option.
-
-AC_ARG_ENABLE(debug,
-[  --enable-debug	  enable non-reentrant debugging for wmls compiler @<:@disabled@:>@], [
-  echo enabling WMLScript compiler debugging
-  if test -n "$GCC"; then
-    CFLAGS="$CFLAGS -Wall"
-  fi
-  AC_DEFINE(WS_DEBUG, 1, [WMLScript compiler debugging])
-])
-
-
 dnl Implement --enable-localtime option.
 
 AC_ARG_ENABLE(localtime,

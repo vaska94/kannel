@@ -37,7 +37,6 @@ Requirements
 	• Unix-like operating system with POSIX threads support
 	• GNU make (check with: make --version)
 	• GNU autotools (autoconf, automake, libtool)
-	• libxml2 development headers
 	• Optional: SSL/TLS support (OpenSSL)
 	• Optional: Database support (MySQL, PostgreSQL, SQLite3, Redis)
 	• Optional: gnuplot (for benchmark graphs)
@@ -46,24 +45,24 @@ Build Dependencies
 
 	Debian/Ubuntu:
 		sudo apt install build-essential autotools-dev autoconf automake \
-		                 libtool libxml2-dev libssl-dev pkg-config \
+		                 libtool libssl-dev pkg-config \
 		                 libmysqlclient-dev libpq-dev libsqlite3-dev \
 		                 libhiredis-dev
 
 	RHEL/Rocky/AlmaLinux (EL9+):
 		sudo dnf install epel-release
 		sudo crb enable
-		sudo dnf install gcc make autoconf automake libtool libxml2-devel \
+		sudo dnf install gcc make autoconf automake libtool \
 		                 openssl-devel pkgconfig mariadb-devel libpq-devel \
 		                 libsqlite3x-devel hiredis-devel gettext-devel
 
 	Fedora:
-		sudo dnf install gcc make autoconf automake libtool libxml2-devel \
+		sudo dnf install gcc make autoconf automake libtool \
 		                 openssl-devel pkgconfig mariadb-devel libpq-devel \
 		                 libsqlite3x-devel hiredis-devel gettext-devel
 
 	Arch Linux:
-		sudo pacman -S base-devel autoconf automake libtool libxml2 openssl \
+		sudo pacman -S base-devel autoconf automake libtool openssl \
 		               mariadb-libs postgresql-libs sqlite hiredis
 
 Documentation
