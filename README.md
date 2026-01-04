@@ -17,6 +17,7 @@ Open source SMS gateway supporting SMPP, CIMD, EMI/UCP, HTTP, and GSM modems.
 - **HTTP API**: Simple REST-like interface for sending/receiving SMS
 - **Delivery reports**: Configurable DLR with multiple storage backends
 - **Database support**: MySQL, PostgreSQL, SQLite3, Redis/Valkey
+- **Health check endpoint**: `/health` for load balancers and Kubernetes
 - **Production ready**: Battle-tested SMS gateway since 2000
 
 ## Quick Start

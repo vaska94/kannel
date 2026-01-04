@@ -977,10 +977,66 @@ char *bb_status_linebreak(int status_type)
         case BBSTATUS_HTML:
             return "<br>\n";
         case BBSTATUS_TEXT:
-            return "\n";
         case BBSTATUS_XML:
+        case BBSTATUS_JSON:
             return "\n";
         default:
             return NULL;
     }
+}
+
+
+Octstr *bb_health_status(int *is_healthy)
+{
+    char *s;
+    time_t t;
+    int smsc_total, smsc_online;
+    long sms_queued;
+
+    t = time(NULL) - start_time;
+
+    /* Get SMSC counts */
+    smsc2_status_counts(&smsc_total, &smsc_online);
+
+    /* Get queue length */
+    sms_queued = gwlist_len(incoming_sms) + gwlist_len(outgoing_sms);
+
+    /* Determine health status */
+    if (bb_status == BB_RUNNING)
+        s = "running";
+    else if (bb_status == BB_ISOLATED)
+        s = "isolated";
+    else if (bb_status == BB_SUSPENDED)
+        s = "suspended";
+    else if (bb_status == BB_FULL)
+        s = "queue_full";
+    else
+        s = "shutting_down";
+
+    /*
+     * Health check criteria:
+     * - Gateway must be running (not shutdown/dead)
+     * - At least one SMSC online (if any are configured)
+     */
+    *is_healthy = (bb_status == BB_RUNNING || bb_status == BB_ISOLATED ||
+                   bb_status == BB_SUSPENDED || bb_status == BB_FULL) &&
+                  (smsc_total == 0 || smsc_online > 0);
+
+    return octstr_format(
+        "{\n"
+        "  \"status\": \"%s\",\n"
+        "  \"healthy\": %s,\n"
+        "  \"uptime_seconds\": %ld,\n"
+        "  \"smscs\": {\n"
+        "    \"total\": %d,\n"
+        "    \"online\": %d\n"
+        "  },\n"
+        "  \"queued_messages\": %ld\n"
+        "}\n",
+        s,
+        *is_healthy ? "true" : "false",
+        (long)t,
+        smsc_total,
+        smsc_online,
+        sms_queued);
 }

@@ -1527,6 +1527,31 @@ Octstr *smsc2_status(int status_type)
 }
 
 
+void smsc2_status_counts(int *total, int *online)
+{
+    long i;
+    SMSCConn *conn;
+    StatusInfo info;
+
+    *total = 0;
+    *online = 0;
+
+    if (!smsc_running)
+        return;
+
+    gw_rwlock_rdlock(&smsc_list_lock);
+    *total = gwlist_len(smsc_list);
+    for (i = 0; i < gwlist_len(smsc_list); i++) {
+        conn = gwlist_get(smsc_list, i);
+        if (smscconn_info(conn, &info) == -1)
+            continue;
+        if (info.status == SMSCCONN_ACTIVE || info.status == SMSCCONN_ACTIVE_RECV)
+            (*online)++;
+    }
+    gw_rwlock_unlock(&smsc_list_lock);
+}
+
+
 int smsc2_graceful_restart(Cfg *cfg)
 {
     CfgGroup *grp;

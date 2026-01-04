@@ -149,6 +149,38 @@ curl "http://localhost:13000/status?password=secret"
 curl "http://localhost:13000/status.xml?password=secret"
 ```
 
+### Health Check Endpoint
+
+The `/health` endpoint provides a simple health check for load balancers and container orchestration systems (Kubernetes, Docker Swarm, etc.). It requires no authentication.
+
+```bash
+curl "http://localhost:13000/health"
+```
+
+Returns JSON with HTTP 200 if healthy, HTTP 503 if unhealthy:
+
+```json
+{
+  "status": "running",
+  "healthy": true,
+  "uptime_seconds": 3600,
+  "smscs": {
+    "total": 2,
+    "online": 2
+  },
+  "queued_messages": 0
+}
+```
+
+**Health Criteria:**
+- Gateway status is running/isolated/suspended/full (not shutdown/dead)
+- At least one SMSC is online (if any are configured)
+
+**Use Cases:**
+- Kubernetes liveness/readiness probes
+- Load balancer health checks
+- Monitoring systems
+
 ### Control SMSCs
 
 ```bash

@@ -84,7 +84,8 @@ enum {
 enum {
     BBSTATUS_HTML = 0,
     BBSTATUS_TEXT = 1,
-    BBSTATUS_XML = 2
+    BBSTATUS_XML = 2,
+    BBSTATUS_JSON = 3
 };
 
 /*---------------------------------------------------------------
@@ -138,6 +139,9 @@ int smsc2_shutdown(void);
 void smsc2_cleanup(void); /* final clean-up */
 
 Octstr *smsc2_status(int status_type);
+
+/* Get SMSC connection counts for health check */
+void smsc2_status_counts(int *total, int *online);
 
 /* function to route outgoing SMS'es
  *
@@ -205,6 +209,9 @@ int bb_reload_smsc_groups(void);
 
 /* return string of current status */
 Octstr *bb_print_status(int status_type);
+
+/* return JSON health status for health check endpoint */
+Octstr *bb_health_status(int *is_healthy);
 
 
 /*----------------------------------------------------------------

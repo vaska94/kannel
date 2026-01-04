@@ -393,6 +393,27 @@ static struct httpd_command {
     { NULL , NULL } /* terminate list */
 };
 
+static void httpd_serve_health(HTTPClient *client, List *headers)
+{
+    Octstr *reply;
+    List *response_headers;
+    int is_healthy;
+    int http_status;
+
+    reply = bb_health_status(&is_healthy);
+    http_status = is_healthy ? HTTP_OK : HTTP_SERVICE_UNAVAILABLE;
+
+    http_destroy_headers(headers);
+    response_headers = gwlist_create();
+    http_header_add(response_headers, "Content-Type", "application/json");
+
+    http_send_reply(client, http_status, response_headers, reply);
+
+    octstr_destroy(reply);
+    http_destroy_headers(response_headers);
+}
+
+
 static void httpd_serve(HTTPClient *client, Octstr *ourl, List *headers,
     	    	    	Octstr *body, List *cgivars)
 {
@@ -452,6 +473,16 @@ static void httpd_serve(HTTPClient *client, Octstr *ourl, List *headers,
         }
 
         octstr_destroy(tmp);
+    }
+
+    /* Handle /health endpoint specially - no auth required, returns proper HTTP status */
+    if (octstr_str_compare(url, "health") == 0) {
+        octstr_destroy(url);
+        octstr_destroy(ourl);
+        octstr_destroy(body);
+        http_destroy_cgiargs(cgivars);
+        httpd_serve_health(client, headers);
+        return;
     }
 
     for (i=0; httpd_commands[i].command != NULL; i++) {
