@@ -1366,6 +1366,7 @@ Octstr *smsc2_status(int status_type)
     char *lb;
     long i;
     int para = 0;
+    int json_count = 0;
     SMSCConn *conn;
     StatusInfo info;
     const Octstr *conn_id = NULL;
@@ -1501,14 +1502,14 @@ Octstr *smsc2_status(int status_type)
                 info.received_dlr, info.sent_dlr,
                 incoming_dlr_load_0, incoming_dlr_load_1, incoming_dlr_load_2,
                 outgoing_dlr_load_0, outgoing_dlr_load_1, outgoing_dlr_load_2);
-        else if (status_type == BBSTATUS_JSON)
+        else if (status_type == BBSTATUS_JSON) {
             octstr_format_append(tmp, "%s{\"id\":\"%S\",\"admin_id\":\"%S\",\"name\":\"%S\","
                 "\"status\":\"%s\",\"failed\":%ld,\"queued\":%ld,"
                 "\"sms\":{\"received\":%ld,\"sent\":%ld,"
                 "\"inbound_rate\":[%.2f,%.2f,%.2f],\"outbound_rate\":[%.2f,%.2f,%.2f]},"
                 "\"dlr\":{\"received\":%ld,\"sent\":%ld,"
                 "\"inbound_rate\":[%.2f,%.2f,%.2f],\"outbound_rate\":[%.2f,%.2f,%.2f]}}",
-                i > 0 ? "," : "",
+                json_count > 0 ? "," : "",
                 conn_id, conn_admin_id, conn_name, tmp3,
                 info.failed, info.queued, info.received, info.sent,
                 incoming_sms_load_0, incoming_sms_load_1, incoming_sms_load_2,
@@ -1516,6 +1517,8 @@ Octstr *smsc2_status(int status_type)
                 info.received_dlr, info.sent_dlr,
                 incoming_dlr_load_0, incoming_dlr_load_1, incoming_dlr_load_2,
                 outgoing_dlr_load_0, outgoing_dlr_load_1, outgoing_dlr_load_2);
+            json_count++;
+        }
         else
             octstr_format_append(tmp, " (%s, rcvd: sms %ld (%.2f,%.2f,%.2f) / dlr %ld (%.2f,%.2f,%.2f), "
                 "sent: sms %ld (%.2f,%.2f,%.2f) / dlr %ld (%.2f,%.2f,%.2f), failed %ld, "
