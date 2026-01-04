@@ -42,9 +42,12 @@ systemctl start kannel-smsbox
 
 ## Sending SMS via HTTP
 
-Kannel supports two methods for sending SMS:
-1. **Query String** - Traditional URL parameters (GET or POST)
-2. **JSON API** - Modern JSON request/response (POST only)
+Kannel supports two endpoints for sending SMS:
+
+| Endpoint | Method | Format | Auth |
+|----------|--------|--------|------|
+| `/cgi-bin/sendsms` | GET/POST | Query string or JSON | user/pass or X-API-Key |
+| `/api/sendsms` | POST only | JSON only | X-API-Key recommended |
 
 ### Basic Send (Query String)
 
@@ -58,14 +61,19 @@ text=Hello+World"
 
 ### JSON API
 
-Send SMS using JSON with token authentication:
+Send SMS using JSON with token authentication. Use `/api/sendsms` for JSON-only:
 
 ```bash
-curl -X POST http://localhost:13013/cgi-bin/sendsms \
+curl -X POST http://localhost:13013/api/sendsms \
   -H "X-API-Key: your_api_token" \
   -H "Content-Type: application/json" \
   -d '{"to":"+358401234567","from":"MYAPP","text":"Hello World"}'
 ```
+
+The `/api/sendsms` endpoint enforces:
+- POST method only (GET returns error)
+- `Content-Type: application/json` required
+- Always returns JSON responses
 
 **Response (success):**
 ```json
@@ -99,7 +107,7 @@ curl -X POST http://localhost:13013/cgi-bin/sendsms \
 ### JSON with Delivery Report
 
 ```bash
-curl -X POST http://localhost:13013/cgi-bin/sendsms \
+curl -X POST http://localhost:13013/api/sendsms \
   -H "X-API-Key: your_api_token" \
   -H "Content-Type: application/json" \
   -d '{

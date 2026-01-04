@@ -109,6 +109,7 @@ static long sendsms_port = 0;
 static Octstr *sendsms_interface = NULL;
 static Octstr *smsbox_id = NULL;
 static Octstr *sendsms_url = NULL;
+static Octstr *api_sendsms_url = NULL;
 static Octstr *bb_host;
 static Octstr *accepted_chars = NULL;
 static int only_try_http = 0;
@@ -3003,7 +3004,7 @@ static void sendsms_thread(void *arg)
          * call the necessary routine for it
          */
 
-        /* sendsms */
+        /* sendsms - traditional endpoint */
         if (octstr_compare(url, sendsms_url) == 0) {
             /*
              * decide if this is a GET or POST request and let the
@@ -3013,6 +3014,22 @@ static void sendsms_thread(void *arg)
                 answer = smsbox_req_sendsms(args, ip, &status, client);
             else
                 answer = smsbox_sendsms_post(hdrs, body, ip, &status, client);
+        }
+        /* /api/sendsms - JSON-only endpoint */
+        else if (octstr_compare(url, api_sendsms_url) == 0) {
+            Octstr *ctype = NULL, *charset = NULL;
+            http_header_get_content_type(hdrs, &ctype, &charset);
+            if (body == NULL) {
+                status = HTTP_BAD_REQUEST;
+                answer = octstr_create("{\"error\":\"POST with JSON body required\"}");
+            } else if (ctype == NULL || octstr_case_compare(ctype, octstr_imm("application/json")) != 0) {
+                status = HTTP_BAD_REQUEST;
+                answer = octstr_create("{\"error\":\"Content-Type must be application/json\"}");
+            } else {
+                answer = smsbox_sendsms_post(hdrs, body, ip, &status, client);
+            }
+            octstr_destroy(ctype);
+            octstr_destroy(charset);
         }
         /* add aditional URI compares here */
         else {
@@ -3236,6 +3253,7 @@ static Cfg *init_smsbox(Cfg *cfg)
      */
     if ((sendsms_url = cfg_get(grp, octstr_imm("sendsms-url"))) == NULL)
         sendsms_url = octstr_imm("/cgi-bin/sendsms");
+    api_sendsms_url = octstr_imm("/api/sendsms");
 
     global_sender = cfg_get(grp, octstr_imm("global-sender"));
     accepted_chars = cfg_get(grp, octstr_imm("sendsms-chars"));
