@@ -37,10 +37,6 @@ gw-config: Makefile
 nag:
 	utils/find-long-lines
 
-pkg: all
-	(cd solaris; mk-solaris-package.sh)
-	echo Package is now in solaris directory
-
 # Generate SSL certificates for testing (2048-bit RSA with SHA256)
 ssl-certs:
 	@echo "Generating SSL certificates for testing..."

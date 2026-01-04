@@ -129,16 +129,13 @@ dnl AC_CHECK_FUNCS(gettimeofday select socket strdup getopt_long localtime_r gmt
 dnl Flags for determined platform
 EXE_EXT=""
 case "$host" in
-  *-sun-solaris*) 
-    CFLAGS="$CFLAGS -DSunOS=1"
-    ;;
   *-cygwin*)
     EXE_EXT=".exe"
     LDFLAGS="$LDFLAGS -Wl,--enable-auto-import"
     ;;
-  *apple-darwin*) 
+  *apple-darwin*)
     CFLAGS="$CFLAGS -DDARWIN=1"
-    LIBS="$LIBS -L/opt/local/lib" 
+    LIBS="$LIBS -L/opt/local/lib"
     ;;
   *-linux-*)
     CFLAGS="$CFLAGS -D_XOPEN_SOURCE=600 -D_BSD_SOURCE"
@@ -146,12 +143,7 @@ case "$host" in
     ;;
   *-*-openbsd* | *-*-freebsd*)
     CFLAGS="$CFLAGS -pthread"
-    AC_CHECK_LIB(pthread, pthread_exit, [LIBS="$LIBS -lpthread"; pthread="yes"],
-      [AC_CHECK_LIB(c_r, pthread_exit, [LIBS="$LIBS -lc_r"; pthread="yes"])]
-    )
-    ;;
-  *-interix3*)
-    INSTALL="./install-sh"
+    AC_CHECK_LIB(pthread, pthread_exit, [LIBS="$LIBS -lpthread"; pthread="yes"])
     ;;
 esac
 

@@ -216,16 +216,16 @@ int gw_gethostbyname(struct hostent *ent, const char *name, char **buff)
  * Hmm, we don't have a gethostbyname_r(), this is bad...
  * Here we must perform a "deep-copy" of a hostent struct returned
  * from gethostbyname.
- * Note: Bellow code is based on parts from cURL.
+ * Note: Below code is based on parts from cURL.
  */
 int gw_gethostbyname(struct hostent *ent, const char *name, char **buff)
 {
     int len, i;
     struct hostent *p;
     /* Allocate enough memory to hold the full name information structs and
-     * everything. OSF1 is known to require at least 8872 bytes. The buffer
-     * required for storing all possible aliases and IP numbers is according to
-     * Stevens' Unix Network Programming 2nd editor, p. 304: 8192 bytes!
+     * everything. The buffer required for storing all possible aliases and
+     * IP numbers is according to Stevens' Unix Network Programming 2nd
+     * edition, p. 304: 8192 bytes!
      */
     size_t bufflen = 9000;
     char *bufptr, *str;

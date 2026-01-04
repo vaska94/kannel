@@ -140,12 +140,7 @@ case "$host" in
     ;;
   *-*-openbsd* | *-*-freebsd*)
     CFLAGS="$CFLAGS -pthread"
-    AC_CHECK_LIB(pthread, pthread_exit, [LIBS="$LIBS -lpthread"; pthread="yes"],
-      [AC_CHECK_LIB(c_r, pthread_exit, [LIBS="$LIBS -lc_r"; pthread="yes"])]
-    )
-    ;;
-  *-interix3*)
-    INSTALL="./install-sh"
+    AC_CHECK_LIB(pthread, pthread_exit, [LIBS="$LIBS -lpthread"; pthread="yes"])
     ;;
 esac
 AC_SUBST(EXE_EXT)
@@ -164,13 +159,7 @@ AC_C_INLINE
 
 dnl Check for how to do large files
 
-AC_SYS_LARGEFILE(CFLAGS)
-if test "${ac_cv_sys_file_offset_bits}" != no ; then
-    CFLAGS="$CFLAGS -D_FILE_OFFSET_BITS=${ac_cv_sys_file_offset_bits}"
-fi
-if test "${ac_cv_sys_large_files}" != no ; then
-    CFLAGS="$CFLAGS -D_LARGE_FILES=${ac_cv_sys_large_files}"
-fi
+AC_SYS_LARGEFILE
 
 dnl Check for word sizes.
 
@@ -312,11 +301,7 @@ dnl Checking pthread_spin support
 dnl
 AC_MSG_CHECKING([for pthread_spinlock support])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <pthread.h>]], [[
-#ifdef __INTERIX
-pthread_spinlock_t_failed lock;
-#else
 pthread_spinlock_t lock;
-#endif
 pthread_spin_init(&lock, 0);
 pthread_spin_lock(&lock);
 pthread_spin_unlock(&lock);
