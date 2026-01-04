@@ -909,7 +909,10 @@ Octstr *bb_print_status(int status_type)
     else
         s = "going down";
 
-    version = version_report_string("bearerbox");
+    if (status_type == BBSTATUS_JSON)
+        version = octstr_create(GW_VERSION);
+    else
+        version = version_report_string("bearerbox");
 
     if (status_type == BBSTATUS_HTML) {
         frmt = "%s</p>\n\n"
@@ -937,6 +940,20 @@ Octstr *bb_print_status(int status_type)
                "<outbound>%.2f,%.2f,%.2f</outbound>\n\t\t"
                "<queued>%ld</queued>\n\t\t<storage>%s</storage>\n\t</dlr>\n";
         footer = "";
+    } else if (status_type == BBSTATUS_JSON) {
+        frmt = "{\"version\":\"%s\","
+               "\"status\":\"%s\","
+               "\"uptime\":{\"days\":%ld,\"hours\":%ld,\"minutes\":%ld,\"seconds\":%ld},"
+               "\"sms\":{\"received\":{\"total\":%ld,\"queued\":%ld},"
+               "\"sent\":{\"total\":%ld,\"queued\":%ld},"
+               "\"store_size\":%ld,"
+               "\"inbound_rate\":[%.2f,%.2f,%.2f],"
+               "\"outbound_rate\":[%.2f,%.2f,%.2f]},"
+               "\"dlr\":{\"received\":%ld,\"sent\":%ld,"
+               "\"inbound_rate\":[%.2f,%.2f,%.2f],"
+               "\"outbound_rate\":[%.2f,%.2f,%.2f],"
+               "\"queued\":%ld,\"storage\":\"%s\"}";
+        footer = "}";
     } else {
         frmt = "%s\n\nStatus: %s, uptime %ldd %ldh %ldm %lds\n\n"
                "SMS: received %ld (%ld queued), sent %ld (%ld queued), store size %ld\n"

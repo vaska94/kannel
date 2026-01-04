@@ -1101,6 +1101,9 @@ Octstr *boxc_status(int status_type)
         tmp = octstr_create ("");
         octstr_append_cstr(tmp, "<boxes>\n\t");
     }
+    else if (status_type == BBSTATUS_JSON) {
+        tmp = octstr_create(",\"boxes\":[");
+    }
     else
         tmp = octstr_format("%sBox connections:%s", para ? "<p>" : "", lb);
     boxes = 0;
@@ -1128,6 +1131,21 @@ Octstr *boxc_status(int status_type)
                     "not installed"
 #endif
                     );
+            else if (status_type == BBSTATUS_JSON)
+                octstr_format_append(tmp, "%s{\"type\":\"smsbox\",\"id\":\"%s\",\"ip\":\"%s\","
+                    "\"queue\":%ld,\"uptime\":{\"days\":%ld,\"hours\":%ld,\"minutes\":%ld,\"seconds\":%ld},"
+                    "\"ssl\":%s}",
+                    boxes > 0 ? "," : "",
+                    (bi->boxc_id ? octstr_get_cstr(bi->boxc_id) : ""),
+                    octstr_get_cstr(bi->client_ip),
+                    gwlist_len(bi->incoming) + dict_key_count(bi->sent),
+                    t/3600/24, t/3600%24, t/60%60, t%60,
+#ifdef HAVE_LIBSSL
+                    conn_get_ssl(bi->conn) != NULL ? "true" : "false"
+#else
+                    "false"
+#endif
+                    );
             else
                 octstr_format_append(tmp, "%ssmsbox:%s, IP %s (%ld queued), (on-line %ldd %ldh %ldm %lds) %s %s",
                     ws, (bi->boxc_id ? octstr_get_cstr(bi->boxc_id) : "(none)"),
@@ -1143,7 +1161,7 @@ Octstr *boxc_status(int status_type)
 	    }
 	    gw_rwlock_unlock(smsbox_list_rwlock);
     }
-    if (boxes == 0 && status_type != BBSTATUS_XML) {
+    if (boxes == 0 && status_type != BBSTATUS_XML && status_type != BBSTATUS_JSON) {
 	    octstr_destroy(tmp);
 	    tmp = octstr_format("%sNo boxes connected", para ? "<p>" : "");
     }
@@ -1151,6 +1169,8 @@ Octstr *boxc_status(int status_type)
 	    octstr_append_cstr(tmp, "</p>");
     if (status_type == BBSTATUS_XML)
         octstr_append_cstr(tmp, "</boxes>\n");
+    else if (status_type == BBSTATUS_JSON)
+        octstr_append_cstr(tmp, "]");
     else
         octstr_append_cstr(tmp, "\n\n");
     return tmp;

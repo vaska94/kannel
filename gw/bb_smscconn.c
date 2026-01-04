@@ -1385,15 +1385,19 @@ Octstr *smsc2_status(int status_type)
     if (!smsc_running) {
         if (status_type == BBSTATUS_XML)
             return octstr_create ("<smscs>\n\t<count>0</count>\n</smscs>");
+        else if (status_type == BBSTATUS_JSON)
+            return octstr_create(",\"smscs\":[]");
         else
             return octstr_format("%sNo SMSC connections%s\n\n", para ? "<p>" : "",
                                  para ? "</p>" : "");
     }
 
-    if (status_type != BBSTATUS_XML)
-        tmp = octstr_format("%sSMSC connections:%s", para ? "<p>" : "", lb);
-    else
+    if (status_type == BBSTATUS_XML)
         tmp = octstr_format("<smscs><count>%d</count>\n\t", gwlist_len(smsc_list));
+    else if (status_type == BBSTATUS_JSON)
+        tmp = octstr_create(",\"smscs\":[");
+    else
+        tmp = octstr_format("%sSMSC connections:%s", para ? "<p>" : "", lb);
 
     gw_rwlock_rdlock(&smsc_list_lock);
     for (i = 0; i < gwlist_len(smsc_list); i++) {
@@ -1438,7 +1442,7 @@ Octstr *smsc2_status(int status_type)
             octstr_append_cstr(tmp, "</admin-id>\n\t\t<id>");
             octstr_append(tmp, conn_id);
             octstr_append_cstr(tmp, "</id>\n\t\t");
-        } else
+        } else if (status_type != BBSTATUS_JSON)
             octstr_append(tmp, conn_name);
 
         switch (info.status) {
@@ -1497,6 +1501,21 @@ Octstr *smsc2_status(int status_type)
                 info.received_dlr, info.sent_dlr,
                 incoming_dlr_load_0, incoming_dlr_load_1, incoming_dlr_load_2,
                 outgoing_dlr_load_0, outgoing_dlr_load_1, outgoing_dlr_load_2);
+        else if (status_type == BBSTATUS_JSON)
+            octstr_format_append(tmp, "%s{\"id\":\"%S\",\"admin_id\":\"%S\",\"name\":\"%S\","
+                "\"status\":\"%s\",\"failed\":%ld,\"queued\":%ld,"
+                "\"sms\":{\"received\":%ld,\"sent\":%ld,"
+                "\"inbound_rate\":[%.2f,%.2f,%.2f],\"outbound_rate\":[%.2f,%.2f,%.2f]},"
+                "\"dlr\":{\"received\":%ld,\"sent\":%ld,"
+                "\"inbound_rate\":[%.2f,%.2f,%.2f],\"outbound_rate\":[%.2f,%.2f,%.2f]}}",
+                i > 0 ? "," : "",
+                conn_id, conn_admin_id, conn_name, tmp3,
+                info.failed, info.queued, info.received, info.sent,
+                incoming_sms_load_0, incoming_sms_load_1, incoming_sms_load_2,
+                outgoing_sms_load_0, outgoing_sms_load_1, outgoing_sms_load_2,
+                info.received_dlr, info.sent_dlr,
+                incoming_dlr_load_0, incoming_dlr_load_1, incoming_dlr_load_2,
+                outgoing_dlr_load_0, outgoing_dlr_load_1, outgoing_dlr_load_2);
         else
             octstr_format_append(tmp, " (%s, rcvd: sms %ld (%.2f,%.2f,%.2f) / dlr %ld (%.2f,%.2f,%.2f), "
                 "sent: sms %ld (%.2f,%.2f,%.2f) / dlr %ld (%.2f,%.2f,%.2f), failed %ld, "
@@ -1521,6 +1540,8 @@ Octstr *smsc2_status(int status_type)
         octstr_append_cstr(tmp, "</p>");
     if (status_type == BBSTATUS_XML)
         octstr_append_cstr(tmp, "</smscs>\n");
+    else if (status_type == BBSTATUS_JSON)
+        octstr_append_cstr(tmp, "]");
     else
         octstr_append_cstr(tmp, "\n\n");
     return tmp;

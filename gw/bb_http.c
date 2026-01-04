@@ -471,6 +471,10 @@ static void httpd_serve(HTTPClient *client, Octstr *ourl, List *headers,
             status_type = BBSTATUS_XML;
             content_type = "application/xml";
         }
+        else if (octstr_str_compare(tmp, "json") == 0) {
+            status_type = BBSTATUS_JSON;
+            content_type = "application/json";
+        }
 
         octstr_destroy(tmp);
     }
@@ -512,6 +516,10 @@ static void httpd_serve(HTTPClient *client, Octstr *ourl, List *headers,
 	header = "<?xml version=\"1.0\"?>\n"
             "<gateway>\n";
         footer = "</gateway>\n";
+    } else if (status_type == BBSTATUS_JSON) {
+	header = "";
+	footer = "";
+	content_type = "application/json";
     } else {
 	header = "";
 	footer = "";
