@@ -86,9 +86,8 @@ Quick Build Instructions
 		autoreconf -fi
 
 	2. Configure with desired options:
-		./configure --enable-ssl --disable-ssl-thread-test \
-		            --with-mysql --with-pgsql --with-sqlite3 --with-redis \
-		            ac_cv_sys_file_offset_bits=64
+		./configure --enable-ssl \
+		            --with-mysql --with-pgsql --with-sqlite3 --with-redis
 
 	3. Build the gateway:
 		make
@@ -107,21 +106,17 @@ Quick Build Instructions
 Configuration Options
 
 	Essential options:
-		--enable-ssl              Enable SSL/TLS support
+		--enable-ssl             Enable SSL/TLS support
 		--with-ssl=/usr          SSL library location
-		--disable-ssl-thread-test Disable SSL threading test
 
 	Database support:
 		--with-mysql             Enable MySQL support
-		--with-pgsql             Enable PostgreSQL support  
+		--with-pgsql             Enable PostgreSQL support
 		--with-sqlite3           Enable SQLite3 support
 		--with-redis             Enable Redis support
 
-	Special parameters:
-		ac_cv_sys_file_offset_bits=64  Fix file offset detection on modern systems
-
 	For minimal build (SMS only, no databases):
-		./configure ac_cv_sys_file_offset_bits=64
+		./configure
 
 SSL Certificates
 

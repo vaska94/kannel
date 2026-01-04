@@ -693,12 +693,14 @@ if test "x$ssllib" != "x" && test "x$sslinc" != "x"; then
     openssl_ver=`echo $openssl_version | sed 's/[[a-zA-Z]]//g'`
     AC_MSG_RESULT([$openssl_version])
   fi
-  AC_CHECK_VERSION($openssl_ver, "1.1.0", 
+  AC_CHECK_VERSION($openssl_ver, "1.1.0",
   [ CRYPTO_CHECK=HMAC_Update
     SSL_CHECK=OPENSSL_init_ssl
+    openssl_modern=yes
   ],[
     CRYPTO_CHECK=CRYPTO_lock
     SSL_CHECK=SSL_library_init
+    openssl_modern=no
   ])
   AC_CHECK_LIB(crypto, $CRYPTO_CHECK,
   [ LIBS="$LIBS -lcrypto"
@@ -707,39 +709,41 @@ if test "x$ssllib" != "x" && test "x$sslinc" != "x"; then
       AC_CHECK_HEADERS(openssl/x509.h openssl/rsa.h openssl/crypto.h \
                        openssl/pem.h openssl/ssl.h openssl/err.h \
                        openssl/hmac.h)
-      AC_MSG_CHECKING(whether the OpenSSL library is multithread-enabled)
-      AC_RUN_IFELSE([AC_LANG_SOURCE([[
-        #define OPENSSL_THREAD_DEFINES
-        #include <openssl/opensslconf.h>
-        #include <stdlib.h>
-        int main(void) {
-        #if defined(THREADS)
-          exit(0);
-        #elif defined(OPENSSL_THREADS)
-          exit(0);
-        #else
-          exit(1);
-        #endif
-        }
-      ]])], [
-        AC_MSG_RESULT(yes)
-          AC_DEFINE([HAVE_LIBSSL], [1], [Do we have libssl])
+      dnl OpenSSL 1.1+ is always thread-safe, skip the test
+      if test "$openssl_modern" = "yes"; then
+        AC_MSG_CHECKING([whether the OpenSSL library is multithread-enabled])
+        AC_MSG_RESULT([yes (OpenSSL 1.1+ is always thread-safe)])
+        AC_DEFINE([HAVE_LIBSSL], [1], [Do we have libssl])
         LIBS="$LIBS -lssl"
         AC_MSG_CHECKING([whether to compile with SSL support])
         AC_MSG_RESULT(yes)
-      ], [
-        AC_ARG_ENABLE(ssl-thread-test,
-        [  --disable-ssl-thread-test  disable the multithread test for the OpenSSL library
-                          this will force to continue even if the test fails],
-        [ if test "$enableval" = no ; then
-            AC_MSG_RESULT([no, continue forced])
-          fi
+      else
+        AC_MSG_CHECKING(whether the OpenSSL library is multithread-enabled)
+        AC_RUN_IFELSE([AC_LANG_SOURCE([[
+          #define OPENSSL_THREAD_DEFINES
+          #include <openssl/opensslconf.h>
+          #include <stdlib.h>
+          int main(void) {
+          #if defined(THREADS)
+            exit(0);
+          #elif defined(OPENSSL_THREADS)
+            exit(0);
+          #else
+            exit(1);
+          #endif
+          }
+        ]])], [
+          AC_MSG_RESULT(yes)
+          AC_DEFINE([HAVE_LIBSSL], [1], [Do we have libssl])
+          LIBS="$LIBS -lssl"
+          AC_MSG_CHECKING([whether to compile with SSL support])
+          AC_MSG_RESULT(yes)
         ], [
           AC_MSG_RESULT(no)
           AC_MSG_ERROR(Either get a multithread-enabled SSL or configure with --disable-ssl)
-        ])
-      ], [AC_MSG_RESULT([cross-compiling; make sure your SSL library is multithread-enabled])]
-      )
+        ], [AC_MSG_RESULT([cross-compiling; make sure your SSL library is multithread-enabled])]
+        )
+      fi
     ])
   ])
 fi
