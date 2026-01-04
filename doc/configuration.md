@@ -100,6 +100,9 @@ group = sendsms-user
 username = myapp
 password = secret123
 
+# Token-based authentication (for JSON API)
+api-token = sk_live_abc123xyz
+
 # Optional access control
 user-deny-ip = "*.*.*.*"
 user-allow-ip = "10.0.0.0/8;192.168.0.0/16"
@@ -110,6 +113,37 @@ forced-smsc = smpp1             # Always use this SMSC
 max-messages = 10               # Max messages per request
 concatenation = true            # Allow long SMS
 ```
+
+### Authentication Methods
+
+Kannel supports two authentication methods:
+
+1. **Username/Password** - Traditional query string or X-Kannel headers
+   ```bash
+   curl "http://host:13013/cgi-bin/sendsms?user=myapp&pass=secret123&to=..."
+   ```
+
+2. **API Token** - Modern X-API-Key header (recommended for JSON API)
+   ```bash
+   curl -X POST http://host:13013/cgi-bin/sendsms \
+     -H "X-API-Key: sk_live_abc123xyz" \
+     -H "Content-Type: application/json" \
+     -d '{"to":"123","text":"Hello"}'
+   ```
+
+### SendSMS User Directives
+
+| Directive | Type | Description |
+|-----------|------|-------------|
+| `username` | string | Username for authentication |
+| `password` | string | Password for authentication |
+| `api-token` | string | API token for X-API-Key header auth |
+| `user-allow-ip` | IP list | Allowed client IPs |
+| `user-deny-ip` | IP list | Denied client IPs |
+| `forced-smsc` | string | Always use this SMSC |
+| `default-smsc` | string | Default SMSC if not specified |
+| `max-messages` | integer | Max messages per request |
+| `concatenation` | boolean | Allow long SMS splitting |
 
 ## SMS Service Group
 
@@ -178,20 +212,39 @@ preferred-smsc-id = smpp1
 
 ## Redis Connection Group
 
-For Redis-based message store or DLR storage.
+For Redis-based message store or DLR storage. Works with Redis and Valkey.
 
 ```ini
 group = redis-connection
 id = redis1
+
 # TCP connection
 host = localhost
 port = 6379
-# Or Unix socket
-#socket = /var/run/redis/redis.sock
+
+# Or Unix socket (faster, recommended for local Redis/Valkey)
+#unix-socket = /run/redis/redis.sock
+
 password = secret
 database = 0
 max-connections = 5
+
+# Set Redis TIMEOUT to prevent idle disconnects (0 = disable)
+idle-timeout = 0
 ```
+
+### Redis Connection Directives
+
+| Directive | Type | Description |
+|-----------|------|-------------|
+| `id` | string | Connection identifier |
+| `host` | hostname | Redis server hostname |
+| `port` | integer | Redis server port (default: 6379) |
+| `unix-socket` | path | Unix socket path (alternative to host/port) |
+| `password` | string | Redis AUTH password |
+| `database` | integer | Redis database number (default: 0) |
+| `max-connections` | integer | Connection pool size |
+| `idle-timeout` | integer | Set Redis TIMEOUT config (0 = disable) |
 
 ## Store-DB Group
 

@@ -42,7 +42,11 @@ systemctl start kannel-smsbox
 
 ## Sending SMS via HTTP
 
-### Basic Send
+Kannel supports two methods for sending SMS:
+1. **Query String** - Traditional URL parameters (GET or POST)
+2. **JSON API** - Modern JSON request/response (POST only)
+
+### Basic Send (Query String)
 
 ```bash
 curl "http://localhost:13013/cgi-bin/sendsms?\
@@ -52,7 +56,61 @@ from=MYAPP&\
 text=Hello+World"
 ```
 
-### Send Parameters
+### JSON API
+
+Send SMS using JSON with token authentication:
+
+```bash
+curl -X POST http://localhost:13013/cgi-bin/sendsms \
+  -H "X-API-Key: your_api_token" \
+  -H "Content-Type: application/json" \
+  -d '{"to":"+358401234567","from":"MYAPP","text":"Hello World"}'
+```
+
+**Response (success):**
+```json
+{"status":0,"message":"Sent."}
+```
+
+**Response (error):**
+```json
+{"error":"Authorization failed"}
+```
+
+### JSON Request Fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `to` | Yes | Recipient phone number |
+| `text` | Yes | Message text |
+| `from` | No | Sender ID |
+| `smsc` | No | Force specific SMSC |
+| `charset` | No | Character set (default: UTF-8) |
+| `coding` | No | Data coding (0=GSM, 1=binary, 2=UCS2) |
+| `mclass` | No | Message class (0-3) |
+| `udh` | No | User Data Header (hex string) |
+| `dlr-mask` | No | Delivery report mask (1-31) |
+| `dlr-url` | No | DLR callback URL |
+| `validity` | No | Message validity in minutes |
+| `deferred` | No | Deferred delivery in minutes |
+| `priority` | No | Message priority (0-3) |
+| `meta-data` | No | Custom metadata |
+
+### JSON with Delivery Report
+
+```bash
+curl -X POST http://localhost:13013/cgi-bin/sendsms \
+  -H "X-API-Key: your_api_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "+358401234567",
+    "text": "Hello",
+    "dlr-mask": 31,
+    "dlr-url": "http://myapp.com/dlr?msgid=%d&status=%d"
+  }'
+```
+
+### Query String Parameters
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
