@@ -108,36 +108,28 @@ dnl Modified by Alexander Malysh for Kannel Project.
 dnl
 AC_DEFUN([AC_FUNC_WHICH_GETHOSTBYNAME_R],
 [AC_CACHE_CHECK(for which type of gethostbyname_r, ac_cv_func_which_gethostname_r, [
-AC_TRY_COMPILE([
-#include <netdb.h>
-  ], [
-
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <netdb.h>]], [[
         char *name;
         struct hostent *he;
         struct hostent_data data;
         (void) gethostbyname_r(name, he, &data);
-
-     ], ac_cv_func_which_gethostname_r=3, [
-AC_TRY_COMPILE([
-#include <netdb.h>
-  ], [
+     ]])], [ac_cv_func_which_gethostname_r=3], [
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <netdb.h>]], [[
         char *name;
         struct hostent *he, *res;
         char buffer[2048];
         int buflen = 2048;
         int h_errnop;
         (void) gethostbyname_r(name, he, buffer, buflen, &res, &h_errnop);
-     ], ac_cv_func_which_gethostname_r=6, [
-AC_TRY_COMPILE([
-#include <netdb.h>
-  ], [
+     ]])], [ac_cv_func_which_gethostname_r=6], [
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <netdb.h>]], [[
         char *name;
         struct hostent *he;
         char buffer[2048];
         int buflen = 2048;
         int h_errnop;
         (void) gethostbyname_r(name, he, buffer, buflen, &h_errnop);
-     ], ac_cv_func_which_gethostname_r=5 , ac_cv_func_which_gethostname_r=0)]
+     ]])], [ac_cv_func_which_gethostname_r=5], [ac_cv_func_which_gethostname_r=0])]
    )]
 )])
 if test $ac_cv_func_which_gethostname_r -eq 6; then
@@ -155,12 +147,13 @@ fi
 dnl GW_HAVE_TYPE_FROM(HDRNAME, TYPE, HAVENAME, DESCRIPTION)
 AC_DEFUN([GW_HAVE_TYPE_FROM], [
 	AC_CACHE_CHECK([for $2 in <$1>], gw_cv_type_$3,
-		AC_TRY_COMPILE([#ifdef HAVE_SYS_TYPES_H
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
 #include <$1>
-], [$2 foo;],
-			gw_cv_type_$3=yes, gw_cv_type_$3=no))
+]], [[$2 foo;]])],
+			[gw_cv_type_$3=yes], [gw_cv_type_$3=no]))
         if test $gw_cv_type_$3 = yes; then
                 AC_DEFINE($3, 1, $4)
         fi
@@ -169,8 +162,8 @@ AC_DEFUN([GW_HAVE_TYPE_FROM], [
 dnl GW_HAVE_FUNC_FROM(HDRNAME, FUNC, HAVENAME, DESCRIPTION)
 AC_DEFUN([GW_HAVE_FUNC_FROM], [
         AC_CACHE_CHECK([for $2 in <$1>], gw_cv_func_$3,
-                AC_TRY_COMPILE([#include <$1>], [void *foo = $2;],
-                        gw_cv_func_$3=yes, gw_cv_func_$3=no))
+                AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <$1>]], [[void *foo = $2;]])],
+                        [gw_cv_func_$3=yes], [gw_cv_func_$3=no]))
         if test $gw_cv_func_$3 = yes; then
                 AC_DEFINE($3, 1, $4)
         fi

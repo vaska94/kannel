@@ -55,40 +55,45 @@ dnl  * WapIT Ltd., Helsinki, Finland for the Kannel project.
 dnl  */ 
 
 dnl
-dnl configure.in -- main autoconf macro definition file
+dnl configure.ac -- main autoconf macro definition file
 dnl
 dnl Process this file with autoconf to produce a configure script.
 dnl
 
 dnl initialization
 
-AC_PREREQ(2.5)
+AC_PREREQ([2.69])
 
-AC_INIT(gw/alt_charsets.h)
-AC_CONFIG_HEADER(gw-config.h)
+dnl Check gateway version number early for AC_INIT
+m4_define([KANNEL_VERSION], m4_esyscmd_s([head -n 1 VERSION]))
+
+AC_INIT([Kannel], [KANNEL_VERSION], [shapeless@pm.me])
+AC_CONFIG_SRCDIR([gw/alt_charsets.h])
+AC_CONFIG_HEADERS([gw-config.h])
 AC_SUBST(SHELL)
-AC_CONFIG_AUX_DIR(.)
+AC_CONFIG_AUX_DIR([.])
 AC_SET_TERMINAL_SEQUENCES()
-AC_CONFIG_NICE(config.nice)
+AC_CONFIG_NICE([config.nice])
 
 dnl Check gateway version number.
-VERSION=`head -n 1 VERSION`
+VERSION="KANNEL_VERSION"
 if test "x$VERSION" = "xsvn"; then
   AC_MSG_CHECKING([svn checkout revision])
   AC_SVN_REVISION(SVN_REVISION)
   AC_MSG_RESULT([$SVN_REVISION])
   VERSION="$VERSION-r$SVN_REVISION"
 fi
-AC_DEFINE_UNQUOTED(GW_NAME, "Kannel", [Gateway name])
-AC_DEFINE_UNQUOTED(GW_VERSION, "$VERSION", [Gateway version])
-AC_SUBST(GW_VERSION)
+AC_DEFINE_UNQUOTED([GW_NAME], ["Kannel"], [Gateway name])
+AC_DEFINE_UNQUOTED([GW_VERSION], ["$VERSION"], [Gateway version])
+AC_SUBST([GW_VERSION], [$VERSION])
 
 AC_CONFIG_SECTION([Configuring for Kannel gateway version $VERSION])
 
-AM_INIT_AUTOMAKE(Kannel,$VERSION)
-AC_LANG_C
+AM_INIT_AUTOMAKE([foreign -Wall])
+AM_PROG_AR
+AC_LANG([C])
 AC_DISABLE_STATIC
-AC_PROG_LIBTOOL
+LT_INIT
 dnl AC_SUBST(LIBTOOL_DEPS)
 
 dnl Solaris pkgadd support definitions
@@ -110,13 +115,9 @@ AC_CANONICAL_HOST
 dnl Checks for programs.
 
 AC_PROG_CC
-AC_PROG_CC_C99
-if test "$ac_cv_prog_cc_c99" = "no"; then
-    AC_MSG_ERROR(["Kannel requires a C compiler that supports ISO C99."])
-fi
 AC_PROG_INSTALL
 AC_PROG_YACC
-AC_PROG_LEX
+AC_PROG_LEX([noyywrap])
 AC_PATH_PROG(CONVERT, convert)
 AC_PATH_PROG(PERL, perl)
 
@@ -213,7 +214,6 @@ AC_CHECK_FUNC(iconv_open, [],
 
 dnl Checks for header files.
 
-AC_HEADER_STDC
 AC_CHECK_HEADERS(sys/ioctl.h sys/time.h sys/types.h unistd.h sys/poll.h)
 AC_CHECK_HEADERS(pthread.h getopt.h syslog.h iconv.h zlib.h execinfo.h stdlib.h)
 AC_CHECK_HEADERS([sys/socket.h sys/sockio.h netinet/in.h])
@@ -237,10 +237,10 @@ AC_CHECK_HEADERS([sys/ucontext.h], [],
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 
-AC_TRY_COMPILE(, [char *func = __FUNCTION__;], 
-    	       AC_DEFINE(HAVE___FUNCTION__, 1,[Do we have __FUNCTION__]))
-AC_TRY_COMPILE(, [char *func = __func__;], 
-    	       AC_DEFINE(HAVE___FUNC__, 1,[Do we have __func__]))
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [char *func = __FUNCTION__;])],
+    [AC_DEFINE([HAVE___FUNCTION__], [1], [Do we have __FUNCTION__])])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [char *func = __func__;])],
+    [AC_DEFINE([HAVE___FUNC__], [1], [Do we have __func__])])
 
 dnl check for iconv
 AM_ICONV
@@ -293,8 +293,10 @@ dnl Misc feature checks
 AC_CONFIG_SECTION([Checking for POSIX threads support])
 
 AC_MSG_CHECKING(for working pthreads)
-AC_TRY_RUN([#include <pthread.h>
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <pthread.h>
 #include <unistd.h>
+#include <stdlib.h>
 int pid;
 void testpid(void* foo);
 int main(void){
@@ -307,26 +309,22 @@ int main(void){
 void testpid(void* foo){
     int mypid=getpid();
     if(mypid!=pid){
-        /* Pthreads states that all threads should have the same PID
-         * we dont!
-         */
         exit(1);
     }else{
         exit(0);
     }
 }
-],echo yes , echo no ;CFLAGS="$CFLAGS -DBROKEN_PTHREADS=1", echo  Cross compiling - assuming they work)
+]])],
+  [AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no); CFLAGS="$CFLAGS -DBROKEN_PTHREADS=1"],
+  [AC_MSG_RESULT([cross compiling - assuming they work])])
 
 dnl
 dnl Checking pthread_spin support
 dnl
 AC_MSG_CHECKING([for pthread_spinlock support])
-AC_TRY_COMPILE([#include <pthread.h>], [
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <pthread.h>]], [[
 #ifdef __INTERIX
-/*
- * interix has experimental spinlock support and this doesn't work very well
- * therefore disable it for now
- */
 pthread_spinlock_t_failed lock;
 #else
 pthread_spinlock_t lock;
@@ -335,11 +333,13 @@ pthread_spin_init(&lock, 0);
 pthread_spin_lock(&lock);
 pthread_spin_unlock(&lock);
 pthread_spin_destroy(&lock);
-], [AC_MSG_RESULT(yes); AC_DEFINE(HAVE_PTHREAD_SPINLOCK_T, 1,[Do we have pthread_spinlock])], AC_MSG_RESULT(no));
+]])],
+  [AC_MSG_RESULT(yes); AC_DEFINE([HAVE_PTHREAD_SPINLOCK_T], [1], [Do we have pthread_spinlock])],
+  [AC_MSG_RESULT(no)])
 
 dnl checking pthread_rwlock support
 AC_MSG_CHECKING([for pthread_rwlock support])
-AC_TRY_COMPILE([#include <pthread.h>], [
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <pthread.h>]], [[
 pthread_rwlock_t lock;
 pthread_rwlock_init(&lock, NULL);
 pthread_rwlock_rdlock(&lock);
@@ -347,18 +347,19 @@ pthread_rwlock_unlock(&lock);
 pthread_rwlock_wrlock(&lock);
 pthread_rwlock_unlock(&lock);
 pthread_rwlock_destroy(&lock);
-], [AC_MSG_RESULT(yes); AC_DEFINE(HAVE_PTHREAD_RWLOCK, 1, [Do we have pthread_rwlock])], AC_MSG_RESULT(no), [
-AC_MSG_RESULT(Cross compiling - assuming suuported) ; AC_DEFINE(HAVE_PTHREAD_RWLOCK)])
+]])],
+  [AC_MSG_RESULT(yes); AC_DEFINE([HAVE_PTHREAD_RWLOCK], [1], [Do we have pthread_rwlock])],
+  [AC_MSG_RESULT(no)])
 
 dnl checking for native semaphore support
 dnl Solaris & HP-UX needs librt.
 AC_CHECK_LIB(rt, sem_init)
 AC_MSG_CHECKING([for semaphore support])
-AC_TRY_RUN([#include <semaphore.h>
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <semaphore.h>
 int main(void) {
     sem_t s;
     int val;
-    /* DARWNIN doesn't implement native sem_init */
     if (sem_init(&s, 0, 1) != 0)
         return 1;
     sem_wait(&s);
@@ -367,8 +368,10 @@ int main(void) {
     sem_destroy(&s);
     return 0;
 }
-], [AC_MSG_RESULT(yes); AC_DEFINE(HAVE_SEMAPHORE, 1, [Do we have semaphores])], AC_MSG_RESULT(no), [
-AC_MSG_RESULT(Cross compiling - assuming suuported) ; AC_DEFINE(HAVE_SEMAPHORE)])
+]])],
+  [AC_MSG_RESULT(yes); AC_DEFINE([HAVE_SEMAPHORE], [1], [Do we have semaphores])],
+  [AC_MSG_RESULT(no)],
+  [AC_MSG_RESULT([cross compiling - assuming supported]); AC_DEFINE([HAVE_SEMAPHORE], [1])])
 
 dnl Check if we have libxml2 installed and which version it is.
 dnl Kannel requires currently at least version 2.6.0 of libxml2.
@@ -872,9 +875,10 @@ if test "x$ssllib" != "x" && test "x$sslinc" != "x"; then
                        openssl/pem.h openssl/ssl.h openssl/err.h \
                        openssl/hmac.h)
       AC_MSG_CHECKING(whether the OpenSSL library is multithread-enabled)
-      AC_TRY_RUN([
+      AC_RUN_IFELSE([AC_LANG_SOURCE([[
         #define OPENSSL_THREAD_DEFINES
         #include <openssl/opensslconf.h>
+        #include <stdlib.h>
         int main(void) {
         #if defined(THREADS)
           exit(0);
@@ -884,9 +888,9 @@ if test "x$ssllib" != "x" && test "x$sslinc" != "x"; then
           exit(1);
         #endif
         }
-      ], [
+      ]])], [
         AC_MSG_RESULT(yes)
-          AC_DEFINE(HAVE_LIBSSL, 1, [Do we have libssl])
+          AC_DEFINE([HAVE_LIBSSL], [1], [Do we have libssl])
         LIBS="$LIBS -lssl"
         AC_MSG_CHECKING([whether to compile with SSL support])
         AC_MSG_RESULT(yes)
@@ -901,7 +905,7 @@ if test "x$ssllib" != "x" && test "x$sslinc" != "x"; then
           AC_MSG_RESULT(no)
           AC_MSG_ERROR(Either get a multithread-enabled SSL or configure with --disable-ssl)
         ])
-      ], echo "Cross-compiling; make sure your SSL library is multithread-enabled"
+      ], [AC_MSG_RESULT([cross-compiling; make sure your SSL library is multithread-enabled])]
       )
     ])
   ])
@@ -1116,7 +1120,9 @@ else
                 CPPFLAGS="$CPPFLAGS -I$a"
         done
         AC_MSG_CHECKING([for oci.h ])
-        AC_TRY_CPP([#include <oci.h>],AC_MSG_RESULT(yes), AC_MSG_ERROR([oci.h not found]))
+        AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include <oci.h>]])],
+          [AC_MSG_RESULT(yes)],
+          [AC_MSG_ERROR([oci.h not found])])
         CFLAGS="$CFLAGS $CPPFLAGS"
 
         AC_ARG_WITH(
@@ -1370,92 +1376,8 @@ fi
 ])
 
 
-dnl Implement the --with-wtls option.
-dnl Check to see if we should include WTLS support, and which library to use.
-
-AC_ARG_WITH(wtls,
-[  --with-wtls@<:@=TYPE@:>@      select WTLS version to use: @<:@openssl|baltimore@:>@], 
-[ AC_CONFIG_SECTION([Configuring WTLS support]) 
-  AC_MSG_CHECKING([for WTLS library])
-  AC_MSG_RESULT($withval)
-  case "$withval" in
-  openssl) 
-    AC_CHECK_LIB(crypto, RSA_new,
-    [ AC_CHECK_HEADERS(openssl/objects.h openssl/rc5.h, 
-        AC_DEFINE(HAVE_WTLS_OPENSSL, 1, [Do we have wtls]),
-        AC_MSG_WARN(OpenSSL installation seems to lack RC5 algorithm!)
-      )
-	])
-	;;
-  baltimore) 
-    AC_MSG_ERROR(This WTLS library is yet not supported!)
-    ;;
-  *) 
-    AC_MSG_ERROR(Unknown WTLS libary support!)
-    exit 1 
-    ;;
-  esac
-])
-
-
-AC_CONFIG_SECTION([Configuring for gSOAP support])
-AC_MSG_CHECKING([whether to compile with SOAP support])
-AC_ARG_WITH(gsoap,
-[  --with-gsoap@<:@=DIR@:>@      enable gSOAP web services SMSC module support @<:@disabled@:>@
-                          DIR points to the gSOAP share directory @<:@/usr/share/gsoap@:>@], [
-  if test "x$withval" = "xyes"; then
-    for loc in /usr/share/gsoap /usr/local/share/gsoap; do
-      if test -d "$loc/import" && test -d "$loc/plugin"; then
-        GSOAP_SHARE=$loc
-        AC_MSG_RESULT($GSOAP_SHARE)
-      fi
-    done
-    if test "x$GSOAP_SHARE" = "x"; then
-      AC_MSG_RESULT(not found)
-      AC_MSG_ERROR(Unable to find gSOAP's import and/or plugin directory)
-    fi
-  else  
-    if test -d "$withval/import" && test -d "$withval/plugin"; then
-      GSOAP_SHARE="$withval"
-      AC_MSG_RESULT($withval)
-    else
-      AC_MSG_RESULT(not found)
-      AC_MSG_ERROR(Unable to find gSOAP's import at $withval/import and/or plugin at $withval/plugin)
-    fi
-  fi
-  gsoap_ver_required="2.8.4"
-
-  AC_PATH_PROGS(WSDL2H, wsdl2h, no)
-  if test "$WSDL2H" = "no"; then
-    AC_MSG_ERROR([Unable to find gSOAP's wsdl2h in path for SOAP support])
-  fi
-  AC_PATH_PROGS(SOAPCPP, soapcpp2, no)
-  if test "$SOAPCPP" = "no"; then
-    AC_MSG_ERROR([Unable to find gSOAP's soapcpp2 in path for SOAP support])
-  fi
-
-  AC_MSG_CHECKING([gSOAP version])
-  gsoap_version=`$SOAPCPP -v &> /tmp/gsoap.tmp && cat /tmp/gsoap.tmp | grep "C and C++" | awk '{print $NF}'`
-  AC_MSG_RESULT([$gsoap_version])
-  gsoap_version_str=`echo $gsoap_version | grep -e "^[[0-9]]*\.[[0-9]]*\.[[0-9]]*$"`
-  if test "$gsoap_version_str" = ""; then
-    AC_MSG_WARN([gSOAP version $gsoap_version contains alphanumeric characters. Version MAYBE too old!])
-  else 
-    AC_CHECK_VERSION($gsoap_version, $gsoap_ver_required, [], 
-    [
-      AC_MSG_ERROR([gSOAP version $gsoap_version is too old. You MUST have at least $gsoap_ver_required])
-    ])
-  fi
-
-  SOAP_INCLUDE="include soap/Makefile"
-  AC_DEFINE(HAVE_GSOAP, 1, [Do we have GSOAP])
-  AC_SUBST(WSDL2H)
-  AC_SUBST(SOAPCPP)
-  AC_SUBST(SOAP_INCLUDE)
-  AC_SUBST(GSOAP_SHARE)
-],[
-  AC_MSG_RESULT(disabled)
-])
+dnl WTLS support removed - no longer maintained
+dnl gSOAP support removed - no longer maintained
 
 AH_VERBATIM([PRINTFLIKE], [
 /* If we're using GCC, we can get it to check format function arguments. */
@@ -1468,8 +1390,8 @@ AH_VERBATIM([PRINTFLIKE], [
 
 dnl Final Output
 
-AC_CONFIG_SECTION([Generating output files]) 
-AC_OUTPUT([
+AC_CONFIG_SECTION([Generating output files])
+AC_CONFIG_FILES([
 	Makefile
 	gwlib/Makefile
 	gwlib/gw_uuid_types.h
@@ -1479,6 +1401,7 @@ AC_OUTPUT([
 	checks/Makefile
 	benchmarks/Makefile
 ])
+AC_OUTPUT
 
 dnl LICENSE notice
 
