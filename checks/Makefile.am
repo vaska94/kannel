@@ -8,6 +8,7 @@ noinst_PROGRAMS = \
 	check_counter \
 	check_date \
 	check_ipcheck \
+	check_json \
 	check_list \
 	check_octstr
 

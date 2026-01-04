@@ -28,6 +28,7 @@ libgwlib_la_SOURCES = \
 	gw_uuid.c \
 	gwlib.c \
 	gwmem-check.c \
+	json.c \
 	gwmem-native.c \
 	gwpoll.c \
 	gwthread-pthread.c \
@@ -73,6 +74,7 @@ include_HEADERS = \
 	gwpoll.h \
 	gwthread.h \
 	http.h \
+	json.h \
 	latin1_to_gsm.h \
 	list.h \
 	log.h \

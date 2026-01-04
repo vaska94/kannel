@@ -498,6 +498,7 @@ MULTI_GROUP(sendsms-user,
     OCTSTR(name)
     OCTSTR(username)
     OCTSTR(password)
+    OCTSTR(api-token)
     OCTSTR(user-deny-ip)
     OCTSTR(user-allow-ip)
     OCTSTR(forced-smsc)
@@ -643,7 +644,7 @@ MULTI_GROUP(redis-connection,
     OCTSTR(database)
     OCTSTR(max-connections)
     OCTSTR(idle-timeout)
-    OCTSTR(socket)
+    OCTSTR(unix-socket)
 )
 
 MULTI_GROUP(cassandra-connection,

@@ -103,6 +103,7 @@
 #include "gw-rwlock.h"
 #include "gw-prioqueue.h"
 #include "gw-dlopen.h"
+#include "json.h"
 
 void gwlib_assert_init(void);
 void gwlib_init(void);

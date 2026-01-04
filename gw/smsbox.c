@@ -2624,6 +2624,98 @@ static URLTranslation *authorise_user(List *list, Octstr *client_ip)
 
 
 /*
+ * Authentication using API token (X-API-Key header).
+ * Returns URLTranslation if successful, NULL otherwise.
+ */
+static URLTranslation *authorise_api_token(List *headers, Octstr *client_ip)
+{
+    URLTranslation *t = NULL;
+    Octstr *token = NULL;
+
+    token = http_header_value(headers, octstr_imm("X-API-Key"));
+    if (token == NULL)
+        return NULL;
+
+    octstr_strip_blanks(token);
+    t = urltrans_find_token(translations, token);
+    octstr_destroy(token);
+
+    if (t == NULL)
+        return NULL;
+
+    /* Check IP restrictions */
+    if (is_allowed_ip(urltrans_allow_ip(t), urltrans_deny_ip(t), client_ip) == 0) {
+        warning(0, "Non-allowed connect tried with API token from <%s>, ignored",
+                octstr_get_cstr(client_ip));
+        return NULL;
+    }
+
+    info(0, "sendsms used by <%s> (api-token)", octstr_get_cstr(urltrans_username(t)));
+    return t;
+}
+
+
+/*
+ * Parse JSON request body for sendsms
+ */
+static void get_x_kannel_from_json(Octstr *body, Octstr **from, Octstr **to,
+                                   Octstr **udh, Octstr **user, Octstr **pass,
+                                   Octstr **smsc, int *mclass, int *mwi,
+                                   int *coding, int *compress, int *validity,
+                                   int *deferred, int *dlr_mask, Octstr **dlr_url,
+                                   Octstr **account, int *pid, int *alt_dcs,
+                                   int *rpi, Octstr **charset, Octstr **binfo,
+                                   int *priority, Octstr **meta_data, Octstr **text)
+{
+    JSON *json;
+
+    json = json_parse(body);
+    if (json == NULL || !json_is_object(json)) {
+        if (json) json_destroy(json);
+        return;
+    }
+
+    *from = json_get_string(json, "from");
+    *to = json_get_string(json, "to");
+    *text = json_get_string(json, "text");
+    *udh = json_get_string(json, "udh");
+    *smsc = json_get_string(json, "smsc");
+    *charset = json_get_string(json, "charset");
+    *account = json_get_string(json, "account");
+    *binfo = json_get_string(json, "binfo");
+    *dlr_url = json_get_string(json, "dlr-url");
+    *meta_data = json_get_string(json, "meta-data");
+
+    /* Auth fields */
+    if (user) *user = json_get_string(json, "username");
+    if (pass) *pass = json_get_string(json, "password");
+
+    /* Integer fields */
+    *dlr_mask = (int)json_get_integer(json, "dlr-mask", SMS_PARAM_UNDEFINED);
+    *mclass = (int)json_get_integer(json, "mclass", SMS_PARAM_UNDEFINED);
+    *mwi = (int)json_get_integer(json, "mwi", SMS_PARAM_UNDEFINED);
+    *coding = (int)json_get_integer(json, "coding", SMS_PARAM_UNDEFINED);
+    *compress = (int)json_get_integer(json, "compress", SMS_PARAM_UNDEFINED);
+    *validity = (int)json_get_integer(json, "validity", SMS_PARAM_UNDEFINED);
+    *deferred = (int)json_get_integer(json, "deferred", SMS_PARAM_UNDEFINED);
+    *pid = (int)json_get_integer(json, "pid", SMS_PARAM_UNDEFINED);
+    *alt_dcs = (int)json_get_integer(json, "alt-dcs", SMS_PARAM_UNDEFINED);
+    *rpi = (int)json_get_integer(json, "rpi", SMS_PARAM_UNDEFINED);
+    *priority = (int)json_get_integer(json, "priority", SMS_PARAM_UNDEFINED);
+
+    /* Convert hex UDH if provided */
+    if (*udh != NULL) {
+        if (octstr_hex_to_binary(*udh) == -1) {
+            octstr_destroy(*udh);
+            *udh = NULL;
+        }
+    }
+
+    json_destroy(json);
+}
+
+
+/*
  * Create and send an SMS message from an HTTP request.
  * Args: args contains the CGI parameters
  */
@@ -2747,24 +2839,26 @@ static Octstr *smsbox_sendsms_post(List *headers, Octstr *body,
     URLTranslation *t = NULL;
     Octstr *user, *pass, *ret, *type;
     List *tolist;
-    Octstr *text_html, *text_plain, *text_wml, *text_xml, *octet_stream;
+    Octstr *text_html, *text_plain, *text_wml, *text_xml, *text_json, *octet_stream;
     Octstr *text;
     Octstr *from, *to, *udh, *smsc, *charset, *dlr_url, *account, *binfo, *meta_data;
     int dlr_mask, mclass, mwi, coding, compress, validity, deferred;
     int pid, alt_dcs, rpi, priority;
- 
+    int is_json = 0;
+
     text_html = octstr_imm("text/html");
     text_wml = octstr_imm("text/vnd.wap.wml");
     text_plain = octstr_imm("text/plain");
     text_xml = octstr_imm("text/xml");
+    text_json = octstr_imm("application/json");
     octet_stream = octstr_imm("application/octet-stream");
 
-    user = pass = ret = type = NULL;
+    user = pass = ret = type = text = NULL;
     tolist = NULL;
     from = to = udh = smsc = account = dlr_url = charset = binfo = meta_data = NULL;
-    mclass = mwi = coding = compress = validity = deferred = dlr_mask = 
+    mclass = mwi = coding = compress = validity = deferred = dlr_mask =
         pid = alt_dcs = rpi = priority = SMS_PARAM_UNDEFINED;
- 
+
     http_header_get_content_type(headers, &type, &charset);
     if (octstr_case_compare(type, text_html) == 0 ||
 	octstr_case_compare(type, text_wml) == 0) {
@@ -2772,47 +2866,61 @@ static Octstr *smsbox_sendsms_post(List *headers, Octstr *body,
 	octstr_strip_blanks(text);
 	body = text;
 	get_x_kannel_from_headers(headers, &from, &to, &udh,
-				  &user, &pass, &smsc, &mclass, &mwi, 
-				  &coding, &compress, &validity, 
-				  &deferred, &dlr_mask, &dlr_url, 
+				  &user, &pass, &smsc, &mclass, &mwi,
+				  &coding, &compress, &validity,
+				  &deferred, &dlr_mask, &dlr_url,
 				  &account, &pid, &alt_dcs, &rpi,
 				  &binfo, &priority, &meta_data);
     } else if (octstr_case_compare(type, text_plain) == 0 ||
                octstr_case_compare(type, octet_stream) == 0) {
 	get_x_kannel_from_headers(headers, &from, &to, &udh,
-				  &user, &pass, &smsc, &mclass, &mwi, 
-				  &coding, &compress, &validity, 
-				  &deferred, &dlr_mask, &dlr_url, 
+				  &user, &pass, &smsc, &mclass, &mwi,
+				  &coding, &compress, &validity,
+				  &deferred, &dlr_mask, &dlr_url,
 				  &account, &pid, &alt_dcs, &rpi,
 				  &binfo, &priority, &meta_data);
     } else if (octstr_case_compare(type, text_xml) == 0) {
-	get_x_kannel_from_xml(mt_push, &type, &body, headers, 
-                              &from, &to, &udh, &user, &pass, &smsc, &mclass, 
+	get_x_kannel_from_xml(mt_push, &type, &body, headers,
+                              &from, &to, &udh, &user, &pass, &smsc, &mclass,
 			      &mwi, &coding, &compress, &validity, &deferred,
 			      &dlr_mask, &dlr_url, &account, &pid, &alt_dcs,
 			      &rpi, &tolist, &charset, &binfo, &priority, &meta_data);
+    } else if (octstr_case_compare(type, text_json) == 0) {
+	is_json = 1;
+	get_x_kannel_from_json(body, &from, &to, &udh, &user, &pass,
+			       &smsc, &mclass, &mwi, &coding, &compress,
+			       &validity, &deferred, &dlr_mask, &dlr_url,
+			       &account, &pid, &alt_dcs, &rpi, &charset,
+			       &binfo, &priority, &meta_data, &text);
+	if (text != NULL)
+	    body = text;
     } else {
 	*status = HTTP_BAD_REQUEST;
 	ret = octstr_create("Invalid content-type");
 	goto error;
     }
 
-    /* check the username and password */
-    t = authorise_username(user, pass, client_ip);
+    /* Try API token auth first, then username/password */
+    t = authorise_api_token(headers, client_ip);
+    if (t == NULL)
+        t = authorise_username(user, pass, client_ip);
     if (t == NULL) {
 	*status = HTTP_FORBIDDEN;
-	ret = octstr_create("Authorization failed for sendsms");
+	ret = is_json ? octstr_create("{\"error\":\"Authorization failed\"}")
+	              : octstr_create("Authorization failed for sendsms");
     }
     else if (to == NULL && tolist == NULL) {
 	error(0, "%s got insufficient headers (<to> and <tolist> are NULL)",
 	      octstr_get_cstr(sendsms_url));
 	*status = HTTP_BAD_REQUEST;
-	ret = octstr_create("Missing receiver(s) number(s), rejected");
-    } 
+	ret = is_json ? octstr_create("{\"error\":\"Missing receiver number\"}")
+	              : octstr_create("Missing receiver(s) number(s), rejected");
+    }
     else if (to != NULL && octstr_len(to) == 0) {
 	error(0, "%s got empty <to> cgi variable", octstr_get_cstr(sendsms_url));
 	*status = HTTP_BAD_REQUEST;
-	ret = octstr_create("Empty receiver number not allowed, rejected");
+	ret = is_json ? octstr_create("{\"error\":\"Empty receiver number\"}")
+	              : octstr_create("Empty receiver number not allowed, rejected");
     } 
     else {
 	if (octstr_case_compare(type,
@@ -2823,19 +2931,34 @@ static Octstr *smsbox_sendsms_post(List *headers, Octstr *body,
 				       octstr_imm("text/plain")) == 0) {
 	    if (coding == DC_UNDEF)
 		coding = DC_7BIT;
+	} else if (octstr_case_compare(type, text_json) == 0) {
+	    if (coding == DC_UNDEF)
+		coding = DC_7BIT;
 	} else {
 	    error(0, "%s got weird content type %s", octstr_get_cstr(sendsms_url),
 		  octstr_get_cstr(type));
 	    *status = HTTP_UNSUPPORTED_MEDIA_TYPE;
-	    ret = octstr_create("Unsupported content-type, rejected");
+	    ret = is_json ? octstr_create("{\"error\":\"Unsupported content-type\"}")
+	                  : octstr_create("Unsupported content-type, rejected");
 	}
 
-	if (ret == NULL)
+	if (ret == NULL) {
 	    ret = smsbox_req_handle(t, client_ip, client, from, to, body, charset,
-				    udh, smsc, mclass, mwi, coding, compress, 
-				    validity, deferred, status, dlr_mask, 
+				    udh, smsc, mclass, mwi, coding, compress,
+				    validity, deferred, status, dlr_mask,
 				    dlr_url, account, pid, alt_dcs, rpi, tolist,
 				    binfo, priority, meta_data);
+	    /* Format response as JSON if request was JSON */
+	    if (is_json && ret != NULL) {
+		Octstr *json_ret;
+		if (*status == HTTP_ACCEPTED)
+		    json_ret = json_response("status", 0, "message", octstr_get_cstr(ret));
+		else
+		    json_ret = octstr_format("{\"error\":\"%S\"}", ret);
+		octstr_destroy(ret);
+		ret = json_ret;
+	    }
+	}
 
     }
     octstr_destroy(user);
@@ -2848,6 +2971,7 @@ static Octstr *smsbox_sendsms_post(List *headers, Octstr *body,
     octstr_destroy(account);
     octstr_destroy(binfo);
     octstr_destroy(meta_data);
+    octstr_destroy(text);
 error:
     octstr_destroy(type);
     octstr_destroy(charset);

@@ -785,12 +785,12 @@ int store_redis_init(Cfg *cfg)
         pool_size = 1;
 
     redis_host = cfg_get(grp, octstr_imm("host"));
-    redis_socket = cfg_get(grp, octstr_imm("socket"));
+    redis_socket = cfg_get(grp, octstr_imm("unix-socket"));
 
-    /* Require either host or socket */
+    /* Require either host or unix-socket */
     if (redis_host == NULL && redis_socket == NULL) {
         grp_dump(grp);
-        panic(0, "Directive 'host' or 'socket' must be specified in 'group = redis-connection' context!");
+        panic(0, "Directive 'host' or 'unix-socket' must be specified in 'group = redis-connection' context!");
     }
     if (cfg_get_integer(&redis_port, grp, octstr_imm("port")) == -1) {
         redis_port = REDIS_DEFAULT_PORT;

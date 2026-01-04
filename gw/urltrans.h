@@ -299,7 +299,13 @@ Octstr *urltrans_alt_charset(URLTranslation *t);
 Octstr *urltrans_name(URLTranslation *t);
 Octstr *urltrans_username(URLTranslation *t);
 Octstr *urltrans_password(URLTranslation *t);
+Octstr *urltrans_api_token(URLTranslation *t);
 
+/*
+ * Find matching URLTranslation for the given 'api_token', or NULL
+ * if not found.
+ */
+URLTranslation *urltrans_find_token(URLTranslationList *trans, Octstr *token);
 
 /* Return forced smsc ID for send-sms user, if set */
 Octstr *urltrans_forced_smsc(URLTranslation *t);

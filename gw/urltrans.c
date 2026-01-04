@@ -108,6 +108,7 @@ struct URLTranslation {
     Octstr *name;	/* Translation name */
     Octstr *username;	/* send sms username */
     Octstr *password;	/* password associated */
+    Octstr *api_token;	/* API token for token-based auth */
     Octstr *forced_smsc;/* if smsc id is forcet to certain for this user */
     long forced_priority; /* define a fixed priority value for this user */
     long max_priority;    /* define a maximum priority value for this user */
@@ -293,6 +294,23 @@ URLTranslation *urltrans_find_username(URLTranslationList *trans, Octstr *name)
 	t = gwlist_get(trans->list, i);
 	if (t->type == TRANSTYPE_SENDSMS) {
 	    if (octstr_compare(name, t->username) == 0)
+		return t;
+	}
+    }
+    return NULL;
+}
+
+URLTranslation *urltrans_find_token(URLTranslationList *trans, Octstr *token)
+{
+    URLTranslation *t;
+    int i;
+
+    if (token == NULL)
+        return NULL;
+    for (i = 0; i < gwlist_len(trans->list); ++i) {
+	t = gwlist_get(trans->list, i);
+	if (t->type == TRANSTYPE_SENDSMS && t->api_token != NULL) {
+	    if (octstr_compare(token, t->api_token) == 0)
 		return t;
 	}
     }
@@ -867,9 +885,14 @@ Octstr *urltrans_username(URLTranslation *t)
     return t->username;
 }
 
-Octstr *urltrans_password(URLTranslation *t) 
+Octstr *urltrans_password(URLTranslation *t)
 {
     return t->password;
+}
+
+Octstr *urltrans_api_token(URLTranslation *t)
+{
+    return t->api_token;
 }
 
 Octstr *urltrans_forced_smsc(URLTranslation *t) 
@@ -1198,6 +1221,7 @@ static URLTranslation *create_onetrans(CfgGroup *grp)
 	ot->catch_all = 1;
 	ot->username = cfg_get(grp, octstr_imm("username"));
 	ot->password = cfg_get(grp, octstr_imm("password"));
+	ot->api_token = cfg_get(grp, octstr_imm("api-token"));
 	ot->dlr_url = cfg_get(grp, octstr_imm("dlr-url"));
     if (cfg_get_integer(&ot->dlr_mask, grp, octstr_imm("dlr-mask")) == -1)
          ot->dlr_mask = DLR_UNDEFINED;
@@ -1342,6 +1366,7 @@ static void destroy_onetrans(void *p)
 	octstr_destroy(ot->name);
 	octstr_destroy(ot->username);
 	octstr_destroy(ot->password);
+	octstr_destroy(ot->api_token);
 	octstr_destroy(ot->forced_smsc);
 	octstr_destroy(ot->default_smsc);
 	octstr_destroy(ot->allow_ip);
