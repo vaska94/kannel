@@ -150,6 +150,7 @@ typedef struct {
     Octstr *password;
     long database;
     long idle_timeout;
+    Octstr *socket;
 } RedisConf;
 
 typedef struct {

@@ -91,15 +91,27 @@ static void *redis_open_conn(const DBConf *db_conf)
         return NULL;
 
     struct timeval timeout = { 1, 500000 }; /* 1.5 seconds */
-    redis = redisConnectWithTimeout(octstr_get_cstr(conf->host), conf->port, timeout);
-    if (redis->err) {
-        error(0, "REDIS: can not connect to server!");
-        error(0, "REDIS: %s", redis->errstr);
-        goto failed;
-    }
 
-    info(0, "REDIS: Connected to server at %s:%ld.",
-         octstr_get_cstr(conf->host), conf->port);
+    /* Use Unix socket if configured, otherwise use TCP */
+    if (conf->socket != NULL && octstr_len(conf->socket) > 0) {
+        redis = redisConnectUnixWithTimeout(octstr_get_cstr(conf->socket), timeout);
+        if (redis->err) {
+            error(0, "REDIS: can not connect to server via socket!");
+            error(0, "REDIS: %s", redis->errstr);
+            goto failed;
+        }
+        info(0, "REDIS: Connected to server via socket %s.",
+             octstr_get_cstr(conf->socket));
+    } else {
+        redis = redisConnectWithTimeout(octstr_get_cstr(conf->host), conf->port, timeout);
+        if (redis->err) {
+            error(0, "REDIS: can not connect to server!");
+            error(0, "REDIS: %s", redis->errstr);
+            goto failed;
+        }
+        info(0, "REDIS: Connected to server at %s:%ld.",
+             octstr_get_cstr(conf->host), conf->port);
+    }
 
     if (conf->password != NULL) {
         reply = redisCommand(redis, "AUTH %s", octstr_get_cstr(conf->password));
@@ -496,6 +508,7 @@ static void redis_conf_destroy(DBConf *db_conf)
 
     octstr_destroy(conf->host);
     octstr_destroy(conf->password);
+    octstr_destroy(conf->socket);
 
     gw_free(conf);
     gw_free(db_conf);

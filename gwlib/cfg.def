@@ -644,6 +644,7 @@ MULTI_GROUP(redis-connection,
     OCTSTR(database)
     OCTSTR(max-connections)
     OCTSTR(idle-timeout)
+    OCTSTR(socket)
 )
 
 MULTI_GROUP(cassandra-connection,

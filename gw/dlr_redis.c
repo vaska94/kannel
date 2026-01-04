@@ -472,7 +472,7 @@ struct dlr_storage *dlr_init_redis(Cfg *cfg)
 {
     CfgGroup *grp;
     List *grplist;
-    Octstr *redis_host, *redis_pass, *redis_id;
+    Octstr *redis_host, *redis_pass, *redis_id, *redis_socket;
     long redis_port = 0, redis_database = -1, redis_idle_timeout = -1;
     Octstr *p = NULL;
     long pool_size;
@@ -531,8 +531,12 @@ found:
     if (cfg_get_integer(&pool_size, grp, octstr_imm("max-connections")) == -1 || pool_size == 0)
         pool_size = 1;
 
-    if (!(redis_host = cfg_get(grp, octstr_imm("host"))))
-   	    panic(0, "DLR: Redis: directive 'host' is not specified!");
+    redis_host = cfg_get(grp, octstr_imm("host"));
+    redis_socket = cfg_get(grp, octstr_imm("socket"));
+
+    /* Require either host or socket */
+    if (redis_host == NULL && redis_socket == NULL)
+   	    panic(0, "DLR: Redis: directive 'host' or 'socket' must be specified!");
     if (cfg_get_integer(&redis_port, grp, octstr_imm("port")) == -1) {
         redis_port = REDIS_DEFAULT_PORT;
     }
@@ -554,6 +558,7 @@ found:
     db_conf->redis->password = redis_pass;
     db_conf->redis->database = redis_database;
     db_conf->redis->idle_timeout = redis_idle_timeout;
+    db_conf->redis->socket = redis_socket;
 
     pool = dbpool_create(DBPOOL_REDIS, db_conf, pool_size);
     gw_assert(pool != NULL);

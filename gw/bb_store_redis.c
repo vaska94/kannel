@@ -77,6 +77,8 @@
 #include "bb_store.h"
 
 #ifdef HAVE_REDIS
+
+#define REDIS_DEFAULT_PORT  6379
 #include "gwlib/dbpool.h"
 
 /*
@@ -726,7 +728,7 @@ int store_redis_init(Cfg *cfg)
 {
     CfgGroup *grp;
     List *grplist;
-    Octstr *redis_host, *redis_pass, *redis_id;
+    Octstr *redis_host, *redis_pass, *redis_id, *redis_socket;
     long redis_port = 0, redis_database = -1, redis_idle_timeout = -1;
     Octstr *p = NULL;
     long pool_size;
@@ -782,13 +784,16 @@ int store_redis_init(Cfg *cfg)
     if (cfg_get_integer(&pool_size, grp, octstr_imm("max-connections")) == -1 || pool_size == 0)
         pool_size = 1;
 
-    if (!(redis_host = cfg_get(grp, octstr_imm("host")))) {
+    redis_host = cfg_get(grp, octstr_imm("host"));
+    redis_socket = cfg_get(grp, octstr_imm("socket"));
+
+    /* Require either host or socket */
+    if (redis_host == NULL && redis_socket == NULL) {
         grp_dump(grp);
-        panic(0, "Directive 'host' is not specified in 'group = redis-connection' context!");
+        panic(0, "Directive 'host' or 'socket' must be specified in 'group = redis-connection' context!");
     }
     if (cfg_get_integer(&redis_port, grp, octstr_imm("port")) == -1) {
-        grp_dump(grp);
-        panic(0, "Directive 'port' is not specified in 'group = redis-connection' context!");
+        redis_port = REDIS_DEFAULT_PORT;
     }
     redis_pass = cfg_get(grp, octstr_imm("password"));
     cfg_get_integer(&redis_database, grp, octstr_imm("database"));
@@ -808,6 +813,7 @@ int store_redis_init(Cfg *cfg)
     db_conf->redis->password = redis_pass;
     db_conf->redis->database = redis_database;
     db_conf->redis->idle_timeout = redis_idle_timeout;
+    db_conf->redis->socket = redis_socket;
 
     pool = dbpool_create(DBPOOL_REDIS, db_conf, pool_size);
     gw_assert(pool != NULL);
