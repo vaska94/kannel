@@ -83,17 +83,11 @@ AC_DEFUN([AC_CONFIG_SECTION],
 ])
 
 
-dnl Check which SVN revision is and apply
-dnl the value to the given variable
+dnl Get git revision for development builds
 
-AC_DEFUN([AC_SVN_REVISION],
+AC_DEFUN([AC_GIT_REVISION],
 [
-  if test -d ".svn"
-  then
-    revision=`svnversion .`
-    test -z "$revision" && revision="unknown"
-    $1="$revision"
-  elif test -d ".git"
+  if test -d ".git"
   then
     sha1=$(git rev-parse --short HEAD)
     mod=$(git status | grep "modified:\|added:\|deleted:" -q && echo "M")

@@ -77,11 +77,11 @@ AC_CONFIG_NICE([config.nice])
 
 dnl Check gateway version number.
 VERSION="KANNEL_VERSION"
-if test "x$VERSION" = "xsvn"; then
-  AC_MSG_CHECKING([svn checkout revision])
-  AC_SVN_REVISION(SVN_REVISION)
-  AC_MSG_RESULT([$SVN_REVISION])
-  VERSION="$VERSION-r$SVN_REVISION"
+if test "x$VERSION" = "xdev" -o "x$VERSION" = "xgit"; then
+  AC_MSG_CHECKING([git revision])
+  AC_GIT_REVISION(GIT_REVISION)
+  AC_MSG_RESULT([$GIT_REVISION])
+  VERSION="$VERSION-$GIT_REVISION"
 fi
 AC_DEFINE_UNQUOTED([GW_NAME], ["Kannel"], [Gateway name])
 AC_DEFINE_UNQUOTED([GW_VERSION], ["$VERSION"], [Gateway version])
@@ -454,71 +454,6 @@ AC_ARG_ENABLE(pcre,
 ])
                                        
 
-dnl DocBook stuff
-
-AC_CONFIG_SECTION([Configuring DocBook support])
-AC_CHECK_PROGS(JADE, [jade openjade], no)
-AC_CHECK_PROG(JADETEX, jadetex, jadetex, no)
-AC_CHECK_PROG(PDFJADETEX, pdfjadetex, pdfjadetex, no)
-AC_CHECK_PROG(DVIPS, dvips, dvips, no)
-AC_CHECK_PROG(FIG2DEV, fig2dev, fig2dev, no)
-AC_CHECK_PROG(CONVERT, convert, convert, no)
-AC_SUBST(HTML_DSL)
-found=""
-for loc in /usr /usr/local /sw /opt/local; do
-  if test "x$found" = "x" ; then 
-    for file in ${loc}/lib/sgml/stylesheet/dsssl/docbook/nwalsh/html/docbook.dsl \
-        ${loc}/lib/sgml/stylesheets/nwalsh-modular/html/docbook.dsl \
-        ${loc}/share/sgml/docbook/dsssl-stylesheets-1.*/html/docbook.dsl \
-        ${loc}/share/sgml/docbook/dsssl-stylesheets/html/docbook.dsl \
-        ${loc}/share/sgml/docbook/stylesheet/dsssl/modular/html/docbook.dsl \
-        ${loc}/share/sgml/docbook/dsssl/modular/html/docbook.dsl \
-        ${loc}/share/sgml/dsssl/docbook-dsssl-nwalsh/html/docbook.dsl \
-        ${loc}/share/dsssl/docbook-dsssl/html/docbook.dsl ; do
-      if test "x$found" = "x" ; then 
-	AC_CHECK_FILE($file,HTML_DSL=$file; found=1)
-      fi
-    done
-  fi
-done
-AC_SUBST(TEX_DSL)
-found=""
-for loc in /usr /usr/local /sw /opt/local; do
-  if test "x$found" = "x" ; then 
-    for file in ${loc}/lib/sgml/stylesheet/dsssl/docbook/nwalsh/print/docbook.dsl \
-        ${loc}/lib/sgml/stylesheets/nwalsh-modular/print/docbook.dsl \
-        ${loc}/share/sgml/docbook/dsssl-stylesheets-1.*/print/docbook.dsl \
-        ${loc}/share/sgml/docbook/dsssl-stylesheets/print/docbook.dsl \
-        ${loc}/share/sgml/docbook/stylesheet/dsssl/modular/print/docbook.dsl \
-        ${loc}/share/sgml/docbook/dsssl/modular/print/docbook.dsl \
-        ${loc}/share/sgml/dsssl/docbook-dsssl-nwalsh/print/docbook.dsl \
-        ${loc}/share/dsssl/docbook-dsssl/print/docbook.dsl ; do
-      if test "x$found" = "x" ; then 
-	AC_CHECK_FILE($file,TEX_DSL=$file; found=1)
-      fi
-    done
-  fi    
-done
-AC_SUBST(XML_DCL)
-found=""
-for loc in /usr /usr/local /sw /opt/local; do
-  if test "x$found" = "x" ; then 
-    for file in ${loc}/lib/sgml/stylesheet/dsssl/docbook/nwalsh/dtds/decls/xml.dcl \
-        ${loc}/lib/sgml/stylesheets/nwalsh-modular/dtds/decls/xml.dcl \
-        ${loc}/share/sgml/docbook/dsssl-stylesheets-1.*/dtds/decls/xml.dcl \
-        ${loc}/share/sgml/docbook/dsssl-stylesheets/dtds/decls/xml.dcl \
-        ${loc}/share/sgml/docbook/stylesheet/dsssl/modular/dtds/decls/xml.dcl \
-        ${loc}/share/sgml/docbook/dsssl/modular/dtds/decls/xml.dcl \
-        ${loc}/share/sgml/declaration/xml.dcl \
-        ${loc}/share/sgml/dsssl/docbook-dsssl-nwalsh/dtds/decls/xml.dcl \
-        ${loc}/share/dsssl/docbook-dsssl/dtds/decls/xml.dcl ; do
-      if test "x$found" = "x" ; then 
-    AC_CHECK_FILE($file,XML_DCL=$file; found=1)
-      fi
-    done
-  fi
-done
-
 dnl Implement --enable-warnings option.
 
 AC_ARG_ENABLE(warnings,
@@ -536,60 +471,6 @@ AC_ARG_ENABLE(warnings,
     #CFLAGS="$CFLAGS -Wconversion"
   fi
 ])
-
-dnl Implement --enable-docs option.
-
-AC_SUBST(DOCSTARGET)
-
-AC_ARG_ENABLE(docs,
-[  --enable-docs           enable building of documentation @<:@enabled@:>@], [
-  if test "$enableval" = "yes"
-  then
-      DOCSTARGET="docs"
-  else
-      DOCSTARGET="no-docs"
-  fi
-])
-
-if test "x$HTML_DSL" = "x" -o "x$TEX_DSL"   = "x" \
-    || test "$JADE"       = "no" \
-    || test "$JADETEX"    = "no" \
-    || test "$PDFJADETEX" = "no" \
-    || test "$DVIPS"      = "no" \
-    || test "$FIG2DEV"    = "no" \
-    || test "$CONVERT"    = "no" \
-    || test "$DOCSTARGET" = "no-docs"
-then
-  DOCSTARGET="no-docs"
-else
-  DOCSTARGET="docs"
-fi
-
-case "$DOCSTARGET" in
-	no-docs) AC_MSG_RESULT(Not building documentation.) ;;
-	docs) AC_MSG_RESULT(Documentation will be built as well.) ;;
-esac
-
-dnl Implement --enable-drafts option.
-
-AC_SUBST(DOCDRAFTS)
-DOCDRAFTS="IGNORE"
-
-AC_ARG_ENABLE(drafts,
-[  --enable-drafts         enable building of documentation drafts @<:@disabled@:>@], [
-  if test "$enableval" = "yes"
-  then
-      DOCDRAFTS="INCLUDE"
-  else
-      DOCDRAFTS="IGNORE"
-  fi
-])
-if test "x$DOCSTARGET" = "xdocs"
-then
-    case "$DOCDRAFTS" in
-    INCLUDE) AC_MSG_RESULT(Documentation will include drafts.) ;;
-    esac
-fi
 
 
 AC_CONFIG_SECTION([Configuring parameters])
