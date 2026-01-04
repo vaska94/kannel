@@ -98,7 +98,6 @@
 #include "accesslog.h"
 #include "dict.h"
 #include "gw-semaphore.h"
-#include "xmlrpc.h"
 #include "md5.h"
 #include "gw_uuid.h"
 #include "gw-rwlock.h"

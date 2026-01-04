@@ -169,47 +169,14 @@ static const int gsm_to_unicode[128] = {
       'x',   'y',   'z',  0xE4,  0xF6,  0xF1,  0xFC,  0xE0    /* 120 - 127 */
 };
 
-/*
- * Register alises for Windows character sets that the libxml/libiconv can
- * recoqnise them.
- */
-
-struct alias_t {
-    char *real;
-    char *alias;
-};
-
-typedef struct alias_t alias_t;
-
-alias_t chars_aliases[] = {
-    { "CP1250", "WIN-1250" },
-    { "CP1250", "WINDOWS-1250" },
-    { "CP1251", "WIN-1251" }, 
-    { "CP1251", "WINDOWS-1251" },
-    { "CP1252", "WIN-1252" }, 
-    { "CP1252", "WINDOWS-1252" },
-    { "CP1253", "WIN-1253" }, 
-    { "CP1253", "WINDOWS-1253" },
-    { "CP1254", "WIN-1254" }, 
-    { "CP1254", "WINDOWS-1254" },
-    { "CP1257", "WIN-1257" },
-    { "CP1257", "WINDOWS-1257" },
-    { NULL }
-};
-
-void charset_init()
+void charset_init(void)
 {
-    int i;
-
-    for (i = 0; chars_aliases[i].real != NULL; i++) {
-      xmlAddEncodingAlias(chars_aliases[i].real,chars_aliases[i].alias);
-      /*debug("encoding",0,"Add encoding for %s",chars_aliases[i].alias);*/
-    }
+    /* No initialization needed for iconv */
 }
 
-void charset_shutdown()
+void charset_shutdown(void)
 {
-    xmlCleanupEncodingAliases();
+    /* No cleanup needed for iconv */
 }
 
 /**
@@ -525,65 +492,78 @@ int charset_gsm_truncate(Octstr *gsm, long max)
 
 int charset_to_utf8(Octstr *from, Octstr **to, Octstr *charset_from)
 {
-    int ret;
-    xmlCharEncodingHandlerPtr handler = NULL;
-    xmlBufferPtr frombuffer = NULL;
-    xmlBufferPtr tobuffer = NULL;
+#if HAVE_ICONV
+    iconv_t cd;
+    char *from_buf, *to_buf, *pointer;
+    size_t inbytesleft, outbytesleft, ret;
 
-    if (octstr_compare(charset_from, octstr_imm("UTF-8")) == 0) {
+    if (octstr_case_compare(charset_from, octstr_imm("UTF-8")) == 0 ||
+        octstr_case_compare(charset_from, octstr_imm("UTF8")) == 0) {
         *to = octstr_duplicate(from);
         return 0;
     }
 
-    handler = xmlFindCharEncodingHandler(octstr_get_cstr(charset_from));
-    if (handler == NULL)
-	return -2;
+    cd = iconv_open("UTF-8", octstr_get_cstr(charset_from));
+    if (cd == (iconv_t)(-1))
+        return -2;
 
-    /* Build the libxml buffers for the transcoding. */
-    tobuffer = xmlBufferCreate();
-    frombuffer = xmlBufferCreate();
-    xmlBufferAdd(frombuffer, (unsigned char*)octstr_get_cstr(from), octstr_len(from));
+    from_buf = octstr_get_cstr(from);
+    inbytesleft = octstr_len(from);
+    outbytesleft = inbytesleft * 4;
+    pointer = to_buf = gw_malloc(outbytesleft);
 
-    ret = xmlCharEncInFunc(handler, tobuffer, frombuffer);
+    ret = iconv(cd, (ICONV_CONST char**)&from_buf, &inbytesleft, &pointer, &outbytesleft);
+    iconv_close(cd);
 
-    *to = octstr_create_from_data((char*)xmlBufferContent(tobuffer), xmlBufferLength(tobuffer));
+    if (ret == (size_t)(-1)) {
+        gw_free(to_buf);
+        return -1;
+    }
 
-    /* Memory cleanup. */
-    xmlBufferFree(tobuffer);
-    xmlBufferFree(frombuffer);
-
-    return ret;
+    *to = octstr_create_from_data(to_buf, pointer - to_buf);
+    gw_free(to_buf);
+    return 0;
+#else
+    return -1;
+#endif
 }
 
 int charset_from_utf8(Octstr *utf8, Octstr **to, Octstr *charset_to)
 {
-    int ret;
-    xmlCharEncodingHandlerPtr handler = NULL;
-    xmlBufferPtr frombuffer = NULL;
-    xmlBufferPtr tobuffer = NULL;
+#if HAVE_ICONV
+    iconv_t cd;
+    char *from_buf, *to_buf, *pointer;
+    size_t inbytesleft, outbytesleft, ret;
 
-    handler = xmlFindCharEncodingHandler(octstr_get_cstr(charset_to));
-    if (handler == NULL)
-	return -2;
+    if (octstr_case_compare(charset_to, octstr_imm("UTF-8")) == 0 ||
+        octstr_case_compare(charset_to, octstr_imm("UTF8")) == 0) {
+        *to = octstr_duplicate(utf8);
+        return 0;
+    }
 
-    /* Build the libxml buffers for the transcoding. */
-    tobuffer = xmlBufferCreate();
-    frombuffer = xmlBufferCreate();
-    xmlBufferAdd(frombuffer, (unsigned char*)octstr_get_cstr(utf8), octstr_len(utf8));
+    cd = iconv_open(octstr_get_cstr(charset_to), "UTF-8");
+    if (cd == (iconv_t)(-1))
+        return -2;
 
-    ret = xmlCharEncOutFunc(handler, tobuffer, frombuffer);
-    if (ret < -2)
-	/* Libxml seems to be here a little uncertain what would be the 
-	 * return code -3, so let's make it -1. Ugly thing, indeed. --tuo */
-	ret = -1; 
+    from_buf = octstr_get_cstr(utf8);
+    inbytesleft = octstr_len(utf8);
+    outbytesleft = inbytesleft * 4;
+    pointer = to_buf = gw_malloc(outbytesleft);
 
-    *to = octstr_create_from_data((char*)xmlBufferContent(tobuffer), xmlBufferLength(tobuffer));
+    ret = iconv(cd, (ICONV_CONST char**)&from_buf, &inbytesleft, &pointer, &outbytesleft);
+    iconv_close(cd);
 
-    /* Memory cleanup. */
-    xmlBufferFree(tobuffer);
-    xmlBufferFree(frombuffer);
+    if (ret == (size_t)(-1)) {
+        gw_free(to_buf);
+        return -1;
+    }
 
-    return ret;
+    *to = octstr_create_from_data(to_buf, pointer - to_buf);
+    gw_free(to_buf);
+    return 0;
+#else
+    return -1;
+#endif
 }
 
 int charset_convert(Octstr* string, char* charset_from, char* charset_to)

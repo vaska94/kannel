@@ -64,12 +64,6 @@
 #include <string.h>
 #include <inttypes.h>
 
-/* libxml & xpath things */
-#include <libxml/tree.h>
-#include <libxml/parser.h>
-#include <libxml/xpath.h>
-#include <libxml/xpathInternals.h>
-
 #include "gwlib/gwlib.h"
 #include "gwlib/gw-regex.h"
 #include "gwlib/gw-timer.h"
@@ -82,7 +76,6 @@
 #include "heartbeat.h"
 #include "html.h"
 #include "urltrans.h"
-#include "xml_shared.h"
 
 #ifdef HAVE_SECURITY_PAM_APPL_H
 #include <security/pam_appl.h>
@@ -116,7 +109,6 @@ static long sendsms_port = 0;
 static Octstr *sendsms_interface = NULL;
 static Octstr *smsbox_id = NULL;
 static Octstr *sendsms_url = NULL;
-static Octstr *xmlrpc_url = NULL;
 static Octstr *bb_host;
 static Octstr *accepted_chars = NULL;
 static int only_try_http = 0;
@@ -645,10 +637,158 @@ static void get_x_kannel_from_headers(List *headers, Octstr **from,
     }
 }
 
+/*
+ * Simple XML tag extraction - no libxml2 dependency
+ */
+static Octstr *xml_get_tag(Octstr *xml, const char *tag)
+{
+    Octstr *open_tag, *close_tag, *result = NULL;
+    long start, end;
+
+    open_tag = octstr_format("<%s>", tag);
+    close_tag = octstr_format("</%s>", tag);
+
+    start = octstr_search(xml, open_tag, 0);
+    if (start >= 0) {
+        start += octstr_len(open_tag);
+        end = octstr_search(xml, close_tag, start);
+        if (end > start) {
+            result = octstr_copy(xml, start, end - start);
+            octstr_strip_blanks(result);
+        }
+    }
+
+    octstr_destroy(open_tag);
+    octstr_destroy(close_tag);
+    return result;
+}
+
+static long xml_get_number(Octstr *xml, const char *tag, long default_val)
+{
+    Octstr *val = xml_get_tag(xml, tag);
+    long result = default_val;
+
+    if (val != NULL) {
+        result = strtol(octstr_get_cstr(val), NULL, 10);
+        octstr_destroy(val);
+    }
+    return result;
+}
+
+static Octstr *xml_get_attr(Octstr *xml, const char *tag, const char *attr)
+{
+    Octstr *search, *result = NULL;
+    long tag_start, attr_start, val_start, val_end;
+    int quote_char;
+
+    search = octstr_format("<%s ", tag);
+    tag_start = octstr_search(xml, search, 0);
+    octstr_destroy(search);
+
+    if (tag_start < 0)
+        return NULL;
+
+    search = octstr_format("%s=", attr);
+    attr_start = octstr_search(xml, search, tag_start);
+    octstr_destroy(search);
+
+    if (attr_start < 0)
+        return NULL;
+
+    val_start = attr_start + strlen(attr) + 1;
+    quote_char = octstr_get_char(xml, val_start);
+    if (quote_char == '"' || quote_char == '\'') {
+        val_start++;
+        val_end = val_start;
+        while (val_end < octstr_len(xml) && octstr_get_char(xml, val_end) != quote_char)
+            val_end++;
+        if (val_end > val_start) {
+            result = octstr_copy(xml, val_start, val_end - val_start);
+            octstr_strip_blanks(result);
+        }
+    }
+
+    return result;
+}
+
+static List *xml_get_all_tags(Octstr *xml, const char *tag)
+{
+    List *results = gwlist_create();
+    Octstr *open_tag, *close_tag;
+    long pos = 0, start, end;
+
+    open_tag = octstr_format("<%s>", tag);
+    close_tag = octstr_format("</%s>", tag);
+
+    while ((start = octstr_search(xml, open_tag, pos)) >= 0) {
+        start += octstr_len(open_tag);
+        end = octstr_search(xml, close_tag, start);
+        if (end > start) {
+            Octstr *val = octstr_copy(xml, start, end - start);
+            octstr_strip_blanks(val);
+            gwlist_append(results, val);
+            pos = end + octstr_len(close_tag);
+        } else {
+            break;
+        }
+    }
+
+    octstr_destroy(open_tag);
+    octstr_destroy(close_tag);
+    return results;
+}
+
+static Octstr *xml_get_encoding(Octstr *xml)
+{
+    Octstr *result = NULL;
+    long start, end;
+
+    start = octstr_search(xml, octstr_imm("encoding="), 0);
+    if (start >= 0 && start < octstr_search(xml, octstr_imm("?>"), 0)) {
+        start += 9; /* length of "encoding=" */
+        int quote = octstr_get_char(xml, start);
+        if (quote == '"' || quote == '\'') {
+            start++;
+            end = start;
+            while (end < octstr_len(xml) && octstr_get_char(xml, end) != quote)
+                end++;
+            if (end > start)
+                result = octstr_copy(xml, start, end - start);
+        }
+    }
+    return result ? result : octstr_create("UTF-8");
+}
+
+static Octstr *xml_escape(Octstr *text)
+{
+    Octstr *result;
+    long i, len;
+    int c;
+
+    if (text == NULL)
+        return octstr_create("");
+
+    result = octstr_create("");
+    len = octstr_len(text);
+
+    for (i = 0; i < len; i++) {
+        c = octstr_get_char(text, i);
+        switch (c) {
+            case '&':  octstr_append_cstr(result, "&amp;"); break;
+            case '<':  octstr_append_cstr(result, "&lt;"); break;
+            case '>':  octstr_append_cstr(result, "&gt;"); break;
+            case '"':  octstr_append_cstr(result, "&quot;"); break;
+            case '\'': octstr_append_cstr(result, "&apos;"); break;
+            default:   octstr_append_char(result, c); break;
+        }
+    }
+    return result;
+}
+
 /* requesttype = mt_reply or mt_push. for example, auth is only read on mt_push
  * parse body and populate fields, including replacing body for <ud> value and
  * type to text/plain */
-static void get_x_kannel_from_xml(int requesttype , Octstr **type, Octstr **body, 
+static void get_x_kannel_from_xml(int requesttype , Octstr **type, Octstr **body,
                                   List *headers, Octstr **from,
                                   Octstr **to, Octstr **udh,
                                   Octstr **user, Octstr **pass,
@@ -659,156 +799,139 @@ static void get_x_kannel_from_xml(int requesttype , Octstr **type, Octstr **body
                                   Octstr **account, int *pid, int *alt_dcs,
                                   int *rpi, List **tolist, Octstr **charset,
                                   Octstr **binfo, int *priority, Octstr **meta_data)
-{                                    
-    xmlDocPtr doc = NULL;
-    xmlXPathContextPtr xpathCtx = NULL;
-    xmlXPathObjectPtr xpathObj = NULL;
-    xmlChar *xml_string;
+{
     Octstr *text = NULL, *tmp = NULL;
-    
+    Octstr *submit_block, *from_block, *dcs_block, *sr_block, *da_block;
+    List *da_numbers;
+
     if (*body == NULL)
         return;
 
     debug("sms", 0, "XMLParsing: XML: <%s>", octstr_get_cstr(*body));
 
-    /* ok, start parsing */
-    doc = xmlParseMemory(octstr_get_cstr(*body), octstr_len(*body));
-    if (doc == NULL) {
-        error(0, "XMLParsing: Could not parse xmldoc: <%s>", octstr_get_cstr(*body));
-        return;
-    }
-    xpathCtx = xmlXPathNewContext(doc);
-    if (xpathCtx == NULL) {
-        error(0, "XMLParsing: Could not create xpath context.");
-        xmlFreeDoc(doc);
+    /* Get the submit block */
+    submit_block = xml_get_tag(*body, "submit");
+    if (submit_block == NULL) {
+        error(0, "XMLParsing: No <submit> block found");
         return;
     }
 
-#define XPATH_SEARCH_OCTSTR(path, var, nostrip)                                         \
-    do {                                                                                \
-        xpathObj = xmlXPathEvalExpression(BAD_CAST path, xpathCtx);                     \
-        if (xpathObj != NULL && !xmlXPathNodeSetIsEmpty(xpathObj->nodesetval)) {        \
-            xml_string = xmlXPathCastToString(xpathObj);                       \
-            O_DESTROY(var);                                                             \
-            var = octstr_create((const char*) xml_string);                              \
-            if(nostrip == 0)                                                            \
-                octstr_strip_blanks(var);                                               \
-            xmlFree(xml_string);                                                        \
-        }                                                                               \
-        if (xpathObj != NULL) xmlXPathFreeObject(xpathObj);                             \
-    } while(0)
+    /* auth - from block */
+    from_block = xml_get_tag(submit_block, "from");
+    if (from_block != NULL) {
+        if (requesttype == mt_push) {
+            /* user/username */
+            O_DESTROY(*user);
+            *user = xml_get_tag(from_block, "user");
+            if (*user == NULL)
+                *user = xml_get_tag(from_block, "username");
 
-#define XPATH_SEARCH_NUMBER(path, var)                                                  \
-    do {                                                                                \
-        xpathObj = xmlXPathEvalExpression(BAD_CAST path, xpathCtx);                     \
-        if (xpathObj != NULL && !xmlXPathNodeSetIsEmpty(xpathObj->nodesetval)) {        \
-            var = xmlXPathCastToNumber(xpathObj);                                       \
-        }                                                                               \
-        if (xpathObj != NULL) xmlXPathFreeObject(xpathObj);                             \
-    } while(0)
-
-    /* auth */
-    xpathObj = xmlXPathEvalExpression(BAD_CAST "/message/submit/from", xpathCtx);
-    if (xpathObj != NULL && !xmlXPathNodeSetIsEmpty(xpathObj->nodesetval)) {
-        xmlXPathFreeObject(xpathObj);
-        if(requesttype == mt_push) {
-            /* user */
-            XPATH_SEARCH_OCTSTR("/message/submit/from/user", *user, 0);
-            XPATH_SEARCH_OCTSTR("/message/submit/from/username", *user, 0);
-
-            /* pass */
-            XPATH_SEARCH_OCTSTR("/message/submit/from/pass", *pass, 0);
-            XPATH_SEARCH_OCTSTR("/message/submit/from/password", *pass, 0);
+            /* pass/password */
+            O_DESTROY(*pass);
+            *pass = xml_get_tag(from_block, "pass");
+            if (*pass == NULL)
+                *pass = xml_get_tag(from_block, "password");
         }
 
         /* account */
-        XPATH_SEARCH_OCTSTR("/message/submit/from/account", *account, 0);
+        O_DESTROY(*account);
+        *account = xml_get_tag(from_block, "account");
 
         /* binfo */
-        XPATH_SEARCH_OCTSTR("/message/submit/from/binfo", *binfo, 0);
+        O_DESTROY(*binfo);
+        *binfo = xml_get_tag(from_block, "binfo");
+
+        octstr_destroy(from_block);
     }
 
-    XPATH_SEARCH_OCTSTR("/message/submit/oa/number", *from, 0);
+    /* oa/number - sender */
+    tmp = xml_get_tag(submit_block, "oa");
+    if (tmp != NULL) {
+        O_DESTROY(*from);
+        *from = xml_get_tag(tmp, "number");
+        octstr_destroy(tmp);
+    }
 
-    /* to (da/number) Multiple tags */
-    xpathObj = xmlXPathEvalExpression(BAD_CAST "/message/submit/da/number/text()", xpathCtx);
-    if (xpathObj != NULL && !xmlXPathNodeSetIsEmpty(xpathObj->nodesetval)) {
-        int i;
-
-        *tolist = gwlist_create();
-        for (i = 0; i < xpathObj->nodesetval->nodeNr; i++) {
-            if (xpathObj->nodesetval->nodeTab[i]->type != XML_TEXT_NODE)
-                continue;
-            xml_string = xmlXPathCastNodeToString(xpathObj->nodesetval->nodeTab[i]);
-            tmp = octstr_create((const char*) xpathObj->nodesetval->nodeTab[i]->content);
-            xmlFree(xml_string);
-            octstr_strip_blanks(tmp);
-            gwlist_append(*tolist, tmp);
+    /* da/number - recipients (multiple) */
+    da_block = xml_get_tag(submit_block, "da");
+    if (da_block != NULL) {
+        da_numbers = xml_get_all_tags(da_block, "number");
+        if (gwlist_len(da_numbers) > 0) {
+            if (*tolist != NULL)
+                gwlist_destroy(*tolist, octstr_destroy_item);
+            *tolist = da_numbers;
+        } else {
+            gwlist_destroy(da_numbers, octstr_destroy_item);
         }
+        octstr_destroy(da_block);
     }
-    if (xpathObj != NULL)
-        xmlXPathFreeObject(xpathObj);
 
     /* udh */
-    XPATH_SEARCH_OCTSTR("/message/submit/udh", *udh, 0);
-    if(*udh != NULL && octstr_hex_to_binary(*udh) == -1)
+    O_DESTROY(*udh);
+    *udh = xml_get_tag(submit_block, "udh");
+    if (*udh != NULL && octstr_hex_to_binary(*udh) == -1)
         octstr_url_decode(*udh);
 
     /* smsc */
-    XPATH_SEARCH_OCTSTR("/message/submit/smsc", *smsc, 0);
+    O_DESTROY(*smsc);
+    *smsc = xml_get_tag(submit_block, "smsc");
     if (*smsc == NULL)
-        XPATH_SEARCH_OCTSTR("/message/submit/to", *smsc, 0);
+        *smsc = xml_get_tag(submit_block, "to");
 
     /* pid */
-    XPATH_SEARCH_NUMBER("/message/submit/pid", *pid);
+    *pid = xml_get_number(submit_block, "pid", *pid);
 
     /* rpi */
-    XPATH_SEARCH_NUMBER("/message/submit/rpi", *rpi);
+    *rpi = xml_get_number(submit_block, "rpi", *rpi);
 
-    /* dcs* (dcs/ *) */
-    /* mclass (dcs/mclass) */
-    XPATH_SEARCH_NUMBER("/message/submit/dcs/mclass", *mclass);
-    /* mwi (dcs/mwi) */
-    XPATH_SEARCH_NUMBER("/message/submit/dcs/mwi", *mwi);
-    /* coding (dcs/coding) */
-    XPATH_SEARCH_NUMBER("/message/submit/dcs/coding", *coding);
-    /* compress (dcs/compress) */
-    XPATH_SEARCH_NUMBER("/message/submit/dcs/compress", *compress);
-    /* alt-dcs (dcs/alt-dcs) */
-    XPATH_SEARCH_NUMBER("/message/submit/dcs/alt-dcs", *alt_dcs);
+    /* dcs block */
+    dcs_block = xml_get_tag(submit_block, "dcs");
+    if (dcs_block != NULL) {
+        *mclass = xml_get_number(dcs_block, "mclass", *mclass);
+        *mwi = xml_get_number(dcs_block, "mwi", *mwi);
+        *coding = xml_get_number(dcs_block, "coding", *coding);
+        *compress = xml_get_number(dcs_block, "compress", *compress);
+        *alt_dcs = xml_get_number(dcs_block, "alt-dcs", *alt_dcs);
+        octstr_destroy(dcs_block);
+    }
 
-
-    /* statusrequest* (statusrequest/ *) */
-    /* dlr-mask (statusrequest/dlr-mask) */
-    XPATH_SEARCH_NUMBER("/message/submit/statusrequest/dlr-mask", *dlr_mask);
-    /* dlr-url */
-    XPATH_SEARCH_OCTSTR("/message/submit/statusrequest/dlr-url", *dlr_url, 0);
+    /* statusrequest block */
+    sr_block = xml_get_tag(submit_block, "statusrequest");
+    if (sr_block != NULL) {
+        *dlr_mask = xml_get_number(sr_block, "dlr-mask", *dlr_mask);
+        O_DESTROY(*dlr_url);
+        *dlr_url = xml_get_tag(sr_block, "dlr-url");
+        octstr_destroy(sr_block);
+    }
 
     /* validity (vp/delay) */
-    XPATH_SEARCH_NUMBER("/message/submit/vp/delay", *validity);
+    tmp = xml_get_tag(submit_block, "vp");
+    if (tmp != NULL) {
+        *validity = xml_get_number(tmp, "delay", *validity);
+        octstr_destroy(tmp);
+    }
 
     /* deferred (timing/delay) */
-    XPATH_SEARCH_NUMBER("/message/submit/timing/delay", *deferred);
+    tmp = xml_get_tag(submit_block, "timing");
+    if (tmp != NULL) {
+        *deferred = xml_get_number(tmp, "delay", *deferred);
+        octstr_destroy(tmp);
+    }
 
     /* priority */
-    XPATH_SEARCH_NUMBER("/message/submit/priority", *priority);
+    *priority = xml_get_number(submit_block, "priority", *priority);
 
     /* meta_data */
-    XPATH_SEARCH_OCTSTR("/message/submit/meta-data", *meta_data, 0);
-    
+    O_DESTROY(*meta_data);
+    *meta_data = xml_get_tag(submit_block, "meta-data");
+
     /* charset from <?xml...encoding=?> */
     O_DESTROY(*charset);
-    if (doc->encoding != NULL)
-        *charset = octstr_create((const char*) doc->encoding);
-    else
-        *charset = octstr_create("UTF-8");
+    *charset = xml_get_encoding(*body);
 
-    /* text */
-    /* first try to receive type, default text */
-    tmp = NULL;
-    XPATH_SEARCH_OCTSTR("/message/submit/ud/@type", tmp, 0);
-    /* now receive message body */
-    XPATH_SEARCH_OCTSTR("/message/submit/ud", text, 0);
+    /* ud - message text */
+    tmp = xml_get_attr(submit_block, "ud", "type");
+    text = xml_get_tag(submit_block, "ud");
     if (text != NULL) {
         if (tmp != NULL && octstr_str_case_compare(tmp, "binary") == 0)
             octstr_hex_to_binary(text);
@@ -818,7 +941,7 @@ static void get_x_kannel_from_xml(int requesttype , Octstr **type, Octstr **body
     octstr_destroy(tmp);
 
     octstr_truncate(*body, 0);
-    if(text != NULL) {
+    if (text != NULL) {
         octstr_append(*body, text);
         octstr_destroy(text);
     }
@@ -826,10 +949,7 @@ static void get_x_kannel_from_xml(int requesttype , Octstr **type, Octstr **body
     O_DESTROY(*type);
     *type = octstr_create("text/plain");
 
-    if (xpathCtx != NULL)
-        xmlXPathFreeContext(xpathCtx);
-    if (doc != NULL)
-        xmlFreeDoc(doc);
+    octstr_destroy(submit_block);
 }
 
 
@@ -1457,12 +1577,9 @@ static int obey_request(Octstr **result, URLTranslation *trans, Msg *msg)
 
 #define OCTSTR_APPEND_XML_OCTSTR(xml, tag, text) \
         do { \
-            xmlDocPtr tmp_doc = xmlNewDoc(BAD_CAST "1.0"); \
-            xmlChar *xml_escaped = NULL; \
-            if (text != NULL) xml_escaped = xmlEncodeEntitiesReentrant(tmp_doc, BAD_CAST octstr_get_cstr(text)); \
-            octstr_format_append(xml, "  \t\t<" tag ">%s</" tag ">\n", (xml_escaped != NULL ? (char*)xml_escaped : "")); \
-            if (xml_escaped != NULL) xmlFree(xml_escaped); \
-            xmlFreeDoc(tmp_doc); \
+            Octstr *escaped = xml_escape(text); \
+            octstr_format_append(xml, "  \t\t<" tag ">%s</" tag ">\n", octstr_get_cstr(escaped)); \
+            octstr_destroy(escaped); \
         } while(0)
 
 #define OCTSTR_APPEND_XML_NUMBER(xml, tag, value)          \
@@ -2738,82 +2855,6 @@ error:
 }
 
 
-/*
- * Create and send an SMS message from a XML-RPC request.
- * Answer with a valid XML-RPC response for a successful request.
- * 
- * function signature: boolean sms.send(struct)
- *
- * The <struct> MUST contain at least <member>'s with name 'username',
- * 'password', 'to' and MAY contain additional <member>'s with name
- * 'from', 'account', 'smsc', 'udh', 'dlrmask', 'dlrurl'. All values
- * are of type string.
- */
-static Octstr *smsbox_xmlrpc_post(List *headers, Octstr *body,
-                                  Octstr *client_ip, int *status)
-{
-    Octstr *ret, *type;
-    Octstr *charset;
-    Octstr *output;
-    Octstr *method_name;
-    XMLRPCDocument *msg;
-
-    charset = NULL;
-    ret = NULL;
-
-    /*
-     * check if the content type is valid for this request
-     */
-    http_header_get_content_type(headers, &type, &charset);
-    if (octstr_case_compare(type, octstr_imm("text/xml")) != 0) {
-        error(0, "Unsupported content-type '%s'", octstr_get_cstr(type));
-        *status = HTTP_BAD_REQUEST;
-        ret = octstr_format("Unsupported content-type '%s'", octstr_get_cstr(type));
-    } else {
-
-        /*
-         * parse the body of the request and check if it is a valid XML-RPC
-         * structure
-         */
-        msg = xmlrpc_parse_call(body);
-
-        if ((xmlrpc_parse_status(msg) != XMLRPC_COMPILE_OK) && 
-            ((output = xmlrpc_parse_error(msg)) != NULL)) {
-            /* parse failure */
-            error(0, "%s", octstr_get_cstr(output));
-            *status = HTTP_BAD_REQUEST;
-            ret = octstr_format("%s", octstr_get_cstr(output));
-            octstr_destroy(output);
-        } else {
-
-            /*
-             * at least the structure has been valid, now check for the
-             * required methodName and the required variables
-             */
-            if (octstr_case_compare((method_name = xmlrpc_get_call_name(msg)), 
-                                    octstr_imm("sms.send")) != 0) {
-                error(0, "Unknown method name '%s'", octstr_get_cstr(method_name));
-                *status = HTTP_BAD_REQUEST;
-                ret = octstr_format("Unkown method name '%s'", 
-                                    octstr_get_cstr(method_name));
-            } else {
-
-                /*
-                 * TODO: check for the required struct members
-                 */
-
-            }
-        }
-
-        xmlrpc_destroy_call(msg);
-    }
-    
-    return ret;
-}
-
-
-
-
 static void sendsms_thread(void *arg)
  {
     HTTPClient *client;
@@ -2848,17 +2889,6 @@ static void sendsms_thread(void *arg)
                 answer = smsbox_req_sendsms(args, ip, &status, client);
             else
                 answer = smsbox_sendsms_post(hdrs, body, ip, &status, client);
-        }
-        /* XML-RPC */
-        else if (octstr_compare(url, xmlrpc_url) == 0) {
-            /*
-             * XML-RPC request needs to have a POST body
-             */
-            if (body == NULL) {
-                answer = octstr_create("Incomplete request.");
-                status = HTTP_BAD_REQUEST;
-            } else
-                answer = smsbox_xmlrpc_post(hdrs, body, ip, &status);
         }
         /* add aditional URI compares here */
         else {
@@ -3082,8 +3112,6 @@ static Cfg *init_smsbox(Cfg *cfg)
      */
     if ((sendsms_url = cfg_get(grp, octstr_imm("sendsms-url"))) == NULL)
         sendsms_url = octstr_imm("/cgi-bin/sendsms");
-    if ((xmlrpc_url = cfg_get(grp, octstr_imm("xmlrpc-url"))) == NULL)
-        xmlrpc_url = octstr_imm("/cgi-bin/xmlrpc");
 
     global_sender = cfg_get(grp, octstr_imm("global-sender"));
     accepted_chars = cfg_get(grp, octstr_imm("sendsms-chars"));
@@ -3295,7 +3323,6 @@ int main(int argc, char **argv)
     octstr_destroy(accepted_chars);
     octstr_destroy(smsbox_id);
     octstr_destroy(sendsms_url);
-    octstr_destroy(xmlrpc_url);
     octstr_destroy(reply_emptymessage);
     octstr_destroy(reply_requestfailed);
     octstr_destroy(reply_couldnotfetch);

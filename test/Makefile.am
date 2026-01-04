@@ -36,6 +36,5 @@ noinst_PROGRAMS = \
 	test_urltrans \
 	test_uuid \
 	test_wakeup \
-	test_xmlrpc \
 	timestamp \
 	udpfeed

@@ -62,7 +62,6 @@
 
 #include <errno.h>
 #include <sys/unistd.h>
-#include <libxml/xmlversion.h>
 
 #include "gwlib/gwlib.h"
 #include "shared.h"

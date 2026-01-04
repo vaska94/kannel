@@ -62,12 +62,9 @@
  * needless conversions.
  *
  * Currently only GSM and Latin-1 are supported with Kannel specific
- * functions. This module contains also wrappers for libxml2 character
- * set conversion functions that work either from or to UTF-8. More
- * about libxml2's character set support on the header file
- * <libxml/encoding.h> or the implementation file encoding.c. Short
- * version: it has a few basic character set supports built in; for
- * the rest iconv is used.
+ * functions. This module also provides iconv-based character set
+ * conversion functions for converting to/from UTF-8 and between
+ * arbitrary character sets.
  *
  * Richard Braakman
  * Tuomas Luttinen
@@ -75,9 +72,6 @@
 
 #ifndef CHARSET_H
 #define CHARSET_H
-
-#include <libxml/encoding.h>
-#include <libxml/tree.h>
 
 /*
  * Initialize the charset subsystem.

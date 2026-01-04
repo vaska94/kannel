@@ -46,8 +46,7 @@ libgwlib_la_SOURCES = \
 	socket.c \
 	ssl.c \
 	thread.c \
-	utils.c \
-	xmlrpc.c
+	utils.c
     
 
 include_HEADERS = \
@@ -90,6 +89,5 @@ include_HEADERS = \
 	ssl.h \
 	thread.h \
 	utils.h \
-	xmlrpc.h \
 	cfg.def \
 	html-entities.def

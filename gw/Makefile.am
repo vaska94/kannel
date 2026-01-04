@@ -30,7 +30,6 @@ libgw_la_SOURCES = \
 	shared.c \
 	sms.c \
 	urltrans.c \
-	xml_shared.c \
 	smsc/emimsg.c \
 	smsc/smasi_pdu.c \
 	smsc/smpp_pdu.c
@@ -101,7 +100,6 @@ nobase_include_HEADERS = \
 	smscconn_p.h \
 	urltrans.h \
 	xml_definitions.h \
-	xml_shared.h \
 	smsc/emimsg.h \
 	smsc/smasi_pdu.h \
 	smsc/smpp_pdu.h \

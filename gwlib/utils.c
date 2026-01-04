@@ -554,7 +554,6 @@ Octstr *version_report_string(const char *boxname)
     return octstr_format(GW_NAME " %s version `%s'.\nBuild `%s', compiler `%s'.\n"
                          "System %s, release %s, version %s, machine %s.\n"
              "Hostname %s, IP %s.\n"
-             "Libxml version %s.\n"
 #ifdef HAVE_LIBSSL
              "Using "
 #ifdef HAVE_WTLS_OPENSSL
@@ -595,7 +594,6 @@ Octstr *version_report_string(const char *boxname)
              u.sysname, u.release, u.version, u.machine,
              octstr_get_cstr(get_official_name()),
              octstr_get_cstr(get_official_ip()),
-             LIBXML_DOTTED_VERSION,
 #ifdef HAVE_LIBSSL
              OPENSSL_VERSION_TEXT,
 #endif

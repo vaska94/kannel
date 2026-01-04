@@ -345,49 +345,6 @@ int main(void) {
   [AC_MSG_RESULT(no)],
   [AC_MSG_RESULT([cross compiling - assuming supported]); AC_DEFINE([HAVE_SEMAPHORE], [1])])
 
-dnl Check if we have libxml2 installed and which version it is.
-dnl Kannel requires currently at least version 2.6.0 of libxml2.
-dnl Try xml2-config first, then pkg-config.
-
-AC_CONFIG_SECTION([Checking for libxml2 support])
-xml_ver_required="2.6.0"
-have_libxml="no"
-
-AC_PATH_PROG(XML2_CONFIG, xml2-config, no)
-if test "$XML2_CONFIG" != "no"; then
-  AC_MSG_CHECKING([for libxml2 >= $xml_ver_required via xml2-config])
-  XML2_VERSION=`$XML2_CONFIG --version`
-  AC_CHECK_VERSION($XML2_VERSION, $xml_ver_required, 
-  [ XML2_LIBS=`$XML2_CONFIG --libs`
-    XML2_CFLAGS=`$XML2_CONFIG --cflags`
-    AC_MSG_RESULT([found $XML2_VERSION])
-    have_libxml="yes"
-  ],[
-    AC_MSG_RESULT([not found])
-  ])
-fi
-
-if test "$have_libxml" = "no" && test -n "$PKG_CONFIG"; then
-  AC_MSG_CHECKING([for libxml2 >= $xml_ver_required via pkg-config])
-  if `$PKG_CONFIG --exists "libxml-2.0 >= $xml_ver_required"`; then
-    XML2_LIBS=`$PKG_CONFIG --libs libxml-2.0`
-    XML2_CFLAGS=`$PKG_CONFIG --cflags libxml-2.0`
-    XML2_VERSION=`$PKG_CONFIG --modversion libxml-2.0`
-    AC_MSG_RESULT([found $XML2_VERSION])
-    have_libxml="yes"
-  else
-    AC_MSG_RESULT([not found]) 
-  fi
-fi
-
-if test "$have_libxml" = "yes"; then
-  CFLAGS="$CFLAGS $XML2_CFLAGS"
-  LIBS="$LIBS $XML2_LIBS"
-else
-  AC_MSG_ERROR(m4_normalize([libxml2 not found or too old. You MUST have \
-                libxml $xml_ver_required or more recent installed.]))
-fi
-
 dnl Implement the --enable-pcre option. This will set HAVE_PCRE in gw-config.h
 dnl accordingly and enable the usage of Perl compatible regular expressions.
 dnl As POSIX regex is a subset of PCRE, we map the posixpcre API calls, so 

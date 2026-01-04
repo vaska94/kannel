@@ -153,3 +153,5 @@ benchmarks/*.dat
 # Generated configuration
 config.nice
 gw-config*.dirstamp
+ar-lib
+gw-config
