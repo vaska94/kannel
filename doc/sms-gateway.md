@@ -91,7 +91,7 @@ The `/api/sendsms` endpoint enforces:
 |-------|----------|-------------|
 | `to` | Yes | Recipient phone number |
 | `text` | Yes | Message text |
-| `from` | No | Sender ID |
+| `from` | Yes* | Sender ID (*optional if `global-sender` configured) |
 | `smsc` | No | Force specific SMSC |
 | `charset` | No | Character set (default: UTF-8) |
 | `coding` | No | Data coding (0=GSM, 1=binary, 2=UCS2) |
