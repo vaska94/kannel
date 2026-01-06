@@ -211,9 +211,74 @@ Or for no reply, return empty 200 or `204 No Content`.
 ### Check Status
 
 ```bash
+# Plain text
 curl "http://localhost:13000/status?password=secret"
+
+# XML format
 curl "http://localhost:13000/status.xml?password=secret"
+
+# JSON format
+curl "http://localhost:13000/status.json?password=secret"
 ```
+
+### JSON Status Response
+
+The `/status.json` endpoint returns comprehensive gateway status in JSON format:
+
+```json
+{
+  "version": "1.7.0",
+  "status": "running",
+  "uptime": {"days": 0, "hours": 2, "minutes": 15, "seconds": 30},
+  "sms": {
+    "received": {"total": 1000, "queued": 5},
+    "sent": {"total": 950, "queued": 10},
+    "store_size": 15,
+    "inbound_rate": [1.5, 1.2, 1.0],
+    "outbound_rate": [1.4, 1.1, 0.9]
+  },
+  "dlr": {
+    "received": 900,
+    "sent": 850,
+    "inbound_rate": [1.3, 1.1, 0.8],
+    "outbound_rate": [1.2, 1.0, 0.7],
+    "queued": 0,
+    "storage": "redis"
+  },
+  "boxes": [
+    {
+      "type": "smsbox",
+      "id": "smsbox1",
+      "ip": "127.0.0.1",
+      "queue": 5,
+      "uptime": {"days": 0, "hours": 2, "minutes": 14, "seconds": 50},
+      "ssl": false
+    }
+  ],
+  "smscs": [
+    {
+      "id": "smpp1",
+      "admin_id": "smpp1",
+      "name": "SMPP:smsc.example.com:2775",
+      "status": "online 3600s",
+      "failed": 10,
+      "queued": 5,
+      "sms": {
+        "received": 500, "sent": 480,
+        "inbound_rate": [0.8, 0.6, 0.5],
+        "outbound_rate": [0.7, 0.5, 0.4]
+      },
+      "dlr": {
+        "received": 450, "sent": 420,
+        "inbound_rate": [0.6, 0.5, 0.4],
+        "outbound_rate": [0.5, 0.4, 0.3]
+      }
+    }
+  ]
+}
+```
+
+**Rate arrays**: `[1sec, 5sec, 15sec]` - messages per second averaged over these intervals.
 
 ### Health Check Endpoint
 
