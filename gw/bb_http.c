@@ -70,6 +70,7 @@
 
 #include "gwlib/gwlib.h"
 #include "bearerbox.h"
+#include "admin_panel.h"
 
 /* passed from bearerbox core */
 
@@ -393,6 +394,22 @@ static struct httpd_command {
     { NULL , NULL } /* terminate list */
 };
 
+static void httpd_serve_admin(HTTPClient *client, List *headers)
+{
+    List *response_headers;
+    Octstr *html;
+
+    http_destroy_headers(headers);
+    response_headers = gwlist_create();
+
+    html = octstr_create(admin_panel_html);
+    http_header_add(response_headers, "Content-Type", "text/html; charset=utf-8");
+    http_send_reply(client, HTTP_OK, response_headers, html);
+    octstr_destroy(html);
+
+    http_destroy_headers(response_headers);
+}
+
 static void httpd_serve_health(HTTPClient *client, List *headers)
 {
     Octstr *reply;
@@ -486,6 +503,16 @@ static void httpd_serve(HTTPClient *client, Octstr *ourl, List *headers,
         octstr_destroy(body);
         http_destroy_cgiargs(cgivars);
         httpd_serve_health(client, headers);
+        return;
+    }
+
+    /* Handle / and /admin endpoints - serves admin panel HTML */
+    if (octstr_len(url) == 0 || octstr_str_compare(url, "admin") == 0) {
+        octstr_destroy(url);
+        octstr_destroy(ourl);
+        octstr_destroy(body);
+        http_destroy_cgiargs(cgivars);
+        httpd_serve_admin(client, headers);
         return;
     }
 
@@ -631,6 +658,8 @@ int httpadmin_start(Cfg *cfg)
 
     http_open_port_if(ha_port, ssl, ha_interface);
 
+    info(0, "Admin panel available at / and /admin");
+
     if (gwthread_create(httpadmin_run, NULL) == -1)
 	panic(0, "Failed to start a new thread for HTTP admin");
 
@@ -643,7 +672,7 @@ void httpadmin_stop(void)
 {
     http_close_all_ports();
     gwthread_join_every(httpadmin_run);
-    octstr_destroy(ha_interface);    
+    octstr_destroy(ha_interface);
     octstr_destroy(ha_password);
     octstr_destroy(ha_status_pw);
     octstr_destroy(ha_allow_ip);

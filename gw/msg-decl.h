@@ -75,6 +75,7 @@ MSG(admin,
     {
         INTEGER(command)
         OCTSTR(boxc_id)
+        INTEGER(http_port)
     })
     
 MSG(sms,

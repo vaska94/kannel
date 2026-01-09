@@ -141,6 +141,7 @@ typedef struct _boxc {
     Octstr        *boxc_id; /* identifies the connected smsbox instance */
     /* used to mark connection usable or still waiting for ident. msg */
     volatile int routable;
+    long          http_port; /* smsbox sendsms-port for admin panel */
 } Boxc;
 
 
@@ -411,6 +412,9 @@ static void boxc_receiver(void *arg)
                           octstr_get_cstr(conn->boxc_id),
                           octstr_get_cstr(conn->client_ip));
                 }
+
+                /* Store the smsbox HTTP port for admin panel */
+                conn->http_port = msg->admin.http_port;
 
                 conn->routable = 1;
                 /* wakeup the dequeue thread */
@@ -1133,11 +1137,13 @@ Octstr *boxc_status(int status_type)
                     );
             else if (status_type == BBSTATUS_JSON)
                 octstr_format_append(tmp, "%s{\"type\":\"smsbox\",\"id\":\"%s\",\"ip\":\"%s\","
-                    "\"queue\":%ld,\"uptime\":{\"days\":%ld,\"hours\":%ld,\"minutes\":%ld,\"seconds\":%ld},"
+                    "\"http_port\":%ld,\"queue\":%ld,"
+                    "\"uptime\":{\"days\":%ld,\"hours\":%ld,\"minutes\":%ld,\"seconds\":%ld},"
                     "\"ssl\":%s}",
                     boxes > 0 ? "," : "",
                     (bi->boxc_id ? octstr_get_cstr(bi->boxc_id) : ""),
                     octstr_get_cstr(bi->client_ip),
+                    bi->http_port,
                     gwlist_len(bi->incoming) + dict_key_count(bi->sent),
                     t/3600/24, t/3600%24, t/60%60, t%60,
 #ifdef HAVE_LIBSSL

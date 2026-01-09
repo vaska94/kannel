@@ -165,6 +165,7 @@ static void identify_to_bearerbox(void)
     msg = msg_create(admin);
     msg->admin.command = cmd_identify;
     msg->admin.boxc_id = octstr_duplicate(smsbox_id);
+    msg->admin.http_port = sendsms_port;
     write_to_bearerbox(msg);
 }
 
@@ -3412,6 +3413,9 @@ int main(int argc, char **argv)
     http_header_add(sendsms_reply_hdrs, "Content-type", "text/html");
     http_header_add(sendsms_reply_hdrs, "Pragma", "no-cache");
     http_header_add(sendsms_reply_hdrs, "Cache-Control", "no-cache");
+    http_header_add(sendsms_reply_hdrs, "Access-Control-Allow-Origin", "*");
+    http_header_add(sendsms_reply_hdrs, "Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    http_header_add(sendsms_reply_hdrs, "Access-Control-Allow-Headers", "Content-Type, X-API-Key");
 
 
     caller = http_caller_create();

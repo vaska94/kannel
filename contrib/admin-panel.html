@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kannel Admin</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f1419;
+            color: #e7e9ea;
+            min-height: 100vh;
+        }
+        .login-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .login-box {
+            background: #16181c;
+            border: 1px solid #2f3336;
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
+        }
+        .login-box h1 { font-size: 24px; margin-bottom: 8px; }
+        .login-box p { color: #71767b; font-size: 14px; margin-bottom: 24px; }
+        .login-box input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #1d1f23;
+            border: 1px solid #2f3336;
+            border-radius: 8px;
+            color: #e7e9ea;
+            font-size: 15px;
+            margin-bottom: 16px;
+        }
+        .login-box input:focus { outline: none; border-color: #1d9bf0; }
+        .login-box .btn { width: 100%; padding: 12px; font-size: 15px; }
+        .login-error { color: #f4212e; font-size: 13px; margin-bottom: 16px; display: none; }
+        .app { display: none; padding: 20px; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #2f3336;
+        }
+        .header h1 { font-size: 24px; font-weight: 600; }
+        .header-right { display: flex; align-items: center; gap: 16px; }
+        .health {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .health.ok { background: #0d3d2e; color: #00ba7c; }
+        .health.error { background: #3d1d1d; color: #f4212e; }
+        .health.loading { background: #2f3336; color: #71767b; }
+        .health-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        .logout-btn {
+            background: none;
+            border: 1px solid #2f3336;
+            color: #71767b;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .logout-btn:hover { border-color: #f4212e; color: #f4212e; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .card {
+            background: #16181c;
+            border: 1px solid #2f3336;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .card h2 {
+            font-size: 14px;
+            color: #71767b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+        }
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #2f3336;
+        }
+        .stat:last-child { border-bottom: none; }
+        .stat-label { color: #71767b; }
+        .stat-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+        .smsc-list { display: flex; flex-direction: column; gap: 12px; }
+        .smsc-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #1d1f23;
+            border-radius: 8px;
+        }
+        .smsc-info { display: flex; flex-direction: column; gap: 4px; }
+        .smsc-id { font-weight: 600; }
+        .smsc-status { font-size: 12px; }
+        .smsc-status.online { color: #00ba7c; }
+        .smsc-status.offline { color: #f4212e; }
+        .smsc-status.connecting { color: #ffd400; }
+        .smsc-stats { font-size: 12px; color: #71767b; }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-start { background: #00ba7c; color: #fff; }
+        .btn-stop { background: #f4212e; color: #fff; }
+        .btn-primary { background: #1d9bf0; color: #fff; }
+        .btn-secondary { background: #2f3336; color: #e7e9ea; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: #71767b;
+            margin-bottom: 6px;
+        }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            background: #1d1f23;
+            border: 1px solid #2f3336;
+            border-radius: 6px;
+            color: #e7e9ea;
+            font-size: 14px;
+        }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none;
+            border-color: #1d9bf0;
+        }
+        .form-row { display: flex; gap: 12px; }
+        .form-row .form-group { flex: 1; }
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        .alert.success { background: #0d3d2e; color: #00ba7c; }
+        .alert.error { background: #3d1d1d; color: #f4212e; }
+        .rates { display: flex; gap: 16px; flex-wrap: wrap; }
+        .rate-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 20px;
+            background: #1d1f23;
+            border-radius: 8px;
+            min-width: 80px;
+        }
+        .rate-value { font-size: 24px; font-weight: 700; }
+        .rate-label { font-size: 11px; color: #71767b; margin-top: 4px; }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+        .uptime { font-size: 13px; color: #71767b; }
+        .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+        .tab {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            color: #71767b;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tab.active { color: #e7e9ea; border-bottom-color: #1d9bf0; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .empty { color: #71767b; font-style: italic; padding: 20px; text-align: center; }
+        .refresh-info { font-size: 12px; color: #71767b; }
+        .queue-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .queue-table th, .queue-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #2f3336; }
+        .queue-table th { color: #71767b; font-weight: 500; background: #1d1f23; }
+        .queue-table tr:hover { background: #1d1f23; }
+        .queue-table .msg-id { font-family: monospace; font-size: 11px; color: #71767b; }
+        .queue-table .msg-text { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .mode-badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        .mode-badge.admin { background: #0d3d2e; color: #00ba7c; }
+        .mode-badge.readonly { background: #3d2d1d; color: #ffd400; }
+        .github-link { color: #71767b; display: flex; align-items: center; transition: color 0.15s; }
+        .github-link:hover { color: #e7e9ea; }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-box">
+            <h1>Kannel Admin</h1>
+            <p>Enter admin password to continue</p>
+            <div class="login-error" id="loginError">Invalid password</div>
+            <input type="password" id="loginPassword" placeholder="Password" autofocus>
+            <button class="btn btn-primary" onclick="login()">Login</button>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="app" id="app">
+        <div class="header">
+            <div>
+                <h1>Kannel Admin</h1>
+                <span class="uptime" id="uptime">-</span>
+            </div>
+            <div class="header-right">
+                <span class="refresh-info">Auto-refresh: 5s</span>
+                <div class="mode-badge" id="modeBadge" title="Access level"></div>
+                <div class="health loading" id="health">
+                    <span class="health-dot"></span>
+                    <span>Connecting...</span>
+                </div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+                <a href="https://github.com/vaska94/kannel" target="_blank" class="github-link" title="GitHub">
+                    <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                </a>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="dashboard">Dashboard</button>
+            <button class="tab" data-tab="queue">Queue</button>
+            <button class="tab" data-tab="send">Send SMS</button>
+            <button class="tab" data-tab="controls">Controls</button>
+        </div>
+
+        <div id="dashboard" class="tab-content active">
+            <div class="grid">
+                <div class="card">
+                    <h2>SMS Traffic</h2>
+                    <div class="rates">
+                        <div class="rate-item">
+                            <span class="rate-value" id="smsInRate">-</span>
+                            <span class="rate-label">IN/min</span>
+                        </div>
+                        <div class="rate-item">
+                            <span class="rate-value" id="smsOutRate">-</span>
+                            <span class="rate-label">OUT/min</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 16px;">
+                        <div class="stat">
+                            <span class="stat-label">Received Total</span>
+                            <span class="stat-value" id="smsRecvTotal">-</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Sent Total</span>
+                            <span class="stat-value" id="smsSentTotal">-</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Queued (recv)</span>
+                            <span class="stat-value" id="smsRecvQueued">-</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Queued (send)</span>
+                            <span class="stat-value" id="smsSentQueued">-</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Store Size</span>
+                            <span class="stat-value" id="storeSize">-</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>DLR Traffic</h2>
+                    <div class="rates">
+                        <div class="rate-item">
+                            <span class="rate-value" id="dlrInRate">-</span>
+                            <span class="rate-label">IN/min</span>
+                        </div>
+                        <div class="rate-item">
+                            <span class="rate-value" id="dlrOutRate">-</span>
+                            <span class="rate-label">OUT/min</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 16px;">
+                        <div class="stat">
+                            <span class="stat-label">Received</span>
+                            <span class="stat-value" id="dlrRecv">-</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Sent</span>
+                            <span class="stat-value" id="dlrSent">-</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Queued</span>
+                            <span class="stat-value" id="dlrQueued">-</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Storage</span>
+                            <span class="stat-value" id="dlrStorage">-</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>Connected Boxes</h2>
+                    <div id="boxesList" class="smsc-list">
+                        <div class="empty">No boxes connected</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>SMSC Connections</h2>
+                    <div id="smscList" class="smsc-list">
+                        <div class="empty">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="queue" class="tab-content">
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                    <h2 style="margin:0">Message Queue</h2>
+                    <button class="btn btn-secondary" onclick="fetchQueue()">Refresh</button>
+                </div>
+                <div id="queueList">
+                    <div class="empty">Click Refresh to load queue</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="send" class="tab-content">
+            <div class="card" style="max-width: 500px;">
+                <h2>Send Test SMS</h2>
+                <div id="sendAlert"></div>
+                <div class="form-group">
+                    <label>From (Sender ID)</label>
+                    <input type="text" id="smsFrom" placeholder="KANNEL">
+                </div>
+                <div class="form-group">
+                    <label>To (Phone Number)</label>
+                    <input type="text" id="smsTo" placeholder="+1234567890">
+                </div>
+                <div class="form-group">
+                    <label>Message</label>
+                    <textarea id="smsText" rows="4" placeholder="Your message here..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>SMSBox</label>
+                        <div style="display:flex;gap:8px">
+                            <select id="smsSmsbox" style="flex:1"><option value="">Select smsbox...</option></select>
+                            <button class="btn btn-secondary" onclick="testSmsAuth()" id="testAuthBtn" title="Test if password works with smsbox">Test</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>SMSC (optional)</label>
+                        <select id="smsSmsc"><option value="">Default</option></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>DLR Mask</label>
+                    <input type="number" id="smsDlrMask" value="31" min="0" max="31" style="max-width:100px">
+                </div>
+                <button class="btn btn-primary" onclick="sendSms()" id="sendBtn">Send SMS</button>
+            </div>
+        </div>
+
+        <div id="controls" class="tab-content">
+            <div class="grid">
+                <div class="card">
+                    <h2>Gateway Control</h2>
+                    <div id="controlAlert"></div>
+                    <p style="color: #71767b; font-size: 13px; margin-bottom: 16px;">
+                        Current status: <strong id="gwStatus">-</strong>
+                    </p>
+                    <div class="actions">
+                        <button class="btn btn-secondary" onclick="gwCommand('suspend')">Suspend</button>
+                        <button class="btn btn-secondary" onclick="gwCommand('resume')">Resume</button>
+                        <button class="btn btn-secondary" onclick="gwCommand('isolate')">Isolate</button>
+                        <button class="btn btn-secondary" onclick="gwCommand('flush-dlr')">Flush DLR</button>
+                    </div>
+                    <div class="actions">
+                        <button class="btn btn-secondary" onclick="gwCommand('graceful-restart')">Graceful Restart</button>
+                        <button class="btn btn-stop" onclick="if(confirm('Shutdown gateway?')) gwCommand('shutdown')">Shutdown</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>Log Level</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Set Log Level (0=debug, 4=panic)</label>
+                            <input type="number" id="logLevel" value="0" min="0" max="4">
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="setLogLevel()">Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let refreshInterval = null;
+        let smsboxes = []; // Store smsbox connection info
+        let isAdminMode = false;
+
+        // Session management
+        function getPassword() {
+            return sessionStorage.getItem('kannel_admin_password');
+        }
+
+        function setPassword(pwd) {
+            sessionStorage.setItem('kannel_admin_password', pwd);
+        }
+
+        function clearPassword() {
+            sessionStorage.removeItem('kannel_admin_password');
+            sessionStorage.removeItem('kannel_admin_mode');
+        }
+
+        function getAdminMode() {
+            return sessionStorage.getItem('kannel_admin_mode') === 'true';
+        }
+
+        function setAdminMode(mode) {
+            isAdminMode = mode;
+            sessionStorage.setItem('kannel_admin_mode', mode ? 'true' : 'false');
+            updateModeBadge();
+        }
+
+        function updateModeBadge() {
+            const el = document.getElementById('modeBadge');
+            if (isAdminMode) {
+                el.className = 'mode-badge admin';
+                el.textContent = 'Admin';
+                el.title = 'Full admin access';
+            } else {
+                el.className = 'mode-badge readonly';
+                el.textContent = 'View Only';
+                el.title = 'Status password - read-only access';
+            }
+        }
+
+        async function checkAdminAccess() {
+            const pwd = getPassword();
+            try {
+                const res = await fetch(`/log-level?password=${encodeURIComponent(pwd)}`);
+                const text = await res.text();
+                setAdminMode(!text.includes('Denied'));
+            } catch (e) {
+                setAdminMode(false);
+            }
+        }
+
+        // Check session on load
+        function checkSession() {
+            if (getPassword()) {
+                isAdminMode = getAdminMode();
+                showApp();
+            }
+        }
+
+        async function login() {
+            const pwd = document.getElementById('loginPassword').value;
+            const errorEl = document.getElementById('loginError');
+
+            try {
+                const res = await fetch(`/status.json?password=${encodeURIComponent(pwd)}`);
+                const text = await res.text();
+                // Check if response is valid JSON (not "Denied" text)
+                if (res.ok && text.startsWith('{')) {
+                    JSON.parse(text); // Verify it's valid JSON
+                    setPassword(pwd);
+                    errorEl.style.display = 'none';
+                    showApp();
+                } else {
+                    errorEl.style.display = 'block';
+                    errorEl.textContent = 'Invalid password';
+                }
+            } catch (e) {
+                errorEl.style.display = 'block';
+                errorEl.textContent = e.message.includes('JSON') ? 'Invalid password' : 'Connection failed';
+            }
+        }
+
+        function logout() {
+            clearPassword();
+            if (refreshInterval) clearInterval(refreshInterval);
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('loginPassword').value = '';
+        }
+
+        function showApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            updateModeBadge();
+            checkAdminAccess();
+            fetchStatus();
+            refreshInterval = setInterval(fetchStatus, 5000);
+        }
+
+        // Enter key for login
+        document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') login();
+        });
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+                // Auto-load queue when switching to queue tab
+                if (tab.dataset.tab === 'queue') fetchQueue();
+            });
+        });
+
+        async function fetchStatus() {
+            const pwd = getPassword();
+            if (!pwd) return;
+
+            try {
+                const res = await fetch(`/status.json?password=${encodeURIComponent(pwd)}`);
+                if (res.status === 403) {
+                    logout();
+                    return;
+                }
+                if (!res.ok) throw new Error('Failed');
+                const data = await res.json();
+                updateDashboard(data);
+                updateHealth(true, data.status);
+            } catch (e) {
+                console.error('Status fetch error:', e);
+                updateHealth(false);
+            }
+        }
+
+        function updateHealth(ok, status) {
+            const el = document.getElementById('health');
+            if (ok) {
+                el.className = 'health ok';
+                el.innerHTML = `<span class="health-dot"></span><span>${status || 'running'}</span>`;
+            } else {
+                el.className = 'health error';
+                el.innerHTML = '<span class="health-dot"></span><span>Offline</span>';
+            }
+        }
+
+        function updateDashboard(data) {
+            const u = data.uptime;
+            document.getElementById('uptime').textContent =
+                `Uptime: ${u.days}d ${u.hours}h ${u.minutes}m ${u.seconds}s`;
+
+            document.getElementById('gwStatus').textContent = data.status;
+
+            const sms = data.sms;
+            document.getElementById('smsInRate').textContent = sms.inbound_rate[1].toFixed(1);
+            document.getElementById('smsOutRate').textContent = sms.outbound_rate[1].toFixed(1);
+            document.getElementById('smsRecvTotal').textContent = sms.received.total.toLocaleString();
+            document.getElementById('smsSentTotal').textContent = sms.sent.total.toLocaleString();
+            document.getElementById('smsRecvQueued').textContent = sms.received.queued;
+            document.getElementById('smsSentQueued').textContent = sms.sent.queued;
+            document.getElementById('storeSize').textContent = sms.store_size;
+
+            const dlr = data.dlr;
+            document.getElementById('dlrInRate').textContent = dlr.inbound_rate[1].toFixed(1);
+            document.getElementById('dlrOutRate').textContent = dlr.outbound_rate[1].toFixed(1);
+            document.getElementById('dlrRecv').textContent = dlr.received.toLocaleString();
+            document.getElementById('dlrSent').textContent = dlr.sent.toLocaleString();
+            document.getElementById('dlrQueued').textContent = dlr.queued;
+            document.getElementById('dlrStorage').textContent = dlr.storage;
+
+            updateSmscList(data.smscs || []);
+            updateBoxesList(data.boxes || []);
+        }
+
+        function updateSmscList(smscs) {
+            const el = document.getElementById('smscList');
+            const select = document.getElementById('smsSmsc');
+
+            // Update SMSC dropdown for send form
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">Default</option>' +
+                smscs.map(s => `<option value="${s.id}">${s.id}</option>`).join('');
+            select.value = currentVal;
+
+            if (!smscs.length) {
+                el.innerHTML = '<div class="empty">No SMSCs configured</div>';
+                return;
+            }
+            el.innerHTML = smscs.map(s => {
+                const statusClass = s.status === 'online' ? 'online' :
+                                   s.status.includes('connecting') ? 'connecting' : 'offline';
+                // Show Stop for online OR connecting states (SMSC is running)
+                const isRunning = s.status === 'online' || s.status.includes('connecting');
+                return `
+                    <div class="smsc-item">
+                        <div class="smsc-info">
+                            <span class="smsc-id">${s.id || s.name}</span>
+                            <span class="smsc-status ${statusClass}">${s.status}</span>
+                            <span class="smsc-stats">
+                                SMS: ${s.sms.received}/${s.sms.sent} |
+                                DLR: ${s.dlr.received}/${s.dlr.sent} |
+                                Q: ${s.queued} | F: ${s.failed}
+                            </span>
+                        </div>
+                        <button class="btn ${isRunning ? 'btn-stop' : 'btn-start'}"
+                                onclick="smscCommand('${isRunning ? 'stop' : 'start'}', '${s.id}')">
+                            ${isRunning ? 'Stop' : 'Start'}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateBoxesList(boxes) {
+            const el = document.getElementById('boxesList');
+            const smsboxSelect = document.getElementById('smsSmsbox');
+
+            // Store smsboxes for Send SMS feature
+            smsboxes = boxes.filter(b => b.type === 'smsbox' && b.http_port > 0);
+
+            // Update smsbox dropdown
+            const currentSmsbox = smsboxSelect.value;
+            smsboxSelect.innerHTML = smsboxes.length === 0
+                ? '<option value="">No smsbox available</option>'
+                : smsboxes.map((b, i) =>
+                    `<option value="${i}">${b.id || 'smsbox'} (${b.ip}:${b.http_port})</option>`
+                  ).join('');
+            if (currentSmsbox && smsboxSelect.querySelector(`option[value="${currentSmsbox}"]`)) {
+                smsboxSelect.value = currentSmsbox;
+            }
+
+            if (!boxes.length) {
+                el.innerHTML = '<div class="empty">No boxes connected</div>';
+                return;
+            }
+            el.innerHTML = boxes.map(b => `
+                <div class="smsc-item">
+                    <div class="smsc-info">
+                        <span class="smsc-id">${b.type}: ${b.id || 'unnamed'}</span>
+                        <span class="smsc-stats">IP: ${b.ip}${b.http_port ? ':' + b.http_port : ''} | Queue: ${b.queue}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function smscCommand(action, smscId) {
+            const pwd = getPassword();
+            try {
+                const res = await fetch(`/${action}-smsc?password=${encodeURIComponent(pwd)}&smsc=${encodeURIComponent(smscId)}`);
+                const text = await res.text();
+                alert(text);
+                fetchStatus();
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        async function gwCommand(cmd) {
+            const pwd = getPassword();
+            const el = document.getElementById('controlAlert');
+            try {
+                const res = await fetch(`/${cmd}?password=${encodeURIComponent(pwd)}`);
+                const text = await res.text();
+                el.innerHTML = `<div class="alert success">${text}</div>`;
+                fetchStatus();
+            } catch (e) {
+                el.innerHTML = `<div class="alert error">Error: ${e.message}</div>`;
+            }
+            setTimeout(() => el.innerHTML = '', 5000);
+        }
+
+        async function setLogLevel() {
+            const pwd = getPassword();
+            const level = document.getElementById('logLevel').value;
+            try {
+                const res = await fetch(`/log-level?password=${encodeURIComponent(pwd)}&level=${level}`);
+                const text = await res.text();
+                alert(text);
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        async function fetchQueue() {
+            const pwd = getPassword();
+            const el = document.getElementById('queueList');
+            el.innerHTML = '<div class="empty">Loading...</div>';
+
+            try {
+                const res = await fetch(`/store-status?password=${encodeURIComponent(pwd)}`);
+                const text = await res.text();
+                const lines = text.trim().split('\n');
+
+                if (lines.length <= 1) {
+                    el.innerHTML = '<div class="empty">Queue is empty</div>';
+                    return;
+                }
+
+                // Parse the store-status output
+                // Format: [SMS ID] [Type] [Time] [Sender] [Receiver] [SMSC ID] [BOX ID] [Flags] [UDH] [Message]
+                const rows = lines.slice(1).map(line => {
+                    const match = line.match(/\[([^\]]*)\]/g);
+                    if (!match || match.length < 10) return null;
+                    const clean = match.map(m => m.slice(1, -1));
+                    return {
+                        id: clean[0],
+                        type: clean[1],
+                        time: clean[2],
+                        sender: clean[3],
+                        receiver: clean[4],
+                        smsc: clean[5],
+                        boxc: clean[6],
+                        flags: clean[7],
+                        udh: clean[8],
+                        message: clean[9]
+                    };
+                }).filter(Boolean);
+
+                if (!rows.length) {
+                    el.innerHTML = '<div class="empty">Queue is empty</div>';
+                    return;
+                }
+
+                el.innerHTML = `
+                    <table class="queue-table">
+                        <thead>
+                            <tr><th>Time</th><th>From</th><th>To</th><th>SMSC</th><th>Message</th><th>ID</th></tr>
+                        </thead>
+                        <tbody>
+                            ${rows.map(r => `
+                                <tr>
+                                    <td>${r.time}</td>
+                                    <td>${r.sender}</td>
+                                    <td>${r.receiver}</td>
+                                    <td>${r.smsc || '-'}</td>
+                                    <td class="msg-text" title="${r.message}">${r.message}</td>
+                                    <td class="msg-id">${r.id.substring(0, 8)}...</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                el.innerHTML = `<div class="empty">Error: ${e.message}</div>`;
+            }
+        }
+
+        async function testSmsAuth() {
+            const pwd = getPassword();
+            const el = document.getElementById('sendAlert');
+            const smsboxIdx = document.getElementById('smsSmsbox').value;
+
+            if (!smsboxes.length) {
+                el.innerHTML = '<div class="alert error">No smsbox connected</div>';
+                return;
+            }
+
+            const box = smsboxes[smsboxIdx !== '' ? parseInt(smsboxIdx) : 0];
+            if (!box) {
+                el.innerHTML = '<div class="alert error">Please select an smsbox</div>';
+                return;
+            }
+
+            try {
+                // Test auth by making request without required fields
+                const smsboxUrl = `${location.protocol}//${box.ip}:${box.http_port}`;
+                const res = await fetch(`${smsboxUrl}/cgi-bin/sendsms?username=admin&password=${encodeURIComponent(pwd)}`);
+                const data = await res.text();
+
+                if (data.includes('Authorization failed')) {
+                    el.innerHTML = '<div class="alert error">Auth failed - password not valid for smsbox. Add sendsms-user with admin-password.</div>';
+                } else {
+                    el.innerHTML = '<div class="alert success">Auth OK - password works with smsbox</div>';
+                }
+            } catch (e) {
+                el.innerHTML = `<div class="alert error">Connection error: ${e.message}</div>`;
+            }
+            setTimeout(() => el.innerHTML = '', 5000);
+        }
+
+        async function sendSms() {
+            const pwd = getPassword();
+            const el = document.getElementById('sendAlert');
+            const btn = document.getElementById('sendBtn');
+
+            const from = document.getElementById('smsFrom').value;
+            const to = document.getElementById('smsTo').value;
+            const text = document.getElementById('smsText').value;
+            const smsc = document.getElementById('smsSmsc').value;
+            const dlrMask = document.getElementById('smsDlrMask').value;
+            const smsboxIdx = document.getElementById('smsSmsbox').value;
+
+            if (!to || !text) {
+                el.innerHTML = '<div class="alert error">To and Message are required</div>';
+                return;
+            }
+
+            // Get smsbox from selection
+            if (!smsboxes.length) {
+                el.innerHTML = '<div class="alert error">No smsbox connected</div>';
+                return;
+            }
+
+            const box = smsboxes[smsboxIdx !== '' ? parseInt(smsboxIdx) : 0];
+            if (!box) {
+                el.innerHTML = '<div class="alert error">Please select an smsbox</div>';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+
+            try {
+                const smsboxUrl = `${location.protocol}//${box.ip}:${box.http_port}`;
+                let url = `${smsboxUrl}/cgi-bin/sendsms?username=admin&password=${encodeURIComponent(pwd)}` +
+                    `&to=${encodeURIComponent(to)}&text=${encodeURIComponent(text)}`;
+                if (from) url += `&from=${encodeURIComponent(from)}`;
+                if (smsc) url += `&smsc=${encodeURIComponent(smsc)}`;
+                if (dlrMask) url += `&dlr-mask=${dlrMask}`;
+
+                const res = await fetch(url);
+                const data = await res.text();
+
+                if (res.ok && !data.includes('Authorization failed')) {
+                    el.innerHTML = `<div class="alert success">${data}</div>`;
+                } else {
+                    el.innerHTML = `<div class="alert error">${data}</div>`;
+                }
+            } catch (e) {
+                el.innerHTML = `<div class="alert error">Error: ${e.message}</div>`;
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Send SMS';
+            setTimeout(() => el.innerHTML = '', 5000);
+        }
+
+        // Check for existing session
+        checkSession();
+    </script>
+</body>
+</html>
