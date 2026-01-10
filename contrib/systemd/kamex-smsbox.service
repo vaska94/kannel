@@ -1,0 +1,25 @@
+[Unit]
+Description=Kamex SMSBox Service
+After=kamex-bearerbox.service network.target
+Requires=kamex-bearerbox.service
+Documentation=https://kamex.dev
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/smsbox -v 1 /etc/kamex/kamex.conf
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+TimeoutStartSec=30
+TimeoutStopSec=30
+User=kamex
+Group=kamex
+
+# Security settings
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/kamex /var/spool/kamex /var/run/kamex
+
+[Install]
+WantedBy=multi-user.target

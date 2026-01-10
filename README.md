@@ -190,7 +190,7 @@ make ssl-certs  # Required for benchmarks
 
 ```bash
 # Install systemd service files
-sudo ./contrib/systemd/setup-kannel-user.sh
+sudo ./contrib/systemd/setup-kamex-user.sh
 sudo systemctl enable kamex-bearerbox kamex-smsbox
 sudo systemctl start kamex-bearerbox kamex-smsbox
 ```

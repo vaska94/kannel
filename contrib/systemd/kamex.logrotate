@@ -1,11 +1,11 @@
-/var/log/kannel/*.log {
+/var/log/kamex/*.log {
     daily
     missingok
     rotate 365
     compress
     delaycompress
     notifempty
-    create 644 kannel kannel
+    create 644 kamex kamex
     sharedscripts
     postrotate
         killall -HUP bearerbox smsbox > /dev/null 2> /dev/null || true

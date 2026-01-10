@@ -1,10 +1,9 @@
 #!/bin/bash
 #
-# Kannel Status Checking Script for Systemd
-# Based on the status functionality from the original init.d script
+# Kamex Status Checking Script for Systemd
 #
 
-CONFDIR=/etc/kannel
+CONFDIR=/etc/kamex
 DEFAULT_ADMIN_PORT=13000
 DEFAULT_ADMIN_PASS=""
 
@@ -17,60 +16,60 @@ get_config_value() {
 
 # Find the core configuration file
 find_core_config() {
-    if [ -f "$CONFDIR/kannel.conf" ]; then
+    if [ -f "$CONFDIR/kamex.conf" ]; then
         # Check if this file contains core group
-        if grep -q 'group[[:space:]]*=[[:space:]]*core' "$CONFDIR/kannel.conf" 2>/dev/null; then
-            echo "$CONFDIR/kannel.conf"
+        if grep -q 'group[[:space:]]*=[[:space:]]*core' "$CONFDIR/kamex.conf" 2>/dev/null; then
+            echo "$CONFDIR/kamex.conf"
             return 0
         fi
     fi
-    
+
     # Search for any config file with core group
     local core_conf=$(grep -r 'group[[:space:]]*=[[:space:]]*core' "$CONFDIR" 2>/dev/null | cut -d: -f1 | head -1)
     if [ -n "$core_conf" ]; then
         echo "$core_conf"
         return 0
     fi
-    
+
     return 1
 }
 
 # Main status check function
-check_kannel_status() {
+check_kamex_status() {
     local core_conf
     local admin_port
     local admin_pass
     local status_url
-    
+
     # Find core configuration
     core_conf=$(find_core_config)
     if [ $? -ne 0 ]; then
-        echo "Error: Could not find Kannel core configuration file"
-        echo "Expected location: $CONFDIR/kannel.conf"
+        echo "Error: Could not find Kamex core configuration file"
+        echo "Expected location: $CONFDIR/kamex.conf"
         return 1
     fi
-    
+
     # Extract admin port and password
     admin_port=$(get_config_value "admin-port" "$core_conf")
     admin_pass=$(get_config_value "admin-password" "$core_conf")
-    
+
     # Use defaults if not found
     admin_port=${admin_port:-$DEFAULT_ADMIN_PORT}
     admin_pass=${admin_pass:-$DEFAULT_ADMIN_PASS}
-    
+
     # Construct status URL
     if [ -n "$admin_pass" ]; then
         status_url="http://127.0.0.1:${admin_port}/status.txt?password=${admin_pass}"
     else
         status_url="http://127.0.0.1:${admin_port}/status.txt"
     fi
-    
-    echo "Checking Kannel status..."
+
+    echo "Checking Kamex status..."
     echo "Config file: $core_conf"
     echo "Admin port: $admin_port"
     echo "Status URL: $status_url"
     echo ""
-    
+
     # Try to fetch status using curl (preferred) or wget
     if command -v curl >/dev/null 2>&1; then
         curl -s --connect-timeout 5 --max-time 10 "$status_url"
@@ -82,7 +81,7 @@ check_kannel_status() {
         echo "Error: Neither curl nor wget found. Please install one of them."
         return 1
     fi
-    
+
     if [ $exit_code -eq 0 ]; then
         echo ""
         echo "Status check completed successfully"
@@ -111,7 +110,7 @@ show_usage() {
     echo "Examples:"
     echo "  $0                          # Check status with default settings"
     echo "  $0 --port 13001             # Check status on custom port"
-    echo "  $0 --config-dir /opt/kannel # Use alternative config directory"
+    echo "  $0 --config-dir /opt/kamex  # Use alternative config directory"
 }
 
 # Parse command line arguments
@@ -142,5 +141,5 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Run the status check
-check_kannel_status
+check_kamex_status
 exit $?
