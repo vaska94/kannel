@@ -15,14 +15,14 @@ port=8080
 
 . benchmarks/functions.inc
 
-rm -f bench_http.log
-test/test_http_server -v 4 -l bench_http.log -p $port &
+rm -f /dev/shm/bench_http.log
+test/test_http_server -v 4 -l /dev/shm/bench_http.log -p $port &
 sleep 1
 test/test_http -q -v 2 -r $times http://localhost:$port/foo
 test/test_http -q -v 2 http://localhost:$port/quit
 wait
 
-awk '/INFO: Request for/ { print $1, $2 }' bench_http.log  |
+awk '/INFO: Request for/ { print $1, $2 }' /dev/shm/bench_http.log  |
 test/timestamp | uniq -c |
 awk '
     NR == 1 { first = $2 }
@@ -40,5 +40,5 @@ sed -e "s/#TIMES#/$times/g" \
     -e "s/#DURATION#/$duration/g" \
     benchmarks/bench_http.txt
 
-rm -f bench_http.log
+rm -f /dev/shm/bench_http.log
 rm -f bench_http.dat
