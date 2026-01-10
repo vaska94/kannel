@@ -200,7 +200,8 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .empty { color: #71767b; font-style: italic; padding: 20px; text-align: center; }
-        .refresh-info { font-size: 12px; color: #71767b; }
+        .refresh-info { font-size: 12px; color: #71767b; cursor: pointer; user-select: none; }
+        .refresh-info:hover { color: #1d9bf0; }
         .queue-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .queue-table th, .queue-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #2f3336; }
         .queue-table th { color: #71767b; font-weight: 500; background: #1d1f23; }
@@ -234,7 +235,7 @@
                 <span class="uptime" id="uptime">-</span>
             </div>
             <div class="header-right">
-                <span class="refresh-info">Auto-refresh: 5s</span>
+                <span class="refresh-info" id="refreshToggle" onclick="cycleRefresh()" title="Click to change">Auto-refresh: 5s</span>
                 <div class="mode-badge" id="modeBadge" title="Access level"></div>
                 <div class="health loading" id="health">
                     <span class="health-dot"></span>
@@ -424,6 +425,23 @@
         let refreshInterval = null;
         let smsboxes = []; // Store smsbox connection info
         let isAdminMode = false;
+        const refreshRates = [5000, 15000, 30000, 0]; // 5s, 15s, 30s, disabled
+        const refreshLabels = ['5s', '15s', '30s', 'Off'];
+        let currentRefreshIndex = 0;
+
+        function cycleRefresh() {
+            currentRefreshIndex = (currentRefreshIndex + 1) % refreshRates.length;
+            const rate = refreshRates[currentRefreshIndex];
+            const label = refreshLabels[currentRefreshIndex];
+
+            document.getElementById('refreshToggle').textContent =
+                rate ? `Auto-refresh: ${label}` : 'Auto-refresh: Off';
+
+            if (refreshInterval) clearInterval(refreshInterval);
+            if (rate > 0) {
+                refreshInterval = setInterval(fetchStatus, rate);
+            }
+        }
 
         // Session management
         function getPassword() {
@@ -518,7 +536,10 @@
             updateModeBadge();
             checkAdminAccess();
             fetchStatus();
-            refreshInterval = setInterval(fetchStatus, 5000);
+            const rate = refreshRates[currentRefreshIndex];
+            if (rate > 0) {
+                refreshInterval = setInterval(fetchStatus, rate);
+            }
         }
 
         // Enter key for login
@@ -759,7 +780,7 @@
                                     <td>${r.receiver}</td>
                                     <td>${r.smsc || '-'}</td>
                                     <td class="msg-text" title="${r.message}">${r.message}</td>
-                                    <td class="msg-id">${r.id.substring(0, 8)}...</td>
+                                    <td class="msg-id">${r.id}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
