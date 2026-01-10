@@ -1,12 +1,14 @@
-/* 
+/*
  * admin_panel.h - Embedded admin panel HTML
- * Auto-generated from admin.html - do not edit directly
+ * Auto-generated - do not edit directly
+ * Source: contrib/admin-panel.html
+ * Generate: python3 utils/generate_admin_panel_h.py
  */
 
 #ifndef ADMIN_PANEL_H
 #define ADMIN_PANEL_H
 
-static const char *admin_panel_html = 
+static const char *admin_panel_html =
 "<!DOCTYPE html>\n"
 "<html lang=\"en\">\n"
 "<head>\n"
@@ -408,6 +410,7 @@ static const char *admin_panel_html =
 "                        <button class=\"btn btn-secondary\" onclick=\"gwCommand('resume')\">Resume</button>\n"
 "                        <button class=\"btn btn-secondary\" onclick=\"gwCommand('isolate')\">Isolate</button>\n"
 "                        <button class=\"btn btn-secondary\" onclick=\"gwCommand('flush-dlr')\">Flush DLR</button>\n"
+"                        <button class=\"btn btn-secondary\" onclick=\"gwCommand('reload-lists')\">Reload Lists</button>\n"
 "                    </div>\n"
 "                    <div class=\"actions\">\n"
 "                        <button class=\"btn btn-secondary\" onclick=\"gwCommand('graceful-restart')\">Graceful Restart</button>\n"
