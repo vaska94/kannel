@@ -31,7 +31,6 @@ libgw_la_SOURCES = \
 	sms.c \
 	urltrans.c \
 	smsc/emimsg.c \
-	smsc/smasi_pdu.c \
 	smsc/smpp_pdu.c
 
 sbin_PROGRAMS = bearerbox smsbox
@@ -48,20 +47,12 @@ bearerbox_SOURCES = \
 	smscconn.c \
 	smsc/smsc.c \
 	smsc/smsc_at.c \
-	smsc/smsc_cgw.c \
-	smsc/smsc_cimd.c \
-	smsc/smsc_cimd2.c \
 	smsc/smsc_emi.c \
-	smsc/smsc_emi_x25.c \
 	smsc/smsc_fake.c \
 	smsc/http/generic.c \
 	smsc/http/kannel.c \
 	smsc/smsc_http.c \
 	smsc/smsc_loopback.c \
-	smsc/smsc_ois.c \
-	smsc/smsc_oisd.c \
-	smsc/smsc_sema.c \
-	smsc/smsc_smasi.c \
 	smsc/smsc_smpp.c \
 	smsc/smsc_wrapper.c \
 	bearerbox.c \
@@ -100,14 +91,11 @@ nobase_include_HEADERS = \
 	smscconn_p.h \
 	urltrans.h \
 	smsc/emimsg.h \
-	smsc/smasi_pdu.h \
 	smsc/smpp_pdu.h \
 	smsc/smsc.h \
 	smsc/smsc_at.h \
 	smsc/smsc_p.h \
 	smsc/smsc_http_p.h \
-	smsc/smsc_sema.h \
-	smsc/smasi_pdu.def \
 	smsc/smpp_pdu.def \
 	smsc/smpp_pdu_opt.def
 

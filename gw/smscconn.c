@@ -386,22 +386,14 @@ SMSCConn *smscconn_create(CfgGroup *grp, int start_as_stopped)
 
     if (octstr_compare(smsc_type, octstr_imm("fake")) == 0)
         ret = smsc_fake_create(conn, grp);
-    else if (octstr_compare(smsc_type, octstr_imm("cimd2")) == 0)
-	ret = smsc_cimd2_create(conn, grp);
     else if (octstr_compare(smsc_type, octstr_imm("emi")) == 0)
-	ret = smsc_emi2_create(conn, grp);
+        ret = smsc_emi2_create(conn, grp);
     else if (octstr_compare(smsc_type, octstr_imm("http")) == 0)
         ret = smsc_http_create(conn, grp);
     else if (octstr_compare(smsc_type, octstr_imm("smpp")) == 0)
-	ret = smsc_smpp_create(conn, grp);
+        ret = smsc_smpp_create(conn, grp);
     else if (octstr_compare(smsc_type, octstr_imm("at")) == 0)
-	ret = smsc_at2_create(conn,grp);
-    else if (octstr_compare(smsc_type, octstr_imm("cgw")) == 0)
-        ret = smsc_cgw_create(conn,grp);
-    else if (octstr_compare(smsc_type, octstr_imm("smasi")) == 0)
-        ret = smsc_smasi_create(conn, grp);
-    else if (octstr_compare(smsc_type, octstr_imm("oisd")) == 0)
-        ret = smsc_oisd_create(conn, grp);
+        ret = smsc_at2_create(conn, grp);
     else if (octstr_compare(smsc_type, octstr_imm("loopback")) == 0)
         ret = smsc_loopback_create(conn, grp);
 #ifdef HAVE_GSOAP
