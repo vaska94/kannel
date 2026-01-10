@@ -400,8 +400,10 @@ SMSCConn *smscconn_create(CfgGroup *grp, int start_as_stopped)
     else if (octstr_compare(smsc_type, octstr_imm("parlayx")) == 0)
     	ret = smsc_soap_parlayx_create(conn, grp);
 #endif
-    else
-        ret = smsc_wrapper_create(conn, grp);
+    else {
+        error(0, "Unknown SMSC type '%s'", octstr_get_cstr(smsc_type));
+        ret = -1;
+    }
 
     octstr_destroy(smsc_type);
     if (ret == -1) {

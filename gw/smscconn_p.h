@@ -272,10 +272,6 @@ typedef struct pattern_route {
  *  are received)
  */
 
-/* generic wrapper for old SMSC implementations (uses old smsc.h).
- * Responsible file: smsc/smsc_wrapper.c */
-int smsc_wrapper_create(SMSCConn *conn, CfgGroup *cfg);
-
 /* Responsible file: smsc/smsc_fake.c */
 int smsc_fake_create(SMSCConn *conn, CfgGroup *cfg);
 

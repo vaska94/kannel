@@ -71,7 +71,6 @@
 
 #include "gwlib/gwlib.h"
 #include "msg.h"
-#include "smsc_p.h"
 #include "smpp_pdu.h"
 #include "smscconn_p.h"
 #include "bb_smscconn_cb.h"

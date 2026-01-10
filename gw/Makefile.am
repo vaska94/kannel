@@ -45,7 +45,6 @@ bearerbox_SOURCES = \
 	bb_http.c \
 	bb_smscconn.c \
 	smscconn.c \
-	smsc/smsc.c \
 	smsc/smsc_at.c \
 	smsc/smsc_emi.c \
 	smsc/smsc_fake.c \
@@ -54,7 +53,6 @@ bearerbox_SOURCES = \
 	smsc/smsc_http.c \
 	smsc/smsc_loopback.c \
 	smsc/smsc_smpp.c \
-	smsc/smsc_wrapper.c \
 	bearerbox.c \
 	bearerbox.h
 
@@ -92,9 +90,7 @@ nobase_include_HEADERS = \
 	urltrans.h \
 	smsc/emimsg.h \
 	smsc/smpp_pdu.h \
-	smsc/smsc.h \
 	smsc/smsc_at.h \
-	smsc/smsc_p.h \
 	smsc/smsc_http_p.h \
 	smsc/smpp_pdu.def \
 	smsc/smpp_pdu_opt.def
