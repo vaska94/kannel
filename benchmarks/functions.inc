@@ -32,6 +32,9 @@ function plot_commands {
 }
 
 function plot {
+    if ! command -v gnuplot >/dev/null 2>&1; then
+        return 0
+    fi
     base="$1"
     shift
     plot_commands png "$@" | gnuplot > "$base.png"
