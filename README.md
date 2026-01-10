@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Linux-lightgrey.svg)]()
 
-Modern, high-performance SMS gateway with built-in admin panel. Supports SMPP, CIMD, EMI/UCP, HTTP, and GSM modems.
+Modern, high-performance SMS gateway with built-in admin panel. Supports SMPP, EMI/UCP, HTTP, and GSM modems.
 
 > **Kamex** is a maintained fork of Kannel with new features and active development.
 > Original Kannel code remains under its original license (see LICENSE.kannel).
@@ -16,12 +16,12 @@ Modern, high-performance SMS gateway with built-in admin panel. Supports SMPP, C
 - **JSON API** - Modern `/status.json` and `/api/sendsms` endpoints
 - **Health Checks** - `/health` endpoint for load balancers and Kubernetes
 - **Redis/Valkey** - Native support for DLR and message store
-- **Removed Legacy** - Dropped RADIUS, WAP, and libxml2 dependencies
+- **Removed Legacy** - Dropped RADIUS, WAP, libxml2, and dead SMSC protocols
 - **Active Development** - Bug fixes and new features
 
 ## Features
 
-- **Multi-protocol support**: SMPP 3.3/3.4/5.0, CIMD, EMI/UCP, HTTP, AT modems
+- **Multi-protocol support**: SMPP 3.3/3.4/5.0, EMI/UCP, HTTP, AT modems
 - **High performance**: 16,000+ messages/sec on commodity hardware
 - **HTTP API**: Simple REST-like interface for sending/receiving SMS
 - **Web Admin Panel**: Real-time dashboard, SMSC control, message queue viewer
@@ -85,13 +85,13 @@ Use `admin-password` for full control, `status-password` for view-only access.
 
 | Protocol | Config | Description |
 |----------|--------|-------------|
-| SMPP | `smsc = smpp` | SMPP 3.3, 3.4, 5.0 (most common) |
-| CIMD | `smsc = cimd2` | Nokia CIMD 1.37 and 2.0 |
-| EMI/UCP | `smsc = emi2` | CMG UCP/EMI 4.0 and 3.5 |
+| SMPP | `smsc = smpp` | SMPP 3.3, 3.4, 5.0 (industry standard) |
+| EMI/UCP | `smsc = emi` | CMG UCP/EMI (European operators) |
 | HTTP | `smsc = http` | HTTP-based gateways |
 | AT Modem | `smsc = at` | GSM modems via serial/USB |
-| SMASI | `smsc = smasi` | CriticalPath InVoke |
-| OIS | `smsc = ois` | Sema Group SMS2000 |
+
+> **Note:** Legacy protocols (CIMD, SMASI, OIS, SEMA, CGW, EMI/X.25) were removed in v1.7.0.
+> These protocols have no active deployments. Use SMPP instead.
 
 ## Architecture
 
