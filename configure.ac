@@ -717,24 +717,12 @@ else
         AC_MSG_CHECKING([mysql version])
         mysql_version=`$MYSQL_CONFIG --version`
         AC_MSG_RESULT([$mysql_version])
-        dnl mysql-4.x style
-        MYSQL_LIBS=""
-        if $MYSQL_CONFIG --libs_r &>/dev/null ; then
-            MYSQL_LIBS=`$MYSQL_CONFIG --libs_r`
-            AC_MSG_CHECKING([mysql reentrant libs])
-            AC_MSG_RESULT([$MYSQL_LIBS])
-            AC_CHECK_LIB(mysqlclient_r, mysql_init, [ LIBS="$LIBS $MYSQL_LIBS" ],
-                [ MYSQL_LIBS="" ], [ $MYSQL_LIBS ])
-        fi
-        if test -z "$MYSQL_LIBS" ; then
-            MYSQL_LIBS=`$MYSQL_CONFIG --libs`
-            AC_MSG_CHECKING([mysql libs])
-            AC_MSG_RESULT([$MYSQL_LIBS])
-            AC_CHECK_LIB(mysqlclient, mysql_init, [ LIBS="$LIBS $MYSQL_LIBS" ],
-                [AC_MSG_ERROR([Unable to find MySQL client libraries])], [ $MYSQL_LIBS ])
-        fi
+        MYSQL_LIBS=`$MYSQL_CONFIG --libs`
+        AC_MSG_CHECKING([mysql libs])
+        AC_MSG_RESULT([$MYSQL_LIBS])
+        AC_CHECK_LIB(mysqlclient, mysql_init, [ LIBS="$LIBS $MYSQL_LIBS" ],
+            [AC_MSG_ERROR([Unable to find MySQL client libraries])], [ $MYSQL_LIBS ])
         AC_MSG_CHECKING([mysql includes])
-        dnl mysql-4.x style
         if $MYSQL_CONFIG --include &>/dev/null ; then
             MYSQL_CFLAGS=`$MYSQL_CONFIG --include`
         else
@@ -783,38 +771,6 @@ else
       [AC_MSG_ERROR([Unable to find libSDB client libraries])]
     )
   fi
-fi
-],[
-  AC_MSG_RESULT(disabled)
-])
-
-
-dnl Implement the --with-sqlite2 option. This will set HAVE_SQLITE in gw-config.h
-dnl accordingly and enable the usage of the libsqlite routines.
-
-AC_MSG_CHECKING([whether to compile with SQLite2 support])
-AC_ARG_WITH(sqlite2,
-[  --with-sqlite2          enable SQLite2 storage @<:@disabled@:>@], [
-if test "$withval" != yes; then
-    AC_MSG_RESULT(disabled)
-else
-    AC_MSG_RESULT(searching)
-    AC_CHECK_HEADERS(sqlite.h)
-    LIBS="$LIBS -L/usr/local/lib"
-    AC_CHECK_LIB(sqlite, sqlite_open, 
-      [LIBS="$LIBS -lsqlite" 
-       AC_DEFINE(HAVE_SQLITE, 1, [Do we use sqlite])
-       SQLITE="yes"], 
-      [AC_MSG_ERROR([Unable to find SQLite2 client libraries])]
-    )
-    AC_PATH_PROGS(SQLITE, sqlite, no)
-    if test "$SQLITE" = "no"; then
-      AC_MSG_WARN([Unable to find sqlite in path for SQLite2 support])
-    else 
-      AC_MSG_CHECKING([sqlite version])
-      sqlite_version=`$SQLITE -version`
-      AC_MSG_RESULT([$sqlite_version])
-    fi
 fi
 ],[
   AC_MSG_RESULT(disabled)

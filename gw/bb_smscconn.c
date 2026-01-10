@@ -828,38 +828,26 @@ int smsc2_start(Cfg *cfg)
     gw_rwlock_init_static(&white_black_list_lock);
     white_list_sender = black_list_sender = NULL;
     white_list_sender_url = black_list_sender_url = NULL;
-    if ((white_list_sender_url = cfg_get(grp, octstr_imm("white-list"))) != NULL)   /* TODO deprecated, remove */
-        warning(0, "Option 'white-list' is deprecated! Please use 'white-list-sender' instead!");
-    else
-        white_list_sender_url = cfg_get(grp, octstr_imm("white-list-sender"));
+    white_list_sender_url = cfg_get(grp, octstr_imm("white-list-sender"));
     if (white_list_sender_url != NULL) {
         if ((white_list_sender = numhash_create(octstr_get_cstr(white_list_sender_url))) == NULL)
-            panic(0, "Could not get white-list at URL <%s>", 
+            panic(0, "Could not get white-list-sender at URL <%s>",
                   octstr_get_cstr(white_list_sender_url));
     }
-    if ((os = cfg_get(grp, octstr_imm("white-list-regex"))) != NULL)                /* TODO deprecated, remove */
-        warning(0, "Option 'white-list-regex' is deprecated! Please use 'white-list-sender-regex' instead!");
-    else
-        os = cfg_get(grp, octstr_imm("white-list-sender-regex"));
+    os = cfg_get(grp, octstr_imm("white-list-sender-regex"));
     if (os != NULL) {
         if ((white_list_sender_regex = gw_regex_comp(os, REG_EXTENDED)) == NULL)
             panic(0, "Could not compile pattern '%s'", octstr_get_cstr(os));
         octstr_destroy(os);
     }
-    
-    if ((black_list_sender_url = cfg_get(grp, octstr_imm("black-list"))) != NULL)   /* TODO deprecated, remove */
-        warning(0, "Option 'black-list' is deprecated! Please use 'black-list-sender' instead!");
-    else
-        black_list_sender_url = cfg_get(grp, octstr_imm("black-list-sender"));
+
+    black_list_sender_url = cfg_get(grp, octstr_imm("black-list-sender"));
     if (black_list_sender_url != NULL) {
         if ((black_list_sender = numhash_create(octstr_get_cstr(black_list_sender_url))) == NULL)
-            panic(0, "Could not get black-list at URL <%s>", 
+            panic(0, "Could not get black-list-sender at URL <%s>",
                   octstr_get_cstr(black_list_sender_url));
     }
-    if ((os = cfg_get(grp, octstr_imm("black-list-regex"))) != NULL)                /* TODO deprecated, remove */
-        warning(0, "Option 'black-list-regex' is deprecated! Please use 'black-list-sender-regex' instead!");
-    else
-        os = cfg_get(grp, octstr_imm("black-list-sender-regex"));
+    os = cfg_get(grp, octstr_imm("black-list-sender-regex"));
     if (os != NULL) {
         if ((black_list_sender_regex = gw_regex_comp(os, REG_EXTENDED)) == NULL)
             panic(0, "Could not compile pattern '%s'", octstr_get_cstr(os));

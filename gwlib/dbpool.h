@@ -140,8 +140,6 @@ typedef struct {
     Octstr *username;
     Octstr *password;
     Octstr *database;
-    Octstr *options;    /* yet not used */
-    Octstr *tty;        /* yet not used */
 } PgSQLConf;
 
 typedef struct {

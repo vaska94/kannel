@@ -136,10 +136,6 @@ static SMPP_PDU *handle_bind_transmitter(ESME *esme, SMPP_PDU *pdu)
     esme->version = pdu->u.bind_transmitter.interface_version;
     resp = smpp_pdu_create(bind_transmitter_resp,
     	    	    	    pdu->u.bind_transmitter.sequence_number);
-#if 0 /* XXX system_id is not implemented in the PDU at the moment */
-    resp->u.bind_transmitter_resp.system_id = 
-    	octstr_duplicate(smsc_system_id);
-#endif
     return resp;
 }
 
@@ -152,9 +148,6 @@ static SMPP_PDU *handle_bind_receiver(ESME *esme, SMPP_PDU *pdu)
     esme->version = pdu->u.bind_receiver.interface_version;
     resp = smpp_pdu_create(bind_receiver_resp,
     	    	    	    pdu->u.bind_receiver.sequence_number);
-#if 0 /* XXX system_id is not implemented in the PDU at the moment */
-    resp->u.bind_receiver_resp.system_id = octstr_duplicate(smsc_system_id);
-#endif
     return resp;
 }
 
@@ -172,10 +165,6 @@ static SMPP_PDU *handle_submit_sm(ESME *esme, SMPP_PDU *pdu)
     time(&last_from_esme);
 
     resp = smpp_pdu_create(submit_sm_resp, pdu->u.submit_sm.sequence_number);
-#if 0 /* XXX message_id is not implemented in the PDU at the moment */
-    resp->u.submit_sm_resp.message_id = 
-    	octstr_format("%ld", counter_increase(message_id_counter));
-#endif
     return resp;
 }
 

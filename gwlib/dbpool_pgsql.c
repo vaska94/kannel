@@ -99,11 +99,6 @@ static void *pgsql_open_conn(const DBConf *db_conf)
     add1(" password=%S", conf->password);
     add1(" dbname=%S", conf->database);
 
-#if 0
-    /* TODO: This is very bad to show password in the log file */
-    info(0, "PGSQL: Using connection string: %s.", octstr_get_cstr(cs));
-#endif
-
     conn = PQconnectdb(octstr_get_cstr(cs));
 
     octstr_destroy(cs);

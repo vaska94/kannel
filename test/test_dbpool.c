@@ -594,10 +594,6 @@ int main(int argc, char **argv)
     info(0,"SQL query is `%s'", octstr_get_cstr(sql));
     time(&start);
     for (i = 0; i < num_threads; ++i) {
-#if 0
-        if (gwthread_create(inc_dec_thread, pool) == -1)
-            panic(0, "Couldnot create thread %ld", i);
-#endif
         if (gwthread_create(client_thread, pool) == -1)
             panic(0, "Couldnot create thread %ld", i);
     }

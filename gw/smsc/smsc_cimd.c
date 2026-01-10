@@ -677,11 +677,6 @@ static int expect_acknowledge(SMSCenter *smsc, int *cmd, int *err)
     char *cmdspecifier = NULL, *errorspecifier = NULL;
     int ret = 0;
 
-#if 0
-    time_t thetime;
-    time(&thetime);
-#endif
-
     if (smsc == NULL) goto error;
 
     /* Loop until we get an acknowledgement message. */
@@ -703,21 +698,6 @@ static int expect_acknowledge(SMSCenter *smsc, int *cmd, int *err)
         }
 
         usleep(500);
-
-#if 0
-        /* Abort if no results in 30 seconds */
-
-        if (time(NULL) > (thetime + 30)) {
-
-            error(0, "timeout occurred, maybe the connection was broken?");
-            if (errno == EPIPE) {
-                error(0, "broken pipe");
-            } /* if errno */
-
-            goto error;
-
-        } /* if time */
-#endif
     }
 
     /* Check if our request was answered or denied */
@@ -780,7 +760,7 @@ static int parse_iso88591_to_cimd(char* from, char* to,
         switch (*from) {
 
         case '@': strcat(to, "_Oa"); to += 3; break;
-        case '£': strcat(to, "_L-"); to += 3; break;
+        case 'ï¿½': strcat(to, "_L-"); to += 3; break;
 
         case '$':
             if (alt_charset == CIMD_PLAIN_DOLLAR_SIGN) {
@@ -792,37 +772,37 @@ static int parse_iso88591_to_cimd(char* from, char* to,
             }
             break;
 
-        case 'Å': strcat(to, "_A*"); to += 3; break;
-        case 'å': strcat(to, "_a*"); to += 3; break;
-        case 'ä': strcat(to, "_a\""); to += 3; break;
-        case 'ö': strcat(to, "_o\""); to += 3; break;
-        case 'Ä': strcat(to, "_A\""); to += 3; break;
-        case 'Ö': strcat(to, "_O\""); to += 3; break;
-        case '¥': strcat(to, "_Y-"); to += 3; break;
-        case 'è': strcat(to, "_e`"); to += 3; break;
-        case 'é': strcat(to, "_e´"); to += 3; break;
-        case 'ù': strcat(to, "_u`"); to += 3; break;
-        case 'ì': strcat(to, "_i`"); to += 3; break;
-        case 'ò': strcat(to, "_o`"); to += 3; break;
-        case 'Ç': strcat(to, "_C,"); to += 3; break;
-        case 'Ø': strcat(to, "_O/"); to += 3; break;
-        case 'ø': strcat(to, "_o/"); to += 3; break;
-        case 'Æ': strcat(to, "_AE"); to += 3; break;
-        case 'æ': strcat(to, "_ae"); to += 3; break;
-        case 'ß': strcat(to, "_ss"); to += 3; break;
-        case 'É': strcat(to, "_E´"); to += 3; break;
-        case '¿': strcat(to, "_??"); to += 3; break;
-        case 'Ü': strcat(to, "_U\""); to += 3; break;
-        case 'ñ': strcat(to, "_n~"); to += 3; break;
-        case 'ü': strcat(to, "_u\""); to += 3; break;
-        case 'à': strcat(to, "_a`"); to += 3; break;
-        case '¡': strcat(to, "_!!"); to += 3; break;
+        case 'ï¿½': strcat(to, "_A*"); to += 3; break;
+        case 'ï¿½': strcat(to, "_a*"); to += 3; break;
+        case 'ï¿½': strcat(to, "_a\""); to += 3; break;
+        case 'ï¿½': strcat(to, "_o\""); to += 3; break;
+        case 'ï¿½': strcat(to, "_A\""); to += 3; break;
+        case 'ï¿½': strcat(to, "_O\""); to += 3; break;
+        case 'ï¿½': strcat(to, "_Y-"); to += 3; break;
+        case 'ï¿½': strcat(to, "_e`"); to += 3; break;
+        case 'ï¿½': strcat(to, "_eï¿½"); to += 3; break;
+        case 'ï¿½': strcat(to, "_u`"); to += 3; break;
+        case 'ï¿½': strcat(to, "_i`"); to += 3; break;
+        case 'ï¿½': strcat(to, "_o`"); to += 3; break;
+        case 'ï¿½': strcat(to, "_C,"); to += 3; break;
+        case 'ï¿½': strcat(to, "_O/"); to += 3; break;
+        case 'ï¿½': strcat(to, "_o/"); to += 3; break;
+        case 'ï¿½': strcat(to, "_AE"); to += 3; break;
+        case 'ï¿½': strcat(to, "_ae"); to += 3; break;
+        case 'ï¿½': strcat(to, "_ss"); to += 3; break;
+        case 'ï¿½': strcat(to, "_Eï¿½"); to += 3; break;
+        case 'ï¿½': strcat(to, "_??"); to += 3; break;
+        case 'ï¿½': strcat(to, "_U\""); to += 3; break;
+        case 'ï¿½': strcat(to, "_n~"); to += 3; break;
+        case 'ï¿½': strcat(to, "_u\""); to += 3; break;
+        case 'ï¿½': strcat(to, "_a`"); to += 3; break;
+        case 'ï¿½': strcat(to, "_!!"); to += 3; break;
         case '_': strcat(to, "_--"); to += 3; break;
-        case 'Ñ': strcat(to, "_N~"); to += 3; break;
+        case 'ï¿½': strcat(to, "_N~"); to += 3; break;
         case '!': strcat(to, "!"); to++; break;
         case '"': strcat(to, "\""); to++; break;
         case '#': strcat(to, "#"); to++; break;
-        case '¤': strcat(to, "¤"); to++; break;
+        case 'ï¿½': strcat(to, "ï¿½"); to++; break;
         case '%': strcat(to, "%"); to++; break;
         case '&': strcat(to, "&"); to++; break;
         case '\'': strcat(to, "'"); to++; break;
@@ -930,10 +910,10 @@ static int parse_cimd_to_iso88591(char* from, char* to, int length)
     for (my_int = 0; my_int < (int)strlen(from) && (int)strlen(to) < length; ) {
 
         if (from[my_int] == '_' && from[my_int + 1] == 'a' && from[my_int + 2] == '"') {
-            strcat(to, "ä");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 'a' && from[my_int + 2] == '*') {
-            strcat(to, "å");
+            strcat(to, "ï¿½");
             my_int += 3;
         }
 
@@ -947,7 +927,7 @@ static int parse_cimd_to_iso88591(char* from, char* to, int length)
             strcat(to, "@");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 'L' && from[my_int + 2] == '-') {
-            strcat(to, "£");
+            strcat(to, "ï¿½");
             my_int += 3;
         }
 
@@ -963,73 +943,73 @@ static int parse_cimd_to_iso88591(char* from, char* to, int length)
             my_int += 3;
         }
         else if (from[my_int] == '_' && from[my_int + 1] == 'A' && from[my_int + 2] == '*') {
-            strcat(to, "Å");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 'o' && from[my_int + 2] == '"') {
-            strcat(to, "ö");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 'A' && from[my_int + 2] == '"') {
-            strcat(to, "Ä");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 'O' && from[my_int + 2] == '"') {
-            strcat(to, "Ö");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 'Y' && from[my_int + 2] == '-') {
-            strcat(to, "¥");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 'e' && from[my_int + 2] == '`') {
-            strcat(to, "è");
+            strcat(to, "ï¿½");
             my_int += 3;
-        } else if (from[my_int] == '_' && from[my_int + 1] == 'e' && from[my_int + 2] == '´') {
-            strcat(to, "é");
+        } else if (from[my_int] == '_' && from[my_int + 1] == 'e' && from[my_int + 2] == 'ï¿½') {
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 'u' && from[my_int + 2] == '`') {
-            strcat(to, "ù");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 'i' && from[my_int + 2] == '`') {
-            strcat(to, "ì");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 'o' && from[my_int + 2] == '`') {
-            strcat(to, "ò");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 'C' && from[my_int + 2] == ',') {
-            strcat(to, "Ç");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 'O' && from[my_int + 2] == '/') {
-            strcat(to, "Ø");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 'o' && from[my_int + 2] == '/') {
-            strcat(to, "ø");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 'A' && from[my_int + 2] == 'E') {
-            strcat(to, "Æ");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 'a' && from[my_int + 2] == 'e') {
-            strcat(to, "æ");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 's' && from[my_int + 2] == 's') {
-            strcat(to, "ß");
+            strcat(to, "ï¿½");
             my_int += 3;
-        } else if (from[my_int] == '_' && from[my_int + 1] == 'E' && from[my_int + 2] == '´') {
-            strcat(to, "É");
+        } else if (from[my_int] == '_' && from[my_int + 1] == 'E' && from[my_int + 2] == 'ï¿½') {
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == '?' && from[my_int + 2] == '?') {
-            strcat(to, "¿");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 'U' && from[my_int + 2] == '"') {
-            strcat(to, "Ü");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 'n' && from[my_int + 2] == '~' ) {
-            strcat(to, "ñ");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 'u' && from[my_int + 2] == '"') {
-            strcat(to, "ü");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == 'a' && from[my_int + 2] == '`') {
-            strcat(to, "à");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == '!' && from[my_int + 2] == '!') {
-            strcat(to, "¡");
+            strcat(to, "ï¿½");
             my_int += 3;
         } else if (from[my_int] == '_' && from[my_int + 1] == '-' && from[my_int + 2] == '-') {
             strcat(to, "_");
@@ -1041,22 +1021,22 @@ static int parse_cimd_to_iso88591(char* from, char* to, int length)
 
         /* I just LOVE the designers of this protocol -mg */
         else if (from[my_int] == ']') {
-            strcat(to, "Å");
+            strcat(to, "ï¿½");
             my_int++;
         } else if (from[my_int] == '}') {
-            strcat(to, "å");
+            strcat(to, "ï¿½");
             my_int++;
         } else if (from[my_int] == '[') {
-            strcat(to, "Ä");
+            strcat(to, "ï¿½");
             my_int++;
         } else if (from[my_int] == '{') {
-            strcat(to, "ä");
+            strcat(to, "ï¿½");
             my_int++;
         } else if (from[my_int] == '\\') {
-            strcat(to, "Ö");
+            strcat(to, "ï¿½");
             my_int++;
         } else if (from[my_int] == '|') {
-            strcat(to, "ö");
+            strcat(to, "ï¿½");
             my_int++;
         }
         else if (from[my_int] == '!') {
@@ -1068,8 +1048,8 @@ static int parse_cimd_to_iso88591(char* from, char* to, int length)
         } else if (from[my_int] == '#') {
             strcat(to, "#");
             my_int++;
-        } else if (from[my_int] == '¤') {
-            strcat(to, "¤");
+        } else if (from[my_int] == 'ï¿½') {
+            strcat(to, "ï¿½");
             my_int++;
         } else if (from[my_int] == '%') {
             strcat(to, "%");
@@ -1324,7 +1304,7 @@ static int parse_cimd_to_iso88591(char* from, char* to, int length)
                   from[my_int + 2], from[my_int + 2]);
 
             temp_int = strlen(to);
-            to[temp_int] = 0xBF; 	/* '¿' */
+            to[temp_int] = 0xBF; 	/* 'ï¿½' */
             to[temp_int + 1] = '\0';
             my_int++;
         }

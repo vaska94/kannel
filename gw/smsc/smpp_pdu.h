@@ -233,7 +233,6 @@ int smpp_pdu_shutdown(void);
 
 SMPP_PDU *smpp_pdu_create(unsigned long type, unsigned long seq_no);
 void smpp_pdu_destroy(SMPP_PDU *pdu);
-int smpp_pdu_is_valid(SMPP_PDU *pdu); /* XXX */
 Octstr *smpp_pdu_pack(Octstr *smsc_id, SMPP_PDU *pdu);
 SMPP_PDU *smpp_pdu_unpack(Octstr *smsc_id, Octstr *data_without_len);
 void smpp_pdu_dump(Octstr *smsc_id, SMPP_PDU *pdu);

@@ -133,7 +133,6 @@ struct SMASI_PDU {
 
 SMASI_PDU *smasi_pdu_create(unsigned long type);
 void smasi_pdu_destroy(SMASI_PDU *pdu);
-int smasi_pdu_is_valid(SMASI_PDU *pdu); /* XXX */
 Octstr *smasi_pdu_pack(SMASI_PDU *pdu);
 SMASI_PDU *smasi_pdu_unpack(Octstr *data_without_len);
 void smasi_pdu_dump(SMASI_PDU *pdu);
