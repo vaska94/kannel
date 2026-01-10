@@ -1283,71 +1283,19 @@ static RSA *tmp_rsa_callback(SSL *ssl, int export, int key_len)
 }
 */
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-
-static Mutex **ssl_static_locks = NULL;
-
-/* the call-back function for the openssl crypto thread locking */
-static void openssl_locking_function(int mode, int n, const char *file, int line)
-{
-    if (mode & CRYPTO_LOCK)
-        mutex_lock(ssl_static_locks[n-1]);
-    else
-        mutex_unlock(ssl_static_locks[n-1]);
-}
-
-void openssl_init_locks(void)
-{
-    int c, maxlocks = CRYPTO_num_locks();
-
-    gw_assert(ssl_static_locks == NULL);
-
-    ssl_static_locks = gw_malloc(sizeof(Mutex *) * maxlocks);
-    for (c = 0; c < maxlocks; c++)
-        ssl_static_locks[c] = mutex_create();
-
-    /* after the mutexes have been created, apply the call-back to it */
-    CRYPTO_set_locking_callback(openssl_locking_function);
-    CRYPTO_set_id_callback((CRYPTO_CALLBACK_PTR)gwthread_self);
-}
-
-void openssl_shutdown_locks(void)
-{
-    int c, maxlocks = CRYPTO_num_locks();
-
-    gw_assert(ssl_static_locks != NULL);
-
-    /* remove call-back from the locks */
-    CRYPTO_set_locking_callback(NULL);
-
-    for (c = 0; c < maxlocks; c++) 
-        mutex_destroy(ssl_static_locks[c]);
-
-    gw_free(ssl_static_locks);
-    ssl_static_locks = NULL;
-}
-
-#endif /* OPENSSL_VERSION_NUMBER < 0x10100000L */
-
 void conn_init_ssl(void)
 {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    openssl_init_locks();
-#endif
-
-    SSL_library_init();
-    SSL_load_error_strings();
-    global_ssl_context = SSL_CTX_new(SSLv23_client_method());
-    SSL_CTX_set_mode(global_ssl_context, 
+    /* OpenSSL 1.1.0+ auto-initializes, no manual init needed */
+    global_ssl_context = SSL_CTX_new(TLS_client_method());
+    SSL_CTX_set_mode(global_ssl_context,
         SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 }
 
-void server_ssl_init(void) 
+void server_ssl_init(void)
 {
-    SSLeay_add_ssl_algorithms();
-    SSL_load_error_strings();
-    global_server_ssl_context = SSL_CTX_new(SSLv23_server_method());
-    SSL_CTX_set_mode(global_server_ssl_context, 
+    /* OpenSSL 1.1.0+ auto-initializes, no manual init needed */
+    global_server_ssl_context = SSL_CTX_new(TLS_server_method());
+    SSL_CTX_set_mode(global_server_ssl_context,
         SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
     if (!SSL_CTX_set_default_verify_paths(global_server_ssl_context)) {
 	   panic(0, "can not set default path for server");
@@ -1356,38 +1304,16 @@ void server_ssl_init(void)
 
 void conn_shutdown_ssl(void)
 {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    openssl_shutdown_locks();
-#endif
-
     if (global_ssl_context)
         SSL_CTX_free(global_ssl_context);
-    
-    CONF_modules_free();
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    ERR_remove_state(0);
-    ENGINE_cleanup();
-#endif
-    CONF_modules_unload(1);
-    ERR_free_strings();
-    EVP_cleanup();
-    CRYPTO_cleanup_all_ex_data();
+    /* OpenSSL 1.1.0+ auto-cleans, no manual cleanup needed */
 }
 
 void server_shutdown_ssl(void)
 {
     if (global_server_ssl_context)
         SSL_CTX_free(global_server_ssl_context);
-
-    CONF_modules_free();
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    ERR_remove_state(0);
-    ENGINE_cleanup();
-#endif
-    CONF_modules_unload(1);
-    ERR_free_strings();
-    EVP_cleanup();
-    CRYPTO_cleanup_all_ex_data();
+    /* OpenSSL 1.1.0+ auto-cleans, no manual cleanup needed */
 }
 
 void conn_use_global_client_certkey_file(Octstr *certkeyfile)
@@ -1450,15 +1376,9 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
     char   *status;
     X509   *curr_cert;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    curr_cert = ctx->current_cert;
-    X509_NAME_oneline(X509_get_subject_name(curr_cert), subject, sizeof(subject));
-    X509_NAME_oneline(X509_get_issuer_name(curr_cert), issuer, sizeof (issuer));
-#else
     curr_cert = X509_STORE_CTX_get_current_cert(ctx);
     X509_NAME_oneline(X509_get_subject_name(curr_cert), subject, sizeof(subject));
-    X509_NAME_oneline(X509_get_issuer_name(curr_cert), issuer, sizeof (issuer));
-#endif
+    X509_NAME_oneline(X509_get_issuer_name(curr_cert), issuer, sizeof(issuer));
 
     status = preverify_ok ? "Accepting" : "Rejecting";
     

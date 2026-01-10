@@ -77,13 +77,12 @@
 
 void pki_init(void)
 {
-        OpenSSL_add_all_algorithms();
-        ERR_load_crypto_strings();
+        /* OpenSSL 1.1.0+ auto-initializes */
 }
 
 void pki_shutdown(void)
 {
-        EVP_cleanup();
+        /* OpenSSL 1.1.0+ auto-cleans */
 }
 
 

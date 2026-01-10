@@ -269,32 +269,7 @@ dnl Misc feature checks
 
 AC_CONFIG_SECTION([Checking for POSIX threads support])
 
-AC_MSG_CHECKING(for working pthreads)
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <pthread.h>
-#include <unistd.h>
-#include <stdlib.h>
-int pid;
-void testpid(void* foo);
-int main(void){
-    pthread_t child;
-    pid=getpid();
-    pthread_create(&child,NULL,(void*)testpid,NULL);
-    pthread_join(child,NULL);
-    return 0;
-}
-void testpid(void* foo){
-    int mypid=getpid();
-    if(mypid!=pid){
-        exit(1);
-    }else{
-        exit(0);
-    }
-}
-]])],
-  [AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no); CFLAGS="$CFLAGS -DBROKEN_PTHREADS=1"],
-  [AC_MSG_RESULT([cross compiling - assuming they work])])
+dnl Modern systems all have working POSIX threads
 
 dnl
 dnl Checking pthread_spin support
@@ -769,9 +744,7 @@ else
         AC_MSG_RESULT([$MYSQL_CFLAGS])
     fi
     AC_CHECK_HEADERS(mysql/mysql.h mysql/mysql_version.h)
-    AC_CHECK_LIB(mysqlclient_r, mysql_stmt_init, [],
-		AC_CHECK_LIB(mysqlclient, mysql_stmt_init, [], [AC_MSG_ERROR([Unable to find MySQL client libraries version >= 4.1])])
-    )
+    AC_CHECK_LIB(mysqlclient, mysql_stmt_init, [], [AC_MSG_ERROR([Unable to find MySQL/MariaDB client library])])
     AC_DEFINE(HAVE_MYSQL, 1, [Do we have mysql])
     AC_MSG_CHECKING([whether to compile with MySQL support])
     AC_MSG_RESULT(yes)

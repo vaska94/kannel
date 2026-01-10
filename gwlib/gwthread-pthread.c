@@ -861,19 +861,9 @@ int gwthread_cancel(long thread)
 }
 
 
-#ifndef BROKEN_PTHREADS
-
-/* Working pthreads */
 int gwthread_shouldhandlesignal(int signal){
     return 1;
 }
-#else
-
-/* Somewhat broken pthreads */ 
-int gwthread_shouldhandlesignal(int signal){
-    return (gwthread_self() == MAIN_THREAD_ID);
-}
-#endif
 
 int gwthread_dumpsigmask(void) {
     sigset_t signal_set;
