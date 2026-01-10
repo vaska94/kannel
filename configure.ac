@@ -67,7 +67,7 @@ AC_PREREQ([2.69])
 dnl Check gateway version number early for AC_INIT
 m4_define([KANNEL_VERSION], m4_esyscmd_s([head -n 1 VERSION]))
 
-AC_INIT([Kannel], [KANNEL_VERSION], [shapeless@pm.me])
+AC_INIT([Kamex], [KANNEL_VERSION], [shapeless@pm.me])
 AC_CONFIG_SRCDIR([gw/alt_charsets.h])
 AC_CONFIG_HEADERS([gw-config.h])
 AC_SUBST(SHELL)
@@ -83,11 +83,11 @@ if test "x$VERSION" = "xdev" -o "x$VERSION" = "xgit"; then
   AC_MSG_RESULT([$GIT_REVISION])
   VERSION="$VERSION-$GIT_REVISION"
 fi
-AC_DEFINE_UNQUOTED([GW_NAME], ["Kannel"], [Gateway name])
+AC_DEFINE_UNQUOTED([GW_NAME], ["Kamex"], [Gateway name])
 AC_DEFINE_UNQUOTED([GW_VERSION], ["$VERSION"], [Gateway version])
 AC_SUBST([GW_VERSION], [$VERSION])
 
-AC_CONFIG_SECTION([Configuring for Kannel gateway version $VERSION])
+AC_CONFIG_SECTION([Configuring for Kamex gateway version $VERSION])
 
 AM_INIT_AUTOMAKE([foreign -Wall])
 AM_PROG_AR
@@ -1191,14 +1191,12 @@ AC_CONFIG_SECTION([License information])
 cat <<X
 +--------------------------------------------------------------------+
 | License:                                                           |
-| This software is subject to the Kannel Software License, available |
-| in this distribution in the file LICENSE. By continuing this       |
-| installation process, you are bound by the terms of this license   |
-| agreement. If you do not agree with the terms of this license, you |
-| must abort the installation process at this point.                 |
+| Kamex is licensed under MIT License. See LICENSE file.             |
+| Original Kannel code remains under Kannel Software License 1.0.    |
+| See LICENSE.kannel for original license terms.                     |
 |                                                                    |
-|                      The Kannel Group <http://www.kannel.org/>     |
+|                         https://kamex.dev                          |
 +--------------------------------------------------------------------+
 
-Thank you for using Kannel.
+Thank you for using Kamex.
 X

@@ -1,20 +1,29 @@
-# Kannel SMS Gateway
+# Kamex SMS Gateway
 
-[![Version](https://img.shields.io/badge/version-1.6.5-blue.svg)](https://github.com/vaska94/kannel/releases/tag/v1.6.5)
-[![License](https://img.shields.io/badge/license-Kannel-green.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.7.0-blue.svg)](https://github.com/vaska94/kannel/releases)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Linux-lightgrey.svg)]()
 
-Open source SMS gateway supporting SMPP, CIMD, EMI/UCP, HTTP, and GSM modems.
+Modern, high-performance SMS gateway with built-in admin panel. Supports SMPP, CIMD, EMI/UCP, HTTP, and GSM modems.
 
-> **Note**: This is an independent fork maintained at [github.com/vaska94/kannel](https://github.com/vaska94/kannel).
-> It has **no affiliation** with the original Kannel project (kannel.org).
-> WAP components have been removed - this is an SMS-only gateway.
+> **Kamex** is a maintained fork of Kannel with new features and active development.
+> Original Kannel code remains under its original license (see LICENSE.kannel).
+
+## What's New in Kamex
+
+- **Web Admin Panel** - Built-in dashboard at `/` with real-time monitoring
+- **JSON API** - Modern `/status.json` and `/api/sendsms` endpoints
+- **Health Checks** - `/health` endpoint for load balancers and Kubernetes
+- **Redis/Valkey** - Native support for DLR and message store
+- **Removed Legacy** - Dropped RADIUS, WAP, and libxml2 dependencies
+- **Active Development** - Bug fixes and new features
 
 ## Features
 
 - **Multi-protocol support**: SMPP 3.3/3.4/5.0, CIMD, EMI/UCP, HTTP, AT modems
 - **High performance**: 3,000+ messages/sec on commodity hardware
 - **HTTP API**: Simple REST-like interface for sending/receiving SMS
+- **Web Admin Panel**: Real-time dashboard, SMSC control, message queue viewer
 - **Delivery reports**: Configurable DLR with multiple storage backends
 - **Database support**: MySQL, PostgreSQL, SQLite3, Redis/Valkey
 - **Health check endpoint**: `/health` for load balancers and Kubernetes
@@ -35,17 +44,31 @@ autoreconf -fi
 make
 
 # Configure
-sudo mkdir -p /etc/kannel
-sudo cp doc/examples/kannel.conf /etc/kannel/
-# Edit /etc/kannel/kannel.conf with your SMSC details
+sudo mkdir -p /etc/kamex
+sudo cp doc/examples/kannel.conf /etc/kamex/kamex.conf
+# Edit /etc/kamex/kamex.conf with your SMSC details
 
 # Run
-./gw/bearerbox /etc/kannel/kannel.conf &
-./gw/smsbox /etc/kannel/kannel.conf &
+./gw/bearerbox /etc/kamex/kamex.conf &
+./gw/smsbox /etc/kamex/kamex.conf &
+
+# Open admin panel
+open http://localhost:13000/
 
 # Send SMS via HTTP
 curl "http://localhost:13013/cgi-bin/sendsms?user=tester&pass=foobar&to=+1234567890&text=Hello"
 ```
+
+## Admin Panel
+
+Access the built-in admin panel at `http://localhost:13000/`
+
+- **Dashboard**: SMS/DLR traffic, SMSC status, connected boxes
+- **Queue**: View pending messages in store
+- **Send SMS**: Test SMS sending
+- **Controls**: Gateway management (suspend/resume/shutdown)
+
+Use `admin-password` for full control, `status-password` for view-only access.
 
 ## Documentation
 
@@ -75,6 +98,9 @@ curl "http://localhost:13013/cgi-bin/sendsms?user=tester&pass=foobar&to=+1234567
 +--------+     HTTP      +--------+    Internal     +-----------+     SMSC      +------+
 |  App   | -----------> | SMSBox | --------------> | BearerBox | ------------> | SMSC |
 +--------+   :13013      +--------+    Protocol     +-----------+   Protocol    +------+
+                                                          |
+                                                    Admin Panel
+                                                      :13000
 ```
 
 - **BearerBox**: Core daemon managing SMSC connections and message routing
@@ -164,8 +190,8 @@ make ssl-certs  # Required for benchmarks
 ```bash
 # Install systemd service files
 sudo ./contrib/systemd/setup-kannel-user.sh
-sudo systemctl enable kannel-bearerbox kannel-smsbox
-sudo systemctl start kannel-bearerbox kannel-smsbox
+sudo systemctl enable kamex-bearerbox kamex-smsbox
+sudo systemctl start kamex-bearerbox kamex-smsbox
 ```
 
 ## Contributing
@@ -178,10 +204,12 @@ sudo systemctl start kannel-bearerbox kannel-smsbox
 
 ## License
 
-Kannel is licensed under the Kannel Software License (BSD-style).
-See [LICENSE](LICENSE) for details.
+Kamex is dual-licensed:
+- **New code**: MIT License (see [LICENSE](LICENSE))
+- **Original Kannel code**: Kannel Software License 1.0 (see [LICENSE.kannel](LICENSE.kannel))
 
 ## Links
 
-- **Issues**: [github.com/vaska94/kannel/issues](https://github.com/vaska94/kannel/issues)
+- **Website**: [kamex.dev](https://kamex.dev)
+- **Issues**: [GitHub Issues](https://github.com/vaska94/kannel/issues)
 - **Documentation**: [doc/](doc/)
