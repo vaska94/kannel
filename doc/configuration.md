@@ -1,6 +1,6 @@
-# Kannel Configuration Guide
+# Kamex Configuration Guide
 
-Kannel uses a single configuration file with multiple "groups" defining different components.
+Kamex uses a single configuration file with multiple "groups" defining different components.
 
 ## Configuration File Syntax
 
@@ -116,7 +116,7 @@ concatenation = true            # Allow long SMS
 
 ### Authentication Methods
 
-Kannel supports two authentication methods:
+Kamex supports two authentication methods:
 
 1. **Username/Password** - Traditional query string or X-Kannel headers
    ```bash

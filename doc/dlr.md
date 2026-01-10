@@ -5,10 +5,10 @@ Delivery reports confirm message delivery status from the SMSC.
 ## How DLR Works
 
 1. Application sends SMS with `dlr-mask` and `dlr-url`
-2. Kannel stores DLR info and sends message to SMSC
+2. Kamex stores DLR info and sends message to SMSC
 3. SMSC delivers message to recipient
-4. SMSC sends delivery status back to Kannel
-5. Kannel calls `dlr-url` with status
+4. SMSC sends delivery status back to Kamex
+5. Kamex calls `dlr-url` with status
 
 ## Requesting DLR
 
@@ -66,7 +66,7 @@ dlr-url=http://myapp.com/dlr?id=%d&status=%d"
 
 ## DLR Storage Backends
 
-DLR info must be stored between send and callback. Kannel supports:
+DLR info must be stored between send and callback. Kamex supports:
 
 ### Internal (Memory)
 

@@ -1,6 +1,6 @@
 # SMS Gateway Setup
 
-This guide covers setting up Kannel as an SMS gateway.
+This guide covers setting up Kamex as an SMS gateway.
 
 ## Architecture Overview
 
@@ -42,7 +42,7 @@ systemctl start kannel-smsbox
 
 ## Sending SMS via HTTP
 
-Kannel supports two endpoints for sending SMS:
+Kamex supports two endpoints for sending SMS:
 
 | Endpoint | Method | Format | Auth |
 |----------|--------|--------|------|

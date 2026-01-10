@@ -1,6 +1,6 @@
-# Kannel SMS Gateway Documentation
+# Kamex SMS Gateway Documentation
 
-Kannel is an open source SMS gateway supporting multiple SMSC protocols.
+Kamex is an open source SMS gateway supporting multiple SMSC protocols.
 
 ## Documentation
 
@@ -69,6 +69,7 @@ smsbox /etc/kannel/kannel.conf &
 
 ## Resources
 
+- Website: https://kamex.dev
 - GitHub: https://github.com/vaska94/kannel
 - Issues: https://github.com/vaska94/kannel/issues
 

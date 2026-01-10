@@ -1,6 +1,6 @@
 # Supported SMSC Types
 
-Kannel supports multiple SMSC protocols for connecting to SMS centers.
+Kamex supports multiple SMSC protocols for connecting to SMS centers.
 
 ## SMPP (Short Message Peer-to-Peer)
 
