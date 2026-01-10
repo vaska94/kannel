@@ -94,6 +94,7 @@ test/udpfeed
 checks/check_counter
 checks/check_date
 checks/check_ipcheck
+checks/check_json
 checks/check_list
 checks/check_octstr
 
