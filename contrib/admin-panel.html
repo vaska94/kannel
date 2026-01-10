@@ -383,6 +383,64 @@
                     <label>DLR Mask</label>
                     <input type="number" id="smsDlrMask" value="31" min="0" max="31" style="max-width:100px">
                 </div>
+                <details style="margin-bottom: 16px;">
+                    <summary style="cursor: pointer; color: #71767b; font-size: 13px; margin-bottom: 12px;">Advanced Options</summary>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Coding</label>
+                            <select id="smsCoding">
+                                <option value="">Default</option>
+                                <option value="0">GSM 7-bit</option>
+                                <option value="1">8-bit binary</option>
+                                <option value="2">UCS-2 (Unicode)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Message Class</label>
+                            <select id="smsMclass">
+                                <option value="">Default</option>
+                                <option value="0">Flash (Class 0)</option>
+                                <option value="1">ME (Class 1)</option>
+                                <option value="2">SIM (Class 2)</option>
+                                <option value="3">TE (Class 3)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Validity (mins)</label>
+                            <input type="number" id="smsValidity" placeholder="e.g. 1440">
+                        </div>
+                        <div class="form-group">
+                            <label>Deferred (mins)</label>
+                            <input type="number" id="smsDeferred" placeholder="e.g. 60">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>MWI</label>
+                            <select id="smsMwi">
+                                <option value="">None</option>
+                                <option value="1">Voicemail Active</option>
+                                <option value="2">Fax Active</option>
+                                <option value="3">Email Active</option>
+                                <option value="4">Other Active</option>
+                                <option value="5">Voicemail Inactive</option>
+                                <option value="6">Fax Inactive</option>
+                                <option value="7">Email Inactive</option>
+                                <option value="8">Other Inactive</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Charset</label>
+                            <input type="text" id="smsCharset" placeholder="e.g. UTF-8">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>UDH (hex)</label>
+                        <input type="text" id="smsUdh" placeholder="e.g. 050003CC0201">
+                    </div>
+                </details>
                 <button class="btn btn-primary" onclick="sendSms()" id="sendBtn">Send SMS</button>
             </div>
         </div>
@@ -835,6 +893,14 @@
             const smsc = document.getElementById('smsSmsc').value;
             const dlrMask = document.getElementById('smsDlrMask').value;
             const smsboxIdx = document.getElementById('smsSmsbox').value;
+            // Advanced options
+            const coding = document.getElementById('smsCoding').value;
+            const mclass = document.getElementById('smsMclass').value;
+            const validity = document.getElementById('smsValidity').value;
+            const deferred = document.getElementById('smsDeferred').value;
+            const mwi = document.getElementById('smsMwi').value;
+            const charset = document.getElementById('smsCharset').value;
+            const udh = document.getElementById('smsUdh').value;
 
             if (!to || !text) {
                 el.innerHTML = '<div class="alert error">To and Message are required</div>';
@@ -863,6 +929,14 @@
                 if (from) url += `&from=${encodeURIComponent(from)}`;
                 if (smsc) url += `&smsc=${encodeURIComponent(smsc)}`;
                 if (dlrMask) url += `&dlr-mask=${dlrMask}`;
+                // Advanced options
+                if (coding) url += `&coding=${coding}`;
+                if (mclass) url += `&mclass=${mclass}`;
+                if (validity) url += `&validity=${validity}`;
+                if (deferred) url += `&deferred=${deferred}`;
+                if (mwi) url += `&mwi=${mwi}`;
+                if (charset) url += `&charset=${encodeURIComponent(charset)}`;
+                if (udh) url += `&udh=${encodeURIComponent(udh)}`;
 
                 const res = await fetch(url);
                 const data = await res.text();
