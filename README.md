@@ -8,6 +8,7 @@ Modern, high-performance SMS gateway with built-in admin panel. Supports SMPP, C
 
 > **Kamex** is a maintained fork of Kannel with new features and active development.
 > Original Kannel code remains under its original license (see LICENSE.kannel).
+> Configuration files are compatible with Kannel.
 
 ## What's New in Kamex
 
