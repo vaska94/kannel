@@ -22,7 +22,7 @@ Modern, high-performance SMS gateway with built-in admin panel. Supports SMPP, C
 ## Features
 
 - **Multi-protocol support**: SMPP 3.3/3.4/5.0, CIMD, EMI/UCP, HTTP, AT modems
-- **High performance**: 3,000+ messages/sec on commodity hardware
+- **High performance**: 16,000+ messages/sec on commodity hardware
 - **HTTP API**: Simple REST-like interface for sending/receiving SMS
 - **Web Admin Panel**: Real-time dashboard, SMSC control, message queue viewer
 - **Delivery reports**: Configurable DLR with multiple storage backends
@@ -173,12 +173,12 @@ Minimal build (no databases):
 
 ## Performance
 
-Benchmark results (WSL2, AMD Ryzen 9 5550X):
+Benchmark results (Linux, Intel i5-13500):
 
 | Test | Throughput | Latency |
 |------|------------|---------|
-| HTTP API | ~2,778 req/sec | - |
-| SMS/SMPP | ~3,125 msg/sec | 339ms avg |
+| HTTP API | ~14,000 req/sec | - |
+| SMS/SMPP | ~16,000 msg/sec | 80ms avg |
 
 Run your own benchmarks:
 ```bash
