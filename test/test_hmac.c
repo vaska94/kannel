@@ -62,7 +62,7 @@
  * 
  * References:
  *   - WAP-184-PROVBOOT-20010314a.pdf (Provisioning Bootstrap), WAP Forum 
- *   - HMAC: Keyed-Hashing for Message Authentication”, Krawczyk, H., 
+ *   - HMAC: Keyed-Hashing for Message Authenticationï¿½, Krawczyk, H., 
  *     Bellare, M., and Canetti, R., RFC 2104
  *
  * Stipe Tolj <stolj@wapme.de>
@@ -109,19 +109,11 @@ int main(int argc, char **argv)
     octstr_dump(data, 0);
 
 #ifdef HAVE_LIBSSL
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    HMAC_Init(ctx, octstr_get_cstr(key), octstr_len(key), EVP_sha1());
-#else
     ctx = HMAC_CTX_new();
-#endif
-    p = HMAC(EVP_sha1(), octstr_get_cstr(key), octstr_len(key), 
-         octstr_get_cstr(data), octstr_len(data), 
+    p = HMAC(EVP_sha1(), octstr_get_cstr(key), octstr_len(key),
+         octstr_get_cstr(data), octstr_len(data),
          macbuf, &mac_len);
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    HMAC_cleanup(ctx);
-#else
     HMAC_CTX_free(ctx);
-#endif
 #else
     macbuf[0] = 0;
     mac_len = 0;

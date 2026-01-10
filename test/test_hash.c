@@ -67,37 +67,16 @@
 #include "gwlib/gwlib.h"
 
 #ifdef HAVE_LIBSSL
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-static Octstr *our_hash_func(Octstr *os)
-{
-    /* use openssl's SHA1 */
-    EVP_MD_CTX mdctx;
-    const EVP_MD *md;
-    unsigned char md_value[EVP_MAX_MD_SIZE];
-    unsigned int md_len;
-
-    md = EVP_get_digestbyname("sha1");
-
-    EVP_MD_CTX_init(&mdctx);
-    EVP_DigestInit_ex(&mdctx, md, NULL);
-    EVP_DigestUpdate(&mdctx, octstr_get_cstr(os), octstr_len(os));
-    EVP_DigestFinal_ex(&mdctx, md_value, &md_len);
-    EVP_MD_CTX_cleanup(&mdctx);
-
-    return octstr_create_from_data((char*) md_value, md_len);
-}
-#else
 static Octstr *our_hash_func(Octstr *os)
 {
     unsigned char hash[20];
-    
+
     memset(hash, 0, sizeof(hash));
-    
+
     SHA1((const unsigned char *)octstr_get_cstr(os), octstr_len(os), hash);
-    
+
     return octstr_create_from_data((const char*)hash, sizeof(hash));
 }
-#endif
 #endif
 
 

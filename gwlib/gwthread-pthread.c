@@ -337,13 +337,6 @@ static void new_thread_cleanup(void *arg)
     debug("gwlib.gwthread", 0, "Thread %ld (%s) terminates.",
           p->ti->number, p->ti->name);
     alert_joiners();
-#ifdef HAVE_LIBSSL
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    /* Clear the OpenSSL thread-specific error queue to avoid
-     * memory leaks. */
-    ERR_remove_state(gwthread_self());
-#endif
-#endif /* HAVE_LIBSSL */
     /* Must free p before signaling our exit, otherwise there is
      * a race with gw_check_leaks at shutdown. */
     gw_free(p);
