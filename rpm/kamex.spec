@@ -110,12 +110,14 @@ exit 0
 %{_unitdir}/kamex-smsbox.service
 %dir %attr(0750, kamex, kamex) %{_localstatedir}/log/kamex
 %dir %attr(0750, kamex, kamex) %{_localstatedir}/spool/kamex
+%{_libdir}/libgwlib.so.*
+%{_libdir}/libgw.so.*
 
 %files devel
 %{_bindir}/gw-config
 %{_includedir}/kamex/
-%{_libdir}/libgwlib.so*
-%{_libdir}/libgw.so*
+%{_libdir}/libgwlib.so
+%{_libdir}/libgw.so
 
 %changelog
 * Sun Jan 11 2026 Kamex Team <dev@kamex.dev> - 1.7.5-1
