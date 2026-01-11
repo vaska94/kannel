@@ -13,7 +13,7 @@ jobs:
     name: Build RPM (EL10)
     runs-on: ubuntu-latest
     container:
-      image: rockylinux:10
+      image: rockylinux/rockylinux:10
 
     steps:
       - name: Install build dependencies
