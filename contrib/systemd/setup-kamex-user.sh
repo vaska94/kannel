@@ -31,26 +31,68 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Detect sbin directory (where bearerbox is installed)
+detect_sbindir() {
+    # Check common locations
+    if [[ -x "/usr/sbin/bearerbox" ]]; then
+        echo "/usr/sbin"
+    elif [[ -x "/usr/local/sbin/bearerbox" ]]; then
+        echo "/usr/local/sbin"
+    else
+        # Default to /usr/local/sbin for manual installs
+        echo "/usr/local/sbin"
+    fi
+}
+
+SBINDIR=$(detect_sbindir)
+print_status "Detected sbin directory: $SBINDIR"
+
 # Function to get file (local or download from GitHub)
+# Handles both generated .service files and .service.in templates
 get_file() {
     local filename="$1"
     local dest="$2"
 
+    # First check for already-generated file (from ./configure)
     if [[ -f "$SCRIPT_DIR/$filename" ]]; then
         cp "$SCRIPT_DIR/$filename" "$dest"
         return 0
-    else
-        # Try to download from GitHub
+    fi
+
+    # Check for .in template and substitute
+    if [[ -f "$SCRIPT_DIR/${filename}.in" ]]; then
+        sed "s|@SBINDIR@|$SBINDIR|g" "$SCRIPT_DIR/${filename}.in" > "$dest"
+        return 0
+    fi
+
+    # Try to download from GitHub
+    local url
+    for suffix in "" ".in"; do
+        url="$GITHUB_RAW/${filename}${suffix}"
         if command -v curl >/dev/null 2>&1; then
-            if curl -sSf "$GITHUB_RAW/$filename" -o "$dest" 2>/dev/null; then
+            if curl -sSf "$url" -o "$dest.tmp" 2>/dev/null; then
+                if [[ -n "$suffix" ]]; then
+                    # Downloaded template, substitute
+                    sed "s|@SBINDIR@|$SBINDIR|g" "$dest.tmp" > "$dest"
+                    rm -f "$dest.tmp"
+                else
+                    mv "$dest.tmp" "$dest"
+                fi
                 return 0
             fi
         elif command -v wget >/dev/null 2>&1; then
-            if wget -q "$GITHUB_RAW/$filename" -O "$dest" 2>/dev/null; then
+            if wget -q "$url" -O "$dest.tmp" 2>/dev/null; then
+                if [[ -n "$suffix" ]]; then
+                    sed "s|@SBINDIR@|$SBINDIR|g" "$dest.tmp" > "$dest"
+                    rm -f "$dest.tmp"
+                else
+                    mv "$dest.tmp" "$dest"
+                fi
                 return 0
             fi
         fi
-    fi
+        rm -f "$dest.tmp"
+    done
     return 1
 }
 

@@ -156,3 +156,7 @@ config.nice
 gw-config*.dirstamp
 ar-lib
 gw-config
+
+# Generated systemd service files
+contrib/systemd/kamex-bearerbox.service
+contrib/systemd/kamex-smsbox.service

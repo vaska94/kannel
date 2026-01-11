@@ -1102,6 +1102,13 @@ AH_VERBATIM([PRINTFLIKE], [
 dnl Final Output
 
 AC_CONFIG_SECTION([Generating output files])
+
+dnl Expand variables for systemd service files
+test "x$prefix" = xNONE && prefix=$ac_default_prefix
+test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
+eval "eval SBINDIR=$sbindir"
+AC_SUBST(SBINDIR)
+
 AC_CONFIG_FILES([
 	Makefile
 	gwlib/Makefile
@@ -1111,6 +1118,8 @@ AC_CONFIG_FILES([
 	test/Makefile
 	checks/Makefile
 	benchmarks/Makefile
+	contrib/systemd/kamex-bearerbox.service
+	contrib/systemd/kamex-smsbox.service
 ])
 AC_OUTPUT
 

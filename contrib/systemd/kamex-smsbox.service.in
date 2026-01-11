@@ -6,7 +6,7 @@ Documentation=https://kamex.dev
 
 [Service]
 Type=simple
-ExecStart=/usr/local/sbin/smsbox -v 1 /etc/kamex/kamex.conf
+ExecStart=@SBINDIR@/smsbox -v 1 /etc/kamex/kamex.conf
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=always
 RestartSec=5

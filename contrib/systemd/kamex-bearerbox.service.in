@@ -5,7 +5,7 @@ Documentation=https://kamex.dev
 
 [Service]
 Type=simple
-ExecStart=/usr/local/sbin/bearerbox -v 1 /etc/kamex/kamex.conf
+ExecStart=@SBINDIR@/bearerbox -v 1 /etc/kamex/kamex.conf
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=always
 RestartSec=5
