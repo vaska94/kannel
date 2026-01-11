@@ -288,7 +288,7 @@ int check_login(Boxc *boxc, Octstr *system_id, Octstr *password, Octstr *system_
 		return 0;
 	}
 	while (!feof(fp)) {
-		fscanf(fp, "%s %s %s %s\n", systemid, passw, systemtype, allowed_ips);
+		fscanf(fp, "%254s %254s %254s %1023s\n", systemid, passw, systemtype, allowed_ips);
 		if (systemidisboxcid) {
 			success = (strcmp(octstr_get_cstr(system_id), systemid) == 0 && strcmp(octstr_get_cstr(password), passw) == 0);
 		}
