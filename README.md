@@ -26,7 +26,8 @@ Modern, high-performance SMS gateway with built-in admin panel. Supports SMPP, E
 - **HTTP API**: Simple REST-like interface for sending/receiving SMS
 - **Web Admin Panel**: Real-time dashboard, SMSC control, message queue viewer
 - **Delivery reports**: Configurable DLR with multiple storage backends
-- **Database support**: MySQL, PostgreSQL, SQLite3, Redis/Valkey
+- **Database support**: MySQL, PostgreSQL, SQLite3, Redis/Valkey, Cassandra, Oracle*, MSSQL*
+  <br><sub>*untested</sub>
 - **Health check endpoint**: `/health` for load balancers and Kubernetes
 - **Production ready**: Battle-tested SMS gateway since 2000
 
@@ -165,6 +166,11 @@ Full build with all features:
 | `--with-pgsql` | PostgreSQL support |
 | `--with-sqlite3` | SQLite3 support |
 | `--with-redis` | Redis/Valkey support |
+| `--with-cassandra` | Cassandra support |
+| `--with-oracle` | Oracle support (untested) |
+| `--with-mssql` | MSSQL support (untested) |
+
+> **Note:** Oracle and MSSQL backends are included but currently untested. Use at your own risk and report issues.
 
 Minimal build (no databases):
 ```bash
