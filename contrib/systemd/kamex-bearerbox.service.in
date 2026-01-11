@@ -14,7 +14,15 @@ TimeoutStopSec=30
 User=kamex
 Group=kamex
 
-# Security settings
+# Directory management (systemd creates these automatically)
+RuntimeDirectory=kamex
+RuntimeDirectoryMode=0755
+StateDirectory=kamex
+StateDirectoryMode=0755
+LogsDirectory=kamex
+LogsDirectoryMode=0755
+
+# Security hardening (requires namespace support)
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
