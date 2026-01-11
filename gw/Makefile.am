@@ -34,9 +34,6 @@ libgw_la_SOURCES = \
 	smsc/smpp_pdu.c
 
 sbin_PROGRAMS = bearerbox smsbox
-man8_MANS = kannel.8
-
-EXTRA_DIST = $(man8_MANS)
 
 bearerbox_LDADD = $(top_builddir)/gwlib/libgwlib.la libgw.la
 bearerbox_SOURCES = \
@@ -67,7 +64,7 @@ smsbox_LDADD = $(top_builddir)/gwlib/libgwlib.la libgw.la
 smsbox_SOURCES = \
 	smsbox.c
 	
-includedir = $(prefix)/include/kannel/gw
+includedir = $(prefix)/include/kamex/gw
 
 nobase_include_HEADERS = \
 	alt_charsets.h \

@@ -4,7 +4,6 @@ bin_PROGRAMS = mtbatch decode_emimsg
 sbin_PROGRAMS = run_kannel_box
 
 man1_MANS = mtbatch.1
-man8_MANS = run_kannel_box.8
 
 
 mtbatch_LDADD = $(top_builddir)/gwlib/libgwlib.la $(top_builddir)/gw/libgw.la

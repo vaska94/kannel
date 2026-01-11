@@ -227,7 +227,7 @@ The `/status.json` endpoint returns comprehensive gateway status in JSON format:
 
 ```json
 {
-  "version": "1.7.0",
+  "version": "1.7.5",
   "status": "running",
   "uptime": {"days": 0, "hours": 2, "minutes": 15, "seconds": 30},
   "sms": {

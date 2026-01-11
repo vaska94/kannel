@@ -1,6 +1,6 @@
 lib_LTLIBRARIES = libgwlib.la
 
-includedir = $(prefix)/include/kannel/gwlib
+includedir = $(prefix)/include/kamex/gwlib
 
 libgwlib_la_SOURCES = \
 	accesslog.c \

@@ -12,7 +12,7 @@ EXTRA_DIST = ChangeLog INSTALL LICENSE README VERSION contrib
 
 BUILT_SOURCES = gw-config.h
 
-includedir = $(prefix)/include/kannel
+includedir = $(prefix)/include/kamex
 
 include_HEADERS = \
 	gw-config.h

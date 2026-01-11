@@ -2,7 +2,7 @@
 
 All notable changes to Kamex (formerly Kannel) will be documented in this file.
 
-## [1.7.0] - 2026-01-10
+## [1.7.5] - 2026-01-10
 
 ### Rebrand
 - **Renamed from Kannel to Kamex** due to licensing restrictions

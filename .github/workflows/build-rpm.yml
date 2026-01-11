@@ -1,0 +1,94 @@
+name: Build RPM
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-el10:
+    name: Build RPM (EL10)
+    runs-on: ubuntu-latest
+    container:
+      image: rockylinux:10
+
+    steps:
+      - name: Install build dependencies
+        run: |
+          dnf install -y epel-release
+          crb enable
+          dnf install -y \
+            git \
+            gcc \
+            make \
+            autoconf \
+            automake \
+            libtool \
+            rpm-build \
+            openssl-devel \
+            pkgconfig \
+            mariadb-devel \
+            libpq-devel \
+            libsqlite3x-devel \
+            hiredis-devel \
+            gettext-devel \
+            systemd-rpm-macros
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup rpmbuild tree
+        run: |
+          mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(grep 'Version:' rpm/kamex.spec | awk '{print $2}')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create source tarball
+        run: |
+          git archive --format=tar.gz --prefix=kamex-${{ steps.version.outputs.version }}/ HEAD \
+            > ~/rpmbuild/SOURCES/kamex-${{ steps.version.outputs.version }}.tar.gz
+
+      - name: Copy spec file
+        run: cp rpm/kamex.spec ~/rpmbuild/SPECS/
+
+      - name: Build RPM
+        run: rpmbuild -ba ~/rpmbuild/SPECS/kamex.spec
+
+      - name: List built RPMs
+        run: find ~/rpmbuild/RPMS ~/rpmbuild/SRPMS -name '*.rpm' -ls
+
+      - name: Upload RPMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: kamex-rpms-el10
+          path: |
+            ~/rpmbuild/RPMS/**/*.rpm
+            ~/rpmbuild/SRPMS/*.rpm
+
+  release:
+    name: Create Release
+    needs: build-el10
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: kamex-rpms-el10
+          path: rpms/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: rpms/**/*.rpm
+          generate_release_notes: true

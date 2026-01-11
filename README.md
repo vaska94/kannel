@@ -1,6 +1,6 @@
 # Kamex SMS Gateway
 
-[![Version](https://img.shields.io/badge/version-1.7.0-blue.svg)](https://github.com/vaska94/kannel/releases)
+[![Version](https://img.shields.io/badge/version-1.7.5-blue.svg)](https://github.com/vaska94/kannel/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Linux-lightgrey.svg)]()
 
@@ -91,7 +91,7 @@ Use `admin-password` for full control, `status-password` for view-only access.
 | HTTP | `smsc = http` | HTTP-based gateways |
 | AT Modem | `smsc = at` | GSM modems via serial/USB |
 
-> **Note:** Legacy protocols (CIMD, SMASI, OIS, SEMA, CGW, EMI/X.25) were removed in v1.7.0.
+> **Note:** Legacy protocols (CIMD, SMASI, OIS, SEMA, CGW, EMI/X.25) were removed in v1.7.5.
 > These protocols have no active deployments. Use SMPP instead.
 
 ## Architecture

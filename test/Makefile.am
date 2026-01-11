@@ -10,7 +10,6 @@ noinst_PROGRAMS = \
 	test_boxc \
 	test_cfg \
 	test_charset \
-	test_cimd2 \
 	test_conn \
 	test_date \
 	test_dbpool \

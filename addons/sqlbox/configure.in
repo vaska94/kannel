@@ -482,9 +482,9 @@ found=""
                 if test "x$found" = "x" ; then
                         AC_MSG_CHECKING([for Kannel include files in])
                         AC_MSG_RESULT($loc)
-                        AC_CHECK_FILE("$loc/include/kannel/gw-config.h",
-                                [CFLAGS="$CFLAGS -I$loc/include/kannel -I$loc/include/kannel"; 
-                LDFLAGS="$LDFLAGS -L$loc/lib/kannel -lwap -lgwlib";
+                        AC_CHECK_FILE("$loc/include/kamex/gw-config.h",
+                                [CFLAGS="$CFLAGS -I$loc/include/kamex -I$loc/include/kamex";
+                LDFLAGS="$LDFLAGS -L$loc/lib/kamex -lgwlib";
                 found=1
                                 ])
                 fi
