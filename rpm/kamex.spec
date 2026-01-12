@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 
 Name:           kamex
-Version:        1.7.5
+Version:        1.7.6
 Release:        1%{?dist}
 Summary:        High-performance SMS gateway (Kannel fork)
 License:        MIT and Kannel
@@ -120,6 +120,11 @@ exit 0
 %{_libdir}/libgw.so
 
 %changelog
+* Mon Jan 12 2026 Kamex Team <dev@kamex.dev> - 1.7.6-1
+- Fixed systemd service namespace compatibility
+- Added RuntimeDirectory/StateDirectory/LogsDirectory
+- Service paths now use @SBINDIR@ template
+
 * Sun Jan 11 2026 Kamex Team <dev@kamex.dev> - 1.7.5-1
 - Initial RPM package for EL10
 - Fork of Kannel with modern codebase

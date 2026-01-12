@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 
 Name:           kamex-sqlbox
-Version:        1.7.5
+Version:        1.7.6
 Release:        1%{?dist}
 Summary:        Database queue box for Kamex SMS gateway
 License:        MIT and Kannel
@@ -84,7 +84,7 @@ exit 0
 %{_unitdir}/kamex-sqlbox.service
 
 %changelog
-* Mon Jan 12 2026 Kamex Team <dev@kamex.dev> - 1.7.5-1
-- Modern RPM package for EL10
-- Added systemd service file
-- Integrated with Kamex packaging
+* Mon Jan 12 2026 Kamex Team <dev@kamex.dev> - 1.7.6-1
+- Initial RPM package for EL10
+- Modernized configure.ac, removed DocBook
+- Added systemd service file with security hardening

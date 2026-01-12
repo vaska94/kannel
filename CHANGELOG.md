@@ -2,6 +2,20 @@
 
 All notable changes to Kamex (formerly Kannel) will be documented in this file.
 
+## [1.7.6] - 2026-01-12
+
+### Added
+- **SQLBox packaging** - RPM package for kamex-sqlbox addon
+- **SQLBox systemd service** - `kamex-sqlbox.service` with security hardening
+
+### Changed
+- **Systemd services** - Use `RuntimeDirectory`, `StateDirectory`, `LogsDirectory` for better compatibility
+- **Systemd paths** - Service files now use `@SBINDIR@` template for correct paths in both `make install` and RPM
+
+### Fixed
+- **Namespace errors** - Fixed `status=226/NAMESPACE` errors in containers/VMs
+- **SQLBox build** - Modernized configure.ac, removed DocBook build system
+
 ## [1.7.5] - 2026-01-10
 
 ### Rebrand
