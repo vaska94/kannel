@@ -1,12 +1,13 @@
 # Docker Deployment
 
-Kamex provides official Docker images for containerized deployments.
+Kamex provides official Docker images for containerized deployments. No need to clone the repo or build anything.
 
 ## Quick Start
 
 ```bash
-cd docker/
-# Create kamex.conf with your SMSC settings
+mkdir kamex && cd kamex
+# Create docker-compose.yml (see below)
+# Create kamex.conf (see below)
 docker compose up -d
 ```
 
@@ -23,7 +24,63 @@ docker run --rm ghcr.io/vaska94/kamex:latest --version
 
 ## Docker Compose
 
-The included `docker-compose.yml` runs a complete stack:
+Create `docker-compose.yml`:
+
+```yaml
+services:
+  bearerbox:
+    image: ghcr.io/vaska94/kamex:latest
+    container_name: kamex-bearerbox
+    command: ["/usr/sbin/bearerbox", "/etc/kamex/kamex.conf"]
+    volumes:
+      - ./kamex.conf:/etc/kamex/kamex.conf:ro
+      - kamex-spool:/var/spool/kamex
+      - kamex-logs:/var/log/kamex
+    ports:
+      - "13000:13000"
+    networks:
+      - kamex
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:13000/health"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+    restart: unless-stopped
+
+  smsbox:
+    image: ghcr.io/vaska94/kamex:latest
+    container_name: kamex-smsbox
+    command: ["/usr/sbin/smsbox", "/etc/kamex/kamex.conf"]
+    volumes:
+      - ./kamex.conf:/etc/kamex/kamex.conf:ro
+      - kamex-logs:/var/log/kamex
+    ports:
+      - "13013:13013"
+    networks:
+      - kamex
+    depends_on:
+      bearerbox:
+        condition: service_healthy
+    restart: unless-stopped
+
+  valkey:
+    image: valkey/valkey:9-alpine
+    container_name: kamex-valkey
+    volumes:
+      - valkey-data:/data
+    networks:
+      - kamex
+    restart: unless-stopped
+
+volumes:
+  kamex-spool:
+  kamex-logs:
+  valkey-data:
+
+networks:
+  kamex:
+    driver: bridge
+```
 
 | Service | Description | Port |
 |---------|-------------|------|
@@ -31,9 +88,9 @@ The included `docker-compose.yml` runs a complete stack:
 | smsbox | HTTP API for sending SMS | 13013 |
 | valkey | Redis-compatible store for DLR | - |
 
-### Configuration
+## Configuration
 
-Create `docker/kamex.conf` with your SMSC settings. See [Configuration Guide](configuration.md) for options.
+Create `kamex.conf` with your SMSC settings. See [Configuration Guide](configuration.md) for options.
 
 Minimal example:
 

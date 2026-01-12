@@ -187,13 +187,15 @@ make ssl-certs  # Required for benchmarks
 
 ## Docker
 
+No build required - just create two files and run:
+
 ```bash
-cd docker/
-# Create kamex.conf with your SMSC settings
+mkdir kamex && cd kamex
+# Create docker-compose.yml and kamex.conf (see doc/docker.md)
 docker compose up -d
 ```
 
-Includes bearerbox, smsbox, and Valkey for DLR storage. See [Docker Guide](doc/docker.md) for details.
+Includes bearerbox, smsbox, and Valkey for DLR storage. See [Docker Guide](doc/docker.md) for full setup.
 
 ## systemd Integration
 
