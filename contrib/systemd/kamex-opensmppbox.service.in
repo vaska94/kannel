@@ -1,0 +1,34 @@
+[Unit]
+Description=Kamex OpenSMPPBox - SMPP Proxy
+Documentation=https://kamex.dev
+After=network.target kamex-bearerbox.service
+Wants=kamex-bearerbox.service
+
+[Service]
+Type=simple
+User=kamex
+Group=kamex
+ExecStart=@SBINDIR@/opensmppbox /etc/kamex/opensmppbox.conf
+Restart=on-failure
+RestartSec=5
+
+# Directory management (systemd creates these automatically)
+RuntimeDirectory=kamex
+RuntimeDirectoryMode=0755
+StateDirectory=kamex
+StateDirectoryMode=0755
+LogsDirectory=kamex
+LogsDirectoryMode=0755
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/kamex /var/spool/kamex /var/run/kamex
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target

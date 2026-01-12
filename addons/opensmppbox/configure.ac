@@ -1,17 +1,21 @@
-dnl SQLBox - Database queue box for Kamex SMS Gateway
+dnl OpenSMPPBox - SMPP proxy box for Kamex SMS Gateway
 dnl
-dnl Originally by Rene Kluwen, Martin Conte, Alejandro Guerrieri, Stipe Tolj
+dnl Originally by Rene Kluwen, Alejandro Guerrieri
 dnl Modernized for Kamex project
 
 AC_PREREQ([2.69])
-AC_INIT([kamex-sqlbox], [1.7.8], [dev@kamex.dev])
-AC_CONFIG_SRCDIR([gw/sqlbox.c])
+AC_INIT([kamex-opensmppbox], [1.7.8], [dev@kamex.dev])
+AC_CONFIG_SRCDIR([gw/opensmppbox.c])
 AC_CONFIG_AUX_DIR([autotools])
 AC_CONFIG_HEADERS([sb-config.h])
 
 AM_INIT_AUTOMAKE([foreign -Wall])
 AM_MAINTAINER_MODE([enable])
 AC_CANONICAL_HOST
+
+dnl Define version macros for opensmppbox
+AC_DEFINE_UNQUOTED(GW_NAME, "OpenSMPPBox", [Gateway name])
+AC_DEFINE_UNQUOTED(GW_VERSION, "$PACKAGE_VERSION", [Gateway version])
 
 dnl Checks for programs
 AC_PROG_CC
@@ -118,73 +122,31 @@ fi
 
 
 dnl ===========================================================================
-dnl Sybase CT-Lib support
+dnl PAM support (optional, for SMPP client authentication)
 dnl ===========================================================================
 
-AC_MSG_CHECKING(for Ct-Lib support)
-AC_ARG_WITH(ctlib,
-[  --with-ctlib[=DIR]      Include Ct-Lib support.  DIR is the Ct-Lib
-                          install directory, defaults to /opt/sybase.],
-[
-    if test "$withval" = "yes"; then
-        withval=/opt/sybase
-    fi
-
-    if test "$withval" != "no"; then
-        if test -f $withval/include/ctpublic.h; then
-            CTLIB_INCDIR=$withval/include
-            CTLIB_LIBDIR=$withval/lib
-        else
-            AC_MSG_RESULT(no)
-            AC_MSG_ERROR(Invalid Ct-Lib directory - unable to find ctpublic.h)
-        fi
-        CTLIB_LFLAGS="-L$CTLIB_LIBDIR -lct -lcs -lsybtcl -lcomn -lintl"
-        CTLIB_INCLUDE="-I$CTLIB_INCDIR"
-        AC_DEFINE(HAVE_CTLIB, 1, [Define if CT-Lib is available])
-        AC_MSG_RESULT(yes)
-        have_db=yes
-        AC_CHECK_FUNC(dlopen, , AC_CHECK_LIB(dl, dlopen, CTLIB_LFLAGS="$CTLIB_LFLAGS -ldl"))
-    fi
+AC_MSG_CHECKING([whether to compile with PAM support])
+AC_ARG_ENABLE(pam,
+[  --enable-pam            enable PAM authentication @<:@disabled@:>@], [
+  if test "$enableval" = "yes"; then
+    AC_CHECK_LIB(pam, pam_end)
+    AC_CHECK_LIB(dl, main)
+    AC_CHECK_HEADER([security/pam_appl.h],
+      AC_DEFINE(HAVE_PAM_SECURITY, 1, "HAVE_PAM_SECURITY")
+      AC_DEFINE(HAVE_PAM, 1, "HAVE_PAM")
+      AC_MSG_RESULT([enabling PAM for authentication]),
+      [AC_CHECK_HEADER([pam/pam_appl.h],
+        AC_DEFINE(HAVE_PAM_PAM, 1, "HAVE_PAM_PAM")
+        AC_DEFINE(HAVE_PAM, 1, "HAVE_PAM")
+        AC_MSG_RESULT([enabling PAM for authentication])
+      )]
+    )
+  else
+    AC_MSG_RESULT(disabled)
+  fi
 ],[
-    AC_MSG_RESULT(no)
+  AC_MSG_RESULT(disabled)
 ])
-AC_SUBST(CTLIB_LFLAGS)
-AC_SUBST(CTLIB_INCLUDE)
-
-
-dnl ===========================================================================
-dnl FreeTDS CT-Lib support (for MSSQL)
-dnl ===========================================================================
-
-AC_MSG_CHECKING(for FreeTDS Ct-Lib support)
-AC_ARG_WITH(mssql,
-[  --with-mssql[=DIR]      Include FreeTDS Ct-Lib support.  DIR is the FreeTDS
-                          install directory, defaults to /usr/local.],
-[
-    if test "$withval" = "yes"; then
-        withval=/usr/local
-    fi
-
-    if test "$withval" != "no"; then
-        if test -f $withval/include/ctpublic.h; then
-            CTLIB_INCDIR=$withval/include
-            CTLIB_LIBDIR=$withval/lib
-        else
-            AC_MSG_RESULT(no)
-            AC_MSG_ERROR(Invalid FreeTDS directory - unable to find ctpublic.h)
-        fi
-        CTLIB_LFLAGS="-L$CTLIB_LIBDIR -lct"
-        CTLIB_INCLUDE="-I$CTLIB_INCDIR"
-        AC_DEFINE(HAVE_CTLIB, 1, [Define if CT-Lib is available])
-        AC_MSG_RESULT(yes)
-        have_db=yes
-        AC_CHECK_FUNC(dlopen, , AC_CHECK_LIB(dl, dlopen, CTLIB_LFLAGS="$CTLIB_LFLAGS -ldl"))
-    fi
-],[
-    AC_MSG_RESULT(no)
-])
-AC_SUBST(CTLIB_LFLAGS)
-AC_SUBST(CTLIB_INCLUDE)
 
 
 dnl ===========================================================================
@@ -243,29 +205,6 @@ AC_CHECK_LIB([gwlib], [cfg_create], [],
 
 
 dnl ===========================================================================
-dnl Check for database support in Kamex
-dnl ===========================================================================
-
-AC_MSG_CHECKING([for Kamex database support])
-
-dnl These are provided by Kamex's gwlib - we just need to link against it
-dnl SQLBox uses: MySQL, PostgreSQL, SQLite3, Oracle, MSSQL
-AC_MSG_RESULT([using Kamex database backends])
-
-dnl Check which databases are available in the installed Kamex
-AC_CHECK_DECL([HAVE_MYSQL], [have_mysql=yes], [have_mysql=no], [#include "gw-config.h"])
-AC_CHECK_DECL([HAVE_PGSQL], [have_pgsql=yes], [have_pgsql=no], [#include "gw-config.h"])
-AC_CHECK_DECL([HAVE_SQLITE3], [have_sqlite3=yes], [have_sqlite3=no], [#include "gw-config.h"])
-AC_CHECK_DECL([HAVE_ORACLE], [have_oracle=yes], [have_oracle=no], [#include "gw-config.h"])
-
-AC_MSG_NOTICE([Database support from Kamex:])
-AC_MSG_NOTICE([  MySQL:    $have_mysql])
-AC_MSG_NOTICE([  PgSQL:    $have_pgsql])
-AC_MSG_NOTICE([  SQLite3:  $have_sqlite3])
-AC_MSG_NOTICE([  Oracle:   $have_oracle])
-
-
-dnl ===========================================================================
 dnl Final Output
 dnl ===========================================================================
 
@@ -275,7 +214,7 @@ AC_OUTPUT
 cat <<EOF
 
 +--------------------------------------------------------------------+
-| SQLBox for Kamex SMS Gateway                                       |
+| OpenSMPPBox for Kamex SMS Gateway                                  |
 | https://kamex.dev                                                  |
 +--------------------------------------------------------------------+
 

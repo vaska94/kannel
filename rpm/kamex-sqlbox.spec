@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 
 Name:           kamex-sqlbox
-Version:        1.7.7
+Version:        1.7.8
 Release:        1%{?dist}
 Summary:        Database queue box for Kamex SMS gateway
 License:        MIT and Kannel
@@ -84,7 +84,7 @@ exit 0
 %{_unitdir}/kamex-sqlbox.service
 
 %changelog
-* Mon Jan 12 2026 Kamex Team <dev@kamex.dev> - 1.7.7-1
+* Mon Jan 12 2026 Kamex Team <dev@kamex.dev> - 1.7.8-1
 - Removed SQLite2 and libsdb database backends (obsolete)
 
 * Mon Jan 12 2026 Kamex Team <dev@kamex.dev> - 1.7.6-1

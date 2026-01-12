@@ -2,6 +2,16 @@
 
 All notable changes to Kamex (formerly Kannel) will be documented in this file.
 
+## [1.7.8] - 2026-01-12
+
+### Added
+- **OpenSMPPBox packaging** - RPM package for kamex-opensmppbox addon
+- **OpenSMPPBox systemd service** - `kamex-opensmppbox.service` with security hardening
+
+### Changed
+- Modernized OpenSMPPBox configure.ac, removed DocBook build system
+- GitHub workflow now builds all 3 packages: kamex, kamex-sqlbox, kamex-opensmppbox
+
 ## [1.7.7] - 2026-01-12
 
 ### Removed

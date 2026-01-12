@@ -59,16 +59,20 @@ jobs:
         run: |
           cp rpm/kamex.spec ~/rpmbuild/SPECS/
           cp rpm/kamex-sqlbox.spec ~/rpmbuild/SPECS/
+          cp rpm/kamex-opensmppbox.spec ~/rpmbuild/SPECS/
 
       - name: Build Kamex RPM
         run: rpmbuild -ba ~/rpmbuild/SPECS/kamex.spec
 
-      - name: Install Kamex for SQLBox build
+      - name: Install Kamex for addon builds
         run: |
           dnf install -y ~/rpmbuild/RPMS/**/kamex-1*.rpm ~/rpmbuild/RPMS/**/kamex-devel-*.rpm
 
       - name: Build SQLBox RPM
         run: rpmbuild -ba ~/rpmbuild/SPECS/kamex-sqlbox.spec
+
+      - name: Build OpenSMPPBox RPM
+        run: rpmbuild -ba ~/rpmbuild/SPECS/kamex-opensmppbox.spec
 
       - name: List built RPMs
         run: find ~/rpmbuild/RPMS ~/rpmbuild/SRPMS -name '*.rpm' -ls
