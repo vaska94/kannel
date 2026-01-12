@@ -1,6 +1,6 @@
 # Kamex SMS Gateway
 
-[![Version](https://img.shields.io/badge/version-1.8.0-blue.svg)](https://github.com/vaska94/kannel/releases)
+[![Version](https://img.shields.io/badge/version-1.8.0-blue.svg)](https://github.com/vaska94/Kamex/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Linux-lightgrey.svg)]()
 [![Docker](https://img.shields.io/badge/docker-ghcr.io-blue.svg)](https://ghcr.io/vaska94/kamex)
@@ -226,5 +226,5 @@ Kamex is dual-licensed:
 ## Links
 
 - **Website**: [kamex.dev](https://kamex.dev)
-- **Issues**: [GitHub Issues](https://github.com/vaska94/kannel/issues)
+- **Issues**: [GitHub Issues](https://github.com/vaska94/Kamex/issues)
 - **Documentation**: [doc/](doc/)
