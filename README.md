@@ -31,34 +31,94 @@ Modern, high-performance SMS gateway with built-in admin panel. Supports SMPP, E
 - **Health check endpoint**: `/health` for load balancers and Kubernetes
 - **Production ready**: Battle-tested SMS gateway since 2000
 
-## Quick Start
+## Installation
+
+### 1. Install Dependencies
+
+<details open>
+<summary>RHEL/Rocky/AlmaLinux (EL9+)</summary>
 
 ```bash
-# Install dependencies (RHEL/Rocky/AlmaLinux 10)
 sudo dnf install epel-release
 sudo crb enable
 sudo dnf install gcc make autoconf automake libtool \
-    openssl-devel pkgconfig hiredis-devel gettext-devel
+    openssl-devel pkgconfig mariadb-devel libpq-devel \
+    libsqlite3x-devel hiredis-devel gettext-devel
+```
+</details>
 
-# Build
+<details>
+<summary>Fedora</summary>
+
+```bash
+sudo dnf install gcc make autoconf automake libtool \
+    openssl-devel pkgconfig mariadb-devel libpq-devel \
+    libsqlite3x-devel hiredis-devel gettext-devel
+```
+</details>
+
+<details>
+<summary>Debian/Ubuntu</summary>
+
+```bash
+sudo apt install build-essential autotools-dev autoconf automake \
+    libtool libssl-dev pkg-config \
+    libmysqlclient-dev libpq-dev libsqlite3-dev libhiredis-dev
+```
+</details>
+
+<details>
+<summary>Arch Linux</summary>
+
+```bash
+sudo pacman -S base-devel autoconf automake libtool openssl \
+    mariadb-libs postgresql-libs sqlite hiredis
+```
+</details>
+
+### 2. Build and Install
+
+```bash
 autoreconf -fi
-./configure --enable-ssl --with-redis
+./configure --enable-ssl --with-mysql --with-pgsql --with-sqlite3 --with-redis
 make
+sudo make install-strip
+```
 
+| Configure Option | Description |
+|------------------|-------------|
+| `--enable-ssl` | Enable SSL/TLS support |
+| `--with-mysql` | MySQL/MariaDB support |
+| `--with-pgsql` | PostgreSQL support |
+| `--with-sqlite3` | SQLite3 support |
+| `--with-redis` | Redis/Valkey support |
+| `--with-cassandra` | Cassandra support |
+| `--with-oracle` | Oracle support (untested) |
+| `--with-mssql` | MSSQL support (untested) |
+
+### 3. Configure and Run
+
+```bash
 # Configure
 sudo mkdir -p /etc/kamex
 sudo cp doc/examples/kannel.conf /etc/kamex/kamex.conf
 # Edit /etc/kamex/kamex.conf with your SMSC details
 
 # Run
-./gw/bearerbox /etc/kamex/kamex.conf &
-./gw/smsbox /etc/kamex/kamex.conf &
+bearerbox /etc/kamex/kamex.conf &
+smsbox /etc/kamex/kamex.conf &
 
 # Open admin panel
 open http://localhost:13000/
 
-# Send SMS via HTTP
-curl "http://localhost:13013/cgi-bin/sendsms?user=tester&pass=foobar&to=+1234567890&text=Hello"
+# Test SMS sending (classic)
+curl "http://localhost:13013/cgi-bin/sendsms?user=tester&pass=foobar&from=Kamex&to=+1234567890&text=Hello"
+
+# Test SMS sending (JSON API)
+curl -X POST http://localhost:13013/cgi-bin/sendsms \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-token" \
+  -d '{"from":"Kamex","to":"+1234567890","text":"Hello"}'
 ```
 
 ## Admin Panel
@@ -108,75 +168,6 @@ Use `admin-password` for full control, `status-password` for view-only access.
 
 - **BearerBox**: Core daemon managing SMSC connections and message routing
 - **SMSBox**: HTTP interface for applications to send/receive SMS
-
-## Build Dependencies
-
-<details>
-<summary>RHEL/Rocky/AlmaLinux (EL9+)</summary>
-
-```bash
-sudo dnf install epel-release
-sudo crb enable
-sudo dnf install gcc make autoconf automake libtool \
-    openssl-devel pkgconfig mariadb-devel libpq-devel \
-    libsqlite3x-devel hiredis-devel gettext-devel
-```
-</details>
-
-<details>
-<summary>Fedora</summary>
-
-```bash
-sudo dnf install gcc make autoconf automake libtool \
-    openssl-devel pkgconfig mariadb-devel libpq-devel \
-    libsqlite3x-devel hiredis-devel gettext-devel
-```
-</details>
-
-<details>
-<summary>Debian/Ubuntu</summary>
-
-```bash
-sudo apt install build-essential autotools-dev autoconf automake \
-    libtool libssl-dev pkg-config \
-    libmysqlclient-dev libpq-dev libsqlite3-dev libhiredis-dev
-```
-</details>
-
-<details>
-<summary>Arch Linux</summary>
-
-```bash
-sudo pacman -S base-devel autoconf automake libtool openssl \
-    mariadb-libs postgresql-libs sqlite hiredis
-```
-</details>
-
-## Build Options
-
-Full build with all features:
-```bash
-./configure --enable-ssl \
-            --with-mysql --with-pgsql --with-sqlite3 --with-redis
-```
-
-| Option | Description |
-|--------|-------------|
-| `--enable-ssl` | Enable SSL/TLS support |
-| `--with-mysql` | MySQL/MariaDB support |
-| `--with-pgsql` | PostgreSQL support |
-| `--with-sqlite3` | SQLite3 support |
-| `--with-redis` | Redis/Valkey support |
-| `--with-cassandra` | Cassandra support |
-| `--with-oracle` | Oracle support (untested) |
-| `--with-mssql` | MSSQL support (untested) |
-
-> **Note:** Oracle and MSSQL backends are included but currently untested. Use at your own risk and report issues.
-
-Minimal build (no databases):
-```bash
-./configure
-```
 
 ## Performance
 

@@ -16,7 +16,7 @@ cd /path/to/kamex
 autoreconf -fi
 ./configure --prefix=/usr/local
 make
-sudo make install
+sudo make install-strip
 ```
 
 ## SQLBox
@@ -34,7 +34,7 @@ cd addons/sqlbox
 autoreconf -fi
 ./configure --with-kannel-dir=/usr/local
 make
-sudo make install
+sudo make install-strip
 ```
 
 ### Configure Options
@@ -70,7 +70,7 @@ cd addons/opensmppbox
 autoreconf -fi
 ./configure --with-kannel-dir=/usr/local
 make
-sudo make install
+sudo make install-strip
 ```
 
 ### Configure Options
