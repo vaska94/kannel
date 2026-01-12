@@ -3,8 +3,7 @@ FROM registry.access.redhat.com/ubi10/ubi-minimal:latest
 COPY kamex-*.rpm /tmp/
 
 # Enable EPEL for hiredis
-RUN microdnf install -y \
-    https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm && \
+RUN microdnf install -y epel-release && \
     microdnf install -y openssl hiredis mariadb-connector-c libpq && \
     rpm -ivh /tmp/kamex-*.rpm && \
     rm -f /tmp/*.rpm && \
