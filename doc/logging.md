@@ -16,9 +16,9 @@ Application Threads                    Writer Thread
 
 ## Design Decisions
 
-### Bounded Queue (512K entries)
+### Bounded Queue (128K entries)
 - Prevents unbounded memory growth under load
-- ~100MB typical, 512MB max
+- ~512MB max (128K × 4KB), ~0 typical (queue stays empty)
 - When full: drop new entries, increment counter
 - Similar to Logback's AsyncAppender design
 

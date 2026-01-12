@@ -179,13 +179,13 @@ static int dosyslog = 0;
  * Async logging support.
  * Log messages are queued and written by a dedicated writer thread.
  */
-#define LOG_QUEUE_MAX (512 * 1024)  /* 512K entries max */
+#define LOG_QUEUE_MAX (128 * 1024)  /* 128K entries max, ~512MB */
 
 typedef struct {
     int level;              /* GW_DEBUG, GW_INFO, etc. */
     int err;                /* errno value */
     int exclusive_idx;      /* thread_to[] index for exclusive logging, 0 = non-exclusive */
-    char formatted[4096];   /* pre-formatted message with timestamp */
+    char formatted[4096];   /* pre-formatted message, handles 9-segment SMS hex logs */
 } LogEntry;
 
 static List *log_queue = NULL;
