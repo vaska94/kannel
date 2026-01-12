@@ -13,6 +13,7 @@ Modern, high-performance SMS gateway with built-in admin panel. Supports SMPP, E
 
 ## What's New in Kamex
 
+- **Async Logging** - Non-blocking logging with dedicated writer thread (~10x throughput)
 - **Web Admin Panel** - Built-in dashboard at `/` with real-time monitoring
 - **JSON API** - Modern `/status.json` and `/api/sendsms` endpoints
 - **Health Checks** - `/health` endpoint for load balancers and Kubernetes
@@ -141,6 +142,7 @@ Use `admin-password` for full control, `status-password` for view-only access.
 | [SMS Gateway Setup](doc/sms-gateway.md) | HTTP API and message routing |
 | [SMSC Types](doc/smsc-types.md) | Protocol-specific configuration |
 | [Delivery Reports](doc/dlr.md) | DLR storage backends |
+| [Logging](doc/logging.md) | Async logging architecture |
 | [Docker](doc/docker.md) | Docker deployment guide |
 | [Addons](doc/addons.md) | Building SQLBox and OpenSMPPBox |
 | [Examples](doc/examples/) | Sample configuration files |
