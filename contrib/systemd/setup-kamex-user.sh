@@ -165,6 +165,13 @@ else
     exit 1
 fi
 
+# Install sqlbox service (optional - only if sqlbox is installed)
+if get_file "kamex-sqlbox.service" "/etc/systemd/system/kamex-sqlbox.service"; then
+    print_status "Installed kamex-sqlbox.service"
+else
+    print_warning "Failed to install kamex-sqlbox.service (optional - install kamex-sqlbox package)"
+fi
+
 # Install status script
 if get_file "kamex-status.sh" "/usr/local/bin/kamex-status.sh"; then
     chmod +x /usr/local/bin/kamex-status.sh

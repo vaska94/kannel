@@ -1120,6 +1120,7 @@ AC_CONFIG_FILES([
 	benchmarks/Makefile
 	contrib/systemd/kamex-bearerbox.service
 	contrib/systemd/kamex-smsbox.service
+	contrib/systemd/kamex-sqlbox.service
 ])
 AC_OUTPUT
 

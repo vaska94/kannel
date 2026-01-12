@@ -160,3 +160,4 @@ gw-config
 # Generated systemd service files
 contrib/systemd/kamex-bearerbox.service
 contrib/systemd/kamex-smsbox.service
+contrib/systemd/kamex-sqlbox.service

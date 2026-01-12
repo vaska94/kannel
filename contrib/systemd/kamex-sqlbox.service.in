@@ -1,0 +1,33 @@
+[Unit]
+Description=Kamex SQLBox Service
+After=kamex-bearerbox.service network.target
+Requires=kamex-bearerbox.service
+Documentation=https://kamex.dev
+
+[Service]
+Type=simple
+ExecStart=@SBINDIR@/sqlbox /etc/kamex/sqlbox.conf
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+TimeoutStartSec=30
+TimeoutStopSec=30
+User=kamex
+Group=kamex
+
+# Directory management (systemd creates these automatically)
+RuntimeDirectory=kamex
+RuntimeDirectoryMode=0755
+StateDirectory=kamex
+StateDirectoryMode=0755
+LogsDirectory=kamex
+LogsDirectoryMode=0755
+
+# Security hardening (requires namespace support)
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/kamex /var/spool/kamex /var/run/kamex
+
+[Install]
+WantedBy=multi-user.target
