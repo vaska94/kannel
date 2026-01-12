@@ -69,6 +69,10 @@ install -m 0640 doc/examples/kannel.conf %{buildroot}%{_sysconfdir}/kamex/kamex.
 install -m 0644 contrib/systemd/kamex-bearerbox.service %{buildroot}%{_unitdir}/
 install -m 0644 contrib/systemd/kamex-smsbox.service %{buildroot}%{_unitdir}/
 
+# Install logrotate
+install -d %{buildroot}%{_sysconfdir}/logrotate.d
+install -m 0644 contrib/systemd/kamex.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/kamex
+
 # fakesmsc is now installed via bin_PROGRAMS in test/Makefile.am
 
 # Remove static libraries and libtool files
@@ -107,6 +111,7 @@ exit 0
 %{_mandir}/man1/mtbatch.1*
 %{_unitdir}/kamex-bearerbox.service
 %{_unitdir}/kamex-smsbox.service
+%config(noreplace) %{_sysconfdir}/logrotate.d/kamex
 %dir %attr(0750, kamex, kamex) %{_localstatedir}/log/kamex
 %dir %attr(0750, kamex, kamex) %{_localstatedir}/spool/kamex
 %{_libdir}/libgwlib.so.*
