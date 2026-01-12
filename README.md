@@ -3,6 +3,7 @@
 [![Version](https://img.shields.io/badge/version-1.7.8-blue.svg)](https://github.com/vaska94/kannel/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Linux-lightgrey.svg)]()
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-blue.svg)](https://ghcr.io/vaska94/kamex)
 
 Modern, high-performance SMS gateway with built-in admin panel. Supports SMPP, EMI/UCP, HTTP, and GSM modems.
 
