@@ -170,10 +170,22 @@ void log_reopen(void);
  */
 void log_close_all(void);
 
-/* 
- * Register a thread to a specific logfiles[] index and hence 
+/*
+ * Register a thread to a specific logfiles[] index and hence
  * to a specific exclusive log file.
  */
 void log_thread_to(int idx);
+
+/*
+ * Async logging queue status - for monitoring and health checks.
+ */
+typedef struct {
+    long queue_depth;       /* Current entries in queue */
+    long queue_max;         /* Maximum queue capacity */
+    long dropped_total;     /* Total messages dropped due to full queue */
+    int writer_running;     /* 1 if writer thread is active */
+} LogQueueStatus;
+
+void log_queue_status(LogQueueStatus *status);
 
 #endif

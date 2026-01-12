@@ -46,7 +46,7 @@ text=test&username=$username&password=$password"
 i=0
 while [ $i -lt $times ]
 do
-    ../../test/test_http $url >> check_sendsms.log 2>&1
+    ../test/test_http $url >> check_sendsms.log 2>&1
     i=`expr $i + 1`
 done
 
@@ -129,7 +129,7 @@ text=&username=$username&password="
 sleep 1
 
 if grep 'WARNING:|ERROR:|PANIC:' check_sendsms*.log >/dev/null ||
-   [ 1 -ne `grep -c '<Authorization failed for sendsms>' \
+   [ 2 -ne `grep -c '<Authorization failed for sendsms>' \
        check_sendsms_sms.log` ]
 then
 	echo check_sendsms.sh failed with password authorisation test 1>&2

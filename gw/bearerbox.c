@@ -979,11 +979,32 @@ Octstr *bb_print_status(int status_type)
         dlr_messages(), dlr_type());
 
     octstr_destroy(version);
-    
+
     append_status(ret, str, boxc_status, status_type);
     append_status(ret, str, smsc2_status, status_type);
+
+    /* Add logging queue status for JSON format */
+    if (status_type == BBSTATUS_JSON) {
+        LogQueueStatus log_status;
+        log_queue_status(&log_status);
+        octstr_format_append(ret,
+            ",\"logging\":{"
+            "\"queue_depth\":%ld,"
+            "\"queue_max\":%ld,"
+            "\"queue_percent\":%.1f,"
+            "\"dropped_total\":%ld,"
+            "\"writer_running\":%s"
+            "}",
+            log_status.queue_depth,
+            log_status.queue_max,
+            log_status.queue_max > 0 ?
+                (double)log_status.queue_depth * 100.0 / log_status.queue_max : 0.0,
+            log_status.dropped_total,
+            log_status.writer_running ? "true" : "false");
+    }
+
     octstr_append_cstr(ret, footer);
-    
+
     return ret;
 }
 
@@ -1006,9 +1027,14 @@ char *bb_status_linebreak(int status_type)
 Octstr *bb_health_status(int *is_healthy)
 {
     char *s;
+    char *health_status;
     time_t t;
     int smsc_total, smsc_online;
     long sms_queued;
+    LogQueueStatus log_status;
+    int log_queue_percent;
+    int has_warnings = 0;
+    Octstr *warnings = NULL;
 
     t = time(NULL) - start_time;
 
@@ -1017,6 +1043,11 @@ Octstr *bb_health_status(int *is_healthy)
 
     /* Get queue length */
     sms_queued = gwlist_len(incoming_sms) + gwlist_len(outgoing_sms);
+
+    /* Get log queue status */
+    log_queue_status(&log_status);
+    log_queue_percent = log_status.queue_max > 0 ?
+        (int)(log_status.queue_depth * 100 / log_status.queue_max) : 0;
 
     /* Determine health status */
     if (bb_status == BB_RUNNING)
@@ -1039,21 +1070,85 @@ Octstr *bb_health_status(int *is_healthy)
                    bb_status == BB_SUSPENDED || bb_status == BB_FULL) &&
                   (smsc_total == 0 || smsc_online > 0);
 
+    /* Check for warning conditions */
+    warnings = octstr_create("");
+    if (log_queue_percent >= 80) {
+        octstr_format_append(warnings, "\"log queue at %d%% (%ld/%ld)\"",
+            log_queue_percent, log_status.queue_depth, log_status.queue_max);
+        has_warnings = 1;
+    }
+    if (log_status.dropped_total > 0) {
+        if (has_warnings)
+            octstr_append_cstr(warnings, ", ");
+        octstr_format_append(warnings, "\"log queue dropped %ld messages\"",
+            log_status.dropped_total);
+        has_warnings = 1;
+    }
+
+    /* Determine overall health status string */
+    if (!*is_healthy)
+        health_status = "unhealthy";
+    else if (has_warnings)
+        health_status = "warn";
+    else
+        health_status = "healthy";
+
+    if (has_warnings) {
+        Octstr *result = octstr_format(
+            "{\n"
+            "  \"status\": \"%s\",\n"
+            "  \"health\": \"%s\",\n"
+            "  \"warnings\": [%s],\n"
+            "  \"uptime_seconds\": %ld,\n"
+            "  \"smscs\": {\n"
+            "    \"total\": %d,\n"
+            "    \"online\": %d\n"
+            "  },\n"
+            "  \"queued_messages\": %ld,\n"
+            "  \"logging\": {\n"
+            "    \"queue_depth\": %ld,\n"
+            "    \"queue_max\": %ld,\n"
+            "    \"dropped_total\": %ld\n"
+            "  }\n"
+            "}\n",
+            s,
+            health_status,
+            octstr_get_cstr(warnings),
+            (long)t,
+            smsc_total,
+            smsc_online,
+            sms_queued,
+            log_status.queue_depth,
+            log_status.queue_max,
+            log_status.dropped_total);
+        octstr_destroy(warnings);
+        return result;
+    }
+
+    octstr_destroy(warnings);
     return octstr_format(
         "{\n"
         "  \"status\": \"%s\",\n"
-        "  \"healthy\": %s,\n"
+        "  \"health\": \"%s\",\n"
         "  \"uptime_seconds\": %ld,\n"
         "  \"smscs\": {\n"
         "    \"total\": %d,\n"
         "    \"online\": %d\n"
         "  },\n"
-        "  \"queued_messages\": %ld\n"
+        "  \"queued_messages\": %ld,\n"
+        "  \"logging\": {\n"
+        "    \"queue_depth\": %ld,\n"
+        "    \"queue_max\": %ld,\n"
+        "    \"dropped_total\": %ld\n"
+        "  }\n"
         "}\n",
         s,
-        *is_healthy ? "true" : "false",
+        health_status,
         (long)t,
         smsc_total,
         smsc_online,
-        sms_queued);
+        sms_queued,
+        log_status.queue_depth,
+        log_status.queue_max,
+        log_status.dropped_total);
 }

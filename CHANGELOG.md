@@ -2,6 +2,29 @@
 
 All notable changes to Kamex (formerly Kannel) will be documented in this file.
 
+## [1.7.9] - 2026-01-12
+
+### Added
+- **Async logging** - Log messages are now queued and written by a dedicated writer thread
+  - Bounded queue (512K entries, ~100MB memory) prevents unbounded growth
+  - Calling threads no longer block on I/O - ~10x throughput improvement
+  - PANIC level remains synchronous (crash context must hit disk immediately)
+  - Per-SMSC exclusive logging preserved via `exclusive_idx` routing
+- **Logging observability** - New monitoring endpoints for log queue health
+  - `/health` returns `warn` status when queue >= 80% or messages dropped
+  - `/status.json` includes `logging` section with queue depth, dropped count, writer status
+- **Architecture documentation** - `doc/logging.md` explains async logging design
+
+### Fixed
+- **test_headers.c** - Removed WAP/WSP dependencies, now tests HTTP headers only
+- **check_sendsms.sh** - Fixed incorrect path and cumulative auth failure count
+- **check_headers.sh** - Updated for simplified test_headers
+- **run-checks** - Now checks exit codes instead of treating any stderr as failure
+
+### Changed
+- Log writer thread uses `gwthread_create()` for proper gwlib integration
+- `LogQueueStatus` struct added to `gwlib/log.h` for queue monitoring
+
 ## [1.7.8] - 2026-01-12
 
 ### Added

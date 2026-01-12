@@ -16,6 +16,7 @@ noinst_PROGRAMS = \
 	test_dict \
 	test_file_traversal \
 	test_hash \
+	test_headers \
 	test_hmac \
 	test_http \
 	test_http_server \

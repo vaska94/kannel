@@ -9,15 +9,22 @@ for prog in "$@"
 do
 	echo -n "Check: $prog..."
         $(dirname $0)/../checks/$prog 2> check.log.new
-	if test ! -s check.log.new
+	exitcode=$?
+	# Fail on non-zero exit OR if stderr contains ERROR/PANIC (not just DEBUG/INFO)
+	if test $exitcode -ne 0
 	then
-		echo " OK."
-	else
+		echo " FAILURE! (exit code $exitcode)"
+		echo "Check: $prog (exit code $exitcode)" >> check.log
+		cat check.log.new >> check.log
+	elif grep -q '\] \(ERROR\|PANIC\):' check.log.new
+	then
 		echo " FAILURE!"
 		echo "Check: $prog" >> check.log
 		cat check.log.new >> check.log
+	else
+		echo " OK."
 	fi
-	rm check.log.new
+	rm -f check.log.new
 done
 
 if test -s check.log

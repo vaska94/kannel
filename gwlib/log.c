@@ -67,6 +67,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
+#include <signal.h>
 
 #ifdef HAVE_EXECINFO_H
 #include <execinfo.h>
@@ -175,6 +176,70 @@ static int syslogfacility = LOG_DAEMON;
 static int dosyslog = 0;
 
 /*
+ * Async logging support.
+ * Log messages are queued and written by a dedicated writer thread.
+ */
+#define LOG_QUEUE_MAX (512 * 1024)  /* 512K entries max */
+
+typedef struct {
+    int level;              /* GW_DEBUG, GW_INFO, etc. */
+    int err;                /* errno value */
+    int exclusive_idx;      /* thread_to[] index for exclusive logging, 0 = non-exclusive */
+    char formatted[4096];   /* pre-formatted message with timestamp */
+} LogEntry;
+
+static List *log_queue = NULL;
+static long log_writer_thread = -1;
+static volatile sig_atomic_t log_writer_running = 0;
+static volatile long dropped_count = 0;
+
+/*
+ * Async log writer thread.
+ * Consumes log entries from the queue and writes them to files.
+ */
+static void log_writer(void *arg)
+{
+    LogEntry *entry;
+
+    while (log_writer_running || gwlist_len(log_queue) > 0) {
+        entry = gwlist_timed_consume(log_queue, 1.0); /* 1 sec timeout */
+        if (entry == NULL)
+            continue;
+
+        gw_rwlock_rdlock(&rwlock);
+
+        if (entry->exclusive_idx > 0) {
+            /* EXCLUSIVE: Write only to the specific SMSC log file */
+            if (entry->level >= logfiles[entry->exclusive_idx].minimum_output_level &&
+                logfiles[entry->exclusive_idx].file != NULL) {
+                fputs(entry->formatted, logfiles[entry->exclusive_idx].file);
+                fflush(logfiles[entry->exclusive_idx].file);
+            }
+        } else {
+            /* NON-EXCLUSIVE: Write to all non-exclusive log files */
+            int i;
+            for (i = 0; i < num_logfiles; i++) {
+                if (logfiles[i].exclusive == GW_NON_EXCL &&
+                    entry->level >= logfiles[i].minimum_output_level &&
+                    logfiles[i].file != NULL) {
+                    fputs(entry->formatted, logfiles[i].file);
+                }
+            }
+            /* Batch fflush for non-exclusive files */
+            for (i = 0; i < num_logfiles; i++) {
+                if (logfiles[i].exclusive == GW_NON_EXCL &&
+                    logfiles[i].file != NULL) {
+                    fflush(logfiles[i].file);
+                }
+            }
+        }
+
+        gw_rwlock_unlock(&rwlock);
+        gw_free(entry);
+    }
+}
+
+/*
  * Make sure stderr is included in the list.
  */
 static void add_stderr(void)
@@ -204,10 +269,39 @@ void log_init(void)
     }
 
     add_stderr();
+
+    /* Start async log writer thread */
+    log_queue = gwlist_create();
+    gwlist_add_producer(log_queue);
+    log_writer_running = 1;
+    log_writer_thread = gwthread_create(log_writer, NULL);
+    if (log_writer_thread == -1) {
+        /* Fall back to sync logging if thread creation fails */
+        log_writer_running = 0;
+        gwlist_remove_producer(log_queue);
+        gwlist_destroy(log_queue, NULL);
+        log_queue = NULL;
+    }
 }
 
 void log_shutdown(void)
 {
+    /* Stop async log writer thread */
+    if (log_queue != NULL) {
+        log_writer_running = 0;
+        gwlist_remove_producer(log_queue);
+
+        /* Wait for queue to drain and thread to exit */
+        if (log_writer_thread != -1) {
+            gwthread_wakeup(log_writer_thread);
+            gwthread_join(log_writer_thread);
+            log_writer_thread = -1;
+        }
+
+        gwlist_destroy(log_queue, NULL);
+        log_queue = NULL;
+    }
+
     log_close_all();
     /* destroy rwlock */
     gw_rwlock_destroy(&rwlock);
@@ -505,7 +599,11 @@ static void PRINTFLIKE(1,0) kannel_syslog(char *format, va_list args, int level)
  * situation.
  */
 
-#define FUNCTION_GUTS(level, place) \
+/*
+ * Synchronous logging macros - used for PANIC level where we need
+ * immediate disk write before potential crash.
+ */
+#define FUNCTION_GUTS_SYNC(level, place) \
 	do { \
 	    int i; \
 	    int formatted = 0; \
@@ -535,28 +633,82 @@ static void PRINTFLIKE(1,0) kannel_syslog(char *format, va_list args, int level)
 	    } \
 	} while (0)
 
-#define FUNCTION_GUTS_EXCL(level, place) \
+/*
+ * Asynchronous logging macros - enqueue log entries for writer thread.
+ * Falls back to sync if queue not available.
+ * Note: Use _lvl as parameter name to avoid conflict with struct member 'level'
+ */
+#define FUNCTION_GUTS(_lvl, place) \
 	do { \
-	    char buf[FORMAT_SIZE]; \
-	    va_list args; \
-	    \
-            gw_rwlock_rdlock(&rwlock); \
-            if (logfiles[e].exclusive == GW_EXCL && \
-                level >= logfiles[e].minimum_output_level && \
-                logfiles[e].file != NULL) { \
-                format(buf, level, place, err, fmt, 1); \
-                va_start(args, fmt); \
-                output(logfiles[e].file, buf, args); \
-                va_end(args); \
-            } \
-            gw_rwlock_unlock(&rwlock); \
+	    if (log_queue != NULL) { \
+	        LogEntry *entry = gw_malloc(sizeof(LogEntry)); \
+	        char buf[FORMAT_SIZE]; \
+	        va_list args; \
+	        entry->level = (_lvl); \
+	        entry->err = err; \
+	        entry->exclusive_idx = 0; \
+	        format(buf, (_lvl), place, err, fmt, 1); \
+	        va_start(args, fmt); \
+	        vsnprintf(entry->formatted, sizeof(entry->formatted), buf, args); \
+	        va_end(args); \
+	        if (gwlist_len(log_queue) >= LOG_QUEUE_MAX) { \
+	            __atomic_add_fetch(&dropped_count, 1, __ATOMIC_RELAXED); \
+	            gw_free(entry); \
+	        } else { \
+	            gwlist_produce(log_queue, entry); \
+	        } \
+	        if (dosyslog) { \
+	            format(buf, (_lvl), place, err, fmt, 0); \
+	            va_start(args, fmt); \
+	            kannel_syslog(buf, args, (_lvl)); \
+	            va_end(args); \
+	        } \
+	    } else { \
+	        FUNCTION_GUTS_SYNC((_lvl), place); \
+	    } \
+	} while (0)
+
+#define FUNCTION_GUTS_EXCL(_lvl, place) \
+	do { \
+	    if (log_queue != NULL) { \
+	        LogEntry *entry = gw_malloc(sizeof(LogEntry)); \
+	        char buf[FORMAT_SIZE]; \
+	        va_list args; \
+	        entry->level = (_lvl); \
+	        entry->err = err; \
+	        entry->exclusive_idx = e; \
+	        format(buf, (_lvl), place, err, fmt, 1); \
+	        va_start(args, fmt); \
+	        vsnprintf(entry->formatted, sizeof(entry->formatted), buf, args); \
+	        va_end(args); \
+	        if (gwlist_len(log_queue) >= LOG_QUEUE_MAX) { \
+	            __atomic_add_fetch(&dropped_count, 1, __ATOMIC_RELAXED); \
+	            gw_free(entry); \
+	        } else { \
+	            gwlist_produce(log_queue, entry); \
+	        } \
+	    } else { \
+	        char buf[FORMAT_SIZE]; \
+	        va_list args; \
+	        gw_rwlock_rdlock(&rwlock); \
+	        if (logfiles[e].exclusive == GW_EXCL && \
+	            (_lvl) >= logfiles[e].minimum_output_level && \
+	            logfiles[e].file != NULL) { \
+	            format(buf, (_lvl), place, err, fmt, 1); \
+	            va_start(args, fmt); \
+	            output(logfiles[e].file, buf, args); \
+	            va_end(args); \
+	        } \
+	        gw_rwlock_unlock(&rwlock); \
+	    } \
 	} while (0)
 
 
 #ifdef HAVE_BACKTRACE
 static void PRINTFLIKE(2,3) gw_panic_output(int err, const char *fmt, ...)
 {
-    FUNCTION_GUTS(GW_PANIC, "");
+    /* PANIC must be synchronous - process may exit immediately */
+    FUNCTION_GUTS_SYNC(GW_PANIC, "");
 }
 #endif
 
@@ -594,10 +746,11 @@ void gw_backtrace(void **stack_frames, size_t size, int lock)
 void gw_panic(int err, const char *fmt, ...)
 {
     /*
-     * we don't want PANICs to spread accross smsc logs, so
+     * PANIC must be synchronous - process may exit immediately.
+     * We don't want PANICs to spread across smsc logs, so
      * this will be always within the main core log.
      */
-    FUNCTION_GUTS(GW_PANIC, "");
+    FUNCTION_GUTS_SYNC(GW_PANIC, "");
 
     gw_backtrace(NULL, 0, 0);
 
@@ -725,11 +878,23 @@ void log_thread_to(int idx)
     long thread_id = thread_slot();
 
     if (idx > 0) {
-        info(0, "Logging thread `%ld' to logfile `%s' with level `%d'.", 
+        info(0, "Logging thread `%ld' to logfile `%s' with level `%d'.",
              thread_id, logfiles[idx].filename, logfiles[idx].minimum_output_level);
         thread_to[thread_id] = idx;
     } else if (idx != 0 && num_logfiles > 0) {
         warning(0, "Logging thread `%ld' to logfile `%s' with level `%d'.",
                 thread_id, logfiles[0].filename, logfiles[0].minimum_output_level);
     }
+}
+
+
+void log_queue_status(LogQueueStatus *status)
+{
+    if (status == NULL)
+        return;
+
+    status->queue_depth = log_queue ? gwlist_len(log_queue) : 0;
+    status->queue_max = LOG_QUEUE_MAX;
+    status->dropped_total = __atomic_load_n(&dropped_count, __ATOMIC_RELAXED);
+    status->writer_running = log_writer_running ? 1 : 0;
 }
