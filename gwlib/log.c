@@ -898,10 +898,13 @@ void log_thread_to(int idx)
 
 void log_queue_status(LogQueueStatus *status)
 {
+    List *queue;
+
     if (status == NULL)
         return;
 
-    status->queue_depth = log_queue ? gwlist_len(log_queue) : 0;
+    queue = log_queue;  /* capture to avoid race */
+    status->queue_depth = queue ? gwlist_len(queue) : 0;
     status->queue_max = LOG_QUEUE_MAX;
     status->dropped_total = __atomic_load_n(&dropped_count, __ATOMIC_RELAXED);
     status->writer_running = log_writer_running ? 1 : 0;

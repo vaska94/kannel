@@ -2,20 +2,28 @@
 
 All notable changes to Kamex (formerly Kannel) will be documented in this file.
 
-## [1.7.9] - 2026-01-12
+## [1.8.0] - 2026-01-12
 
 ### Added
 - **Async logging** - Log messages are now queued and written by a dedicated writer thread
-  - Bounded queue (512K entries, ~100MB memory) prevents unbounded growth
+  - Bounded queue (128K entries, ~512MB max) prevents unbounded growth
   - Calling threads no longer block on I/O - ~10x throughput improvement
   - PANIC level remains synchronous (crash context must hit disk immediately)
   - Per-SMSC exclusive logging preserved via `exclusive_idx` routing
+  - 4KB buffer per entry handles 9-segment SMS in hex logs
 - **Logging observability** - New monitoring endpoints for log queue health
   - `/health` returns `warn` status when queue >= 80% or messages dropped
   - `/status.json` includes `logging` section with queue depth, dropped count, writer status
 - **Architecture documentation** - `doc/logging.md` explains async logging design
+- **RPM logrotate** - Logrotate config now included in RPM package
 
 ### Fixed
+- **Async logging security** - Fixed multiple issues found during security audit:
+  - Race condition: capture `log_queue` to local variable before use
+  - Memory leak: use `gw_native_free` destructor in `gwlist_destroy`
+  - Out-of-bounds: validate `exclusive_idx < num_logfiles` before array access
+  - Shutdown race: set `log_queue = NULL` before destroying queue
+- **fakesmsc installation** - Now installs real binary instead of libtool wrapper
 - **test_headers.c** - Removed WAP/WSP dependencies, now tests HTTP headers only
 - **check_sendsms.sh** - Fixed incorrect path and cumulative auth failure count
 - **check_headers.sh** - Updated for simplified test_headers
@@ -24,6 +32,7 @@ All notable changes to Kamex (formerly Kannel) will be documented in this file.
 ### Changed
 - Log writer thread uses `gwthread_create()` for proper gwlib integration
 - `LogQueueStatus` struct added to `gwlib/log.h` for queue monitoring
+- Queue size reduced from 512K to 128K entries (still handles sustained bursts)
 
 ## [1.7.8] - 2026-01-12
 
