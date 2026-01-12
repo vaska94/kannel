@@ -208,7 +208,7 @@ static void log_writer(void *arg)
 
         gw_rwlock_rdlock(&rwlock);
 
-        if (entry->exclusive_idx > 0) {
+        if (entry->exclusive_idx > 0 && entry->exclusive_idx < num_logfiles) {
             /* EXCLUSIVE: Write only to the specific SMSC log file */
             if (entry->level >= logfiles[entry->exclusive_idx].minimum_output_level &&
                 logfiles[entry->exclusive_idx].file != NULL) {
@@ -286,6 +286,8 @@ void log_init(void)
 
 void log_shutdown(void)
 {
+    List *queue_to_destroy;
+
     /* Stop async log writer thread */
     if (log_queue != NULL) {
         log_writer_running = 0;
@@ -298,8 +300,12 @@ void log_shutdown(void)
             log_writer_thread = -1;
         }
 
-        gwlist_destroy(log_queue, NULL);
+        /* Atomically swap out queue to prevent race with new log entries */
+        queue_to_destroy = log_queue;
         log_queue = NULL;
+
+        /* Free any remaining entries (shouldn't be any, but safety first) */
+        gwlist_destroy(queue_to_destroy, gw_native_free);
     }
 
     log_close_all();
