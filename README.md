@@ -140,6 +140,7 @@ Use `admin-password` for full control, `status-password` for view-only access.
 | [SMS Gateway Setup](doc/sms-gateway.md) | HTTP API and message routing |
 | [SMSC Types](doc/smsc-types.md) | Protocol-specific configuration |
 | [Delivery Reports](doc/dlr.md) | DLR storage backends |
+| [Docker](doc/docker.md) | Docker deployment guide |
 | [Addons](doc/addons.md) | Building SQLBox and OpenSMPPBox |
 | [Examples](doc/examples/) | Sample configuration files |
 
@@ -183,6 +184,16 @@ Run your own benchmarks:
 make ssl-certs  # Required for benchmarks
 ./benchmarks/run-benchmarks benchmarks/bench_http.sh benchmarks/bench_sms.sh
 ```
+
+## Docker
+
+```bash
+cd docker/
+# Create kamex.conf with your SMSC settings
+docker compose up -d
+```
+
+Includes bearerbox, smsbox, and Valkey for DLR storage. See [Docker Guide](doc/docker.md) for details.
 
 ## systemd Integration
 

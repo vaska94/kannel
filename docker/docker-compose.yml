@@ -4,7 +4,7 @@ services:
     container_name: kamex-bearerbox
     command: ["/usr/sbin/bearerbox", "/etc/kamex/kamex.conf"]
     volumes:
-      - ./config:/etc/kamex:ro
+      - ./kamex.conf:/etc/kamex/kamex.conf:ro
       - kamex-spool:/var/spool/kamex
       - kamex-logs:/var/log/kamex
     ports:
@@ -23,7 +23,7 @@ services:
     container_name: kamex-smsbox
     command: ["/usr/sbin/smsbox", "/etc/kamex/kamex.conf"]
     volumes:
-      - ./config:/etc/kamex:ro
+      - ./kamex.conf:/etc/kamex/kamex.conf:ro
       - kamex-logs:/var/log/kamex
     ports:
       - "13013:13013"
