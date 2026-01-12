@@ -1,0 +1,53 @@
+services:
+  bearerbox:
+    image: ghcr.io/vaska94/kamex:latest
+    container_name: kamex-bearerbox
+    command: ["/usr/sbin/bearerbox", "/etc/kamex/kamex.conf"]
+    volumes:
+      - ./config:/etc/kamex:ro
+      - kamex-spool:/var/spool/kamex
+      - kamex-logs:/var/log/kamex
+    ports:
+      - "13000:13000"
+    networks:
+      - kamex
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:13000/health"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+    restart: unless-stopped
+
+  smsbox:
+    image: ghcr.io/vaska94/kamex:latest
+    container_name: kamex-smsbox
+    command: ["/usr/sbin/smsbox", "/etc/kamex/kamex.conf"]
+    volumes:
+      - ./config:/etc/kamex:ro
+      - kamex-logs:/var/log/kamex
+    ports:
+      - "13013:13013"
+    networks:
+      - kamex
+    depends_on:
+      bearerbox:
+        condition: service_healthy
+    restart: unless-stopped
+
+  valkey:
+    image: valkey/valkey:9-alpine
+    container_name: kamex-valkey
+    volumes:
+      - valkey-data:/data
+    networks:
+      - kamex
+    restart: unless-stopped
+
+volumes:
+  kamex-spool:
+  kamex-logs:
+  valkey-data:
+
+networks:
+  kamex:
+    driver: bridge
