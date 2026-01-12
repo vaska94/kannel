@@ -67,6 +67,7 @@ test/test_dbpool
 test/test_dict
 test/test_file_traversal
 test/test_hash
+test/test_headers
 test/test_hmac
 test/test_http
 test/test_http_server

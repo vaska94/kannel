@@ -4,9 +4,11 @@ AM_CFLAGS = -I. -I$(top_builddir)/gwlib -I$(top_builddir) -I$(top_builddir)/gw
 
 LDADD = $(top_builddir)/gwlib/libgwlib.la $(top_builddir)/gw/libgw.la
 
+# fakesmsc is installed for testing, others are build-only
+bin_PROGRAMS = fakesmsc
+
 noinst_PROGRAMS = \
 	drive_smpp \
-	fakesmsc \
 	test_boxc \
 	test_cfg \
 	test_charset \

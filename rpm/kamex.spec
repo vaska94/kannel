@@ -69,8 +69,7 @@ install -m 0640 doc/examples/kannel.conf %{buildroot}%{_sysconfdir}/kamex/kamex.
 install -m 0644 contrib/systemd/kamex-bearerbox.service %{buildroot}%{_unitdir}/
 install -m 0644 contrib/systemd/kamex-smsbox.service %{buildroot}%{_unitdir}/
 
-# Install fakesmsc (not installed by default)
-install -m 0755 test/fakesmsc %{buildroot}%{_bindir}/
+# fakesmsc is now installed via bin_PROGRAMS in test/Makefile.am
 
 # Remove static libraries and libtool files
 rm -f %{buildroot}%{_libdir}/*.la
