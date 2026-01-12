@@ -646,7 +646,8 @@ static void PRINTFLIKE(1,0) kannel_syslog(char *format, va_list args, int level)
  */
 #define FUNCTION_GUTS(_lvl, place) \
 	do { \
-	    if (log_queue != NULL) { \
+	    List *queue = log_queue; \
+	    if (queue != NULL) { \
 	        LogEntry *entry = gw_malloc(sizeof(LogEntry)); \
 	        char buf[FORMAT_SIZE]; \
 	        va_list args; \
@@ -657,11 +658,11 @@ static void PRINTFLIKE(1,0) kannel_syslog(char *format, va_list args, int level)
 	        va_start(args, fmt); \
 	        vsnprintf(entry->formatted, sizeof(entry->formatted), buf, args); \
 	        va_end(args); \
-	        if (gwlist_len(log_queue) >= LOG_QUEUE_MAX) { \
+	        if (gwlist_len(queue) >= LOG_QUEUE_MAX) { \
 	            __atomic_add_fetch(&dropped_count, 1, __ATOMIC_RELAXED); \
 	            gw_free(entry); \
 	        } else { \
-	            gwlist_produce(log_queue, entry); \
+	            gwlist_produce(queue, entry); \
 	        } \
 	        if (dosyslog) { \
 	            format(buf, (_lvl), place, err, fmt, 0); \
@@ -676,7 +677,8 @@ static void PRINTFLIKE(1,0) kannel_syslog(char *format, va_list args, int level)
 
 #define FUNCTION_GUTS_EXCL(_lvl, place) \
 	do { \
-	    if (log_queue != NULL) { \
+	    List *queue = log_queue; \
+	    if (queue != NULL) { \
 	        LogEntry *entry = gw_malloc(sizeof(LogEntry)); \
 	        char buf[FORMAT_SIZE]; \
 	        va_list args; \
@@ -687,11 +689,11 @@ static void PRINTFLIKE(1,0) kannel_syslog(char *format, va_list args, int level)
 	        va_start(args, fmt); \
 	        vsnprintf(entry->formatted, sizeof(entry->formatted), buf, args); \
 	        va_end(args); \
-	        if (gwlist_len(log_queue) >= LOG_QUEUE_MAX) { \
+	        if (gwlist_len(queue) >= LOG_QUEUE_MAX) { \
 	            __atomic_add_fetch(&dropped_count, 1, __ATOMIC_RELAXED); \
 	            gw_free(entry); \
 	        } else { \
-	            gwlist_produce(log_queue, entry); \
+	            gwlist_produce(queue, entry); \
 	        } \
 	    } else { \
 	        char buf[FORMAT_SIZE]; \
