@@ -7,36 +7,17 @@ function check_for_errors {
     fi
 }
 
-function plot_commands {
-    echo "set terminal $1"
-    echo "set xlabel \"$2\""
-    echo "set ylabel \"$3\""
-    if [ "$5" = "" ]
-    then
-	echo -n "plot \"$4\" notitle with lines"
-    else
-	echo -n "plot \"$4\" title \"$5\" with lines"
-    fi
-    shift 5
-    while [ "$2" != "" ]
-    do
-        if [ "$2" == "" ]
-	then
-	    echo -n ", \"$1\" notitle with lines"
-	else
-	    echo -n ", \"$1\" title \"$2\" with lines"
-	fi
-	shift 2
-    done
-    echo ""
-}
-
 function plot {
-    if ! command -v gnuplot >/dev/null 2>&1; then
-        return 0
-    fi
     base="$1"
     shift
-    plot_commands png "$@" | gnuplot > "$base.png"
-    plot_commands "postscript eps" "$@" | gnuplot > "$base.ps"
+
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    if command -v python3 >/dev/null 2>&1 && python3 -c "import matplotlib" 2>/dev/null; then
+        python3 "$SCRIPT_DIR/plot.py" "$base" "$@"
+        return 0
+    fi
+
+    echo "Warning: python3-matplotlib not available, skipping plots" >&2
+    echo "Install with: dnf install epel-release && dnf install python3-matplotlib" >&2
+    return 0
 }
