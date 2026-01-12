@@ -61,7 +61,7 @@
  *      2003 Initial version.
  * Alexander Malysh <a.malysh@centrium.de>
  *      2003 Made dbpool more generic.
- * Robert Ga³ach <robert.galach@my.tenbit.pl>
+ * Robert Gaï¿½ach <robert.galach@my.tenbit.pl>
  *      2004 Added support for binding variables.
  * Alejandro Guerrieri <aguerrieri at kannel dot org>
  *      2009 Added support for MS-SQL using FreeTDS
@@ -75,9 +75,7 @@
 
 #include "dbpool_mysql.c"
 #include "dbpool_oracle.c"
-#include "dbpool_sqlite.c"
 #include "dbpool_sqlite3.c"
-#include "dbpool_sdb.c"
 #include "dbpool_pgsql.c"
 #include "dbpool_mssql.c"
 #include "dbpool_redis.c"
@@ -131,19 +129,9 @@ DBPool *dbpool_create(enum db_type db_type, DBConf *conf, unsigned int connectio
             p->db_ops = &oracle_ops;
             break;
 #endif
-#ifdef HAVE_SQLITE
-        case DBPOOL_SQLITE:
-            p->db_ops = &sqlite_ops;
-            break;
-#endif
 #ifdef HAVE_SQLITE3
         case DBPOOL_SQLITE3:
             p->db_ops = &sqlite3_ops;
-            break;
-#endif
-#ifdef HAVE_SDB
-        case DBPOOL_SDB:
-            p->db_ops = &sdb_ops;
             break;
 #endif
 #ifdef HAVE_PGSQL

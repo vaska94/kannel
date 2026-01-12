@@ -35,27 +35,12 @@ log-level = 0
 # Example POSTGRESQL Connection
 #group = pgsql-connection
 #id = sqlbox-db
-#id = sqlbox-db
 #username = myuser
 #password = mypass
 #database = kannel
 #host = localhost
 
-# Example SDB Connection with some database URL examples
-# *** Note: Uncomment only _one_ "url" line ***
-#group = sdb-connection
-#id = sqlbox-db
-#url = mysql:host=localhost:db=kannel:uid=myuser:pwd=mypass
-#url = sqlite:db=/path/to/kannel.db
-#url = sqlite3:db=/path/to/kannel3.db
-
-# Example SQLITE 2 Connection
-#group = sqlite-connection
-#id = sqlbox-db
-#database = /path/to/kannel.db
-#max-connections = 1
-
-# Example SQLITE 3 Connection
+# Example SQLITE3 Connection
 #group = sqlite3-connection
 #id = sqlbox-db
 #database = /path/to/kannel.db

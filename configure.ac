@@ -743,40 +743,6 @@ fi
 ])
 
 
-dnl Implement the --with-sdb option. This will set HAVE_SDB in gw-config.h
-dnl accordingly and enable the usage of the libsdb routines.
-
-AC_MSG_CHECKING([whether to compile with LibSDB support])
-AC_ARG_WITH(sdb,
-[  --with-sdb              enable LibSDB storage @<:@disabled@:>@], [
-if test "$withval" != yes; then
-  AC_MSG_RESULT(disabled)
-else
-  AC_MSG_RESULT(searching)
-  AC_PATH_PROGS(SDB_CONFIG, sdb-config, no)
-  if test "$SDB_CONFIG" = "no"; then
-    AC_MSG_ERROR(Unable to find sdb-config in path for SDB support)
-  else
-    AC_MSG_CHECKING([sdb version])
-    sdb_version=`$SDB_CONFIG --version`
-    AC_MSG_RESULT([$sdb_version])
-    CFLAGS="$CFLAGS `$SDB_CONFIG --cflags`"
-    AC_CHECK_HEADERS(sdb.h)
-    LIBS="$LIBS `$SDB_CONFIG --libs`"
-    AC_CHECK_LIB(sdb, sdb_init, 
-      [LIBS="$LIBS -lsdb" 
-       AC_DEFINE(HAVE_SDB, 1, [do we use libsdb])
-       AC_DEFINE_UNQUOTED(LIBSDB_VERSION, "$sdb_version", [libsdb version])
-       SDB="yes"], 
-      [AC_MSG_ERROR([Unable to find libSDB client libraries])]
-    )
-  fi
-fi
-],[
-  AC_MSG_RESULT(disabled)
-])
-
-
 dnl Implement the --with-sqlite3 option. This will set HAVE_SQLITE3 in gw-config.h
 dnl accordingly and enable the usage of the libsqlite3 routines.
 

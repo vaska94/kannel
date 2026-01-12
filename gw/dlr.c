@@ -256,8 +256,6 @@ void dlr_init(Cfg* cfg)
         handles = dlr_init_spool(cfg);
     } else if (octstr_compare(dlr_type, octstr_imm("mysql")) == 0) {
         handles = dlr_init_mysql(cfg);
-    } else if (octstr_compare(dlr_type, octstr_imm("sdb")) == 0) {
-        handles = dlr_init_sdb(cfg);
     } else if (octstr_compare(dlr_type, octstr_imm("oracle")) == 0) {
         handles = dlr_init_oracle(cfg);
     } else if (octstr_compare(dlr_type, octstr_imm("internal")) == 0) {

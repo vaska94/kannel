@@ -6,8 +6,6 @@
 #include "sqlbox_mysql.h"
 #include "sqlbox_oracle.h"
 #include "sqlbox_pgsql.h"
-#include "sqlbox_sdb.h"
-#include "sqlbox_sqlite.h"
 #include "sqlbox_sqlite3.h"
 
 struct server_type {

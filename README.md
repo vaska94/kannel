@@ -1,6 +1,6 @@
 # Kamex SMS Gateway
 
-[![Version](https://img.shields.io/badge/version-1.7.6-blue.svg)](https://github.com/vaska94/kannel/releases)
+[![Version](https://img.shields.io/badge/version-1.7.7-blue.svg)](https://github.com/vaska94/kannel/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Linux-lightgrey.svg)]()
 

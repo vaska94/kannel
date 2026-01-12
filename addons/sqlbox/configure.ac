@@ -4,7 +4,7 @@ dnl Originally by Rene Kluwen, Martin Conte, Alejandro Guerrieri, Stipe Tolj
 dnl Modernized for Kamex project
 
 AC_PREREQ([2.69])
-AC_INIT([kamex-sqlbox], [1.7.6], [dev@kamex.dev])
+AC_INIT([kamex-sqlbox], [1.7.7], [dev@kamex.dev])
 AC_CONFIG_SRCDIR([gw/sqlbox.c])
 AC_CONFIG_AUX_DIR([autotools])
 AC_CONFIG_HEADERS([sb-config.h])
@@ -249,24 +249,20 @@ dnl ===========================================================================
 AC_MSG_CHECKING([for Kamex database support])
 
 dnl These are provided by Kamex's gwlib - we just need to link against it
-dnl SQLBox uses: MySQL, PostgreSQL, SQLite, SQLite3, Oracle, MSSQL, SDB
+dnl SQLBox uses: MySQL, PostgreSQL, SQLite3, Oracle, MSSQL
 AC_MSG_RESULT([using Kamex database backends])
 
 dnl Check which databases are available in the installed Kamex
 AC_CHECK_DECL([HAVE_MYSQL], [have_mysql=yes], [have_mysql=no], [#include "gw-config.h"])
 AC_CHECK_DECL([HAVE_PGSQL], [have_pgsql=yes], [have_pgsql=no], [#include "gw-config.h"])
 AC_CHECK_DECL([HAVE_SQLITE3], [have_sqlite3=yes], [have_sqlite3=no], [#include "gw-config.h"])
-AC_CHECK_DECL([HAVE_SQLITE], [have_sqlite=yes], [have_sqlite=no], [#include "gw-config.h"])
 AC_CHECK_DECL([HAVE_ORACLE], [have_oracle=yes], [have_oracle=no], [#include "gw-config.h"])
-AC_CHECK_DECL([HAVE_SDB], [have_sdb=yes], [have_sdb=no], [#include "gw-config.h"])
 
 AC_MSG_NOTICE([Database support from Kamex:])
 AC_MSG_NOTICE([  MySQL:    $have_mysql])
 AC_MSG_NOTICE([  PgSQL:    $have_pgsql])
 AC_MSG_NOTICE([  SQLite3:  $have_sqlite3])
-AC_MSG_NOTICE([  SQLite:   $have_sqlite])
 AC_MSG_NOTICE([  Oracle:   $have_oracle])
-AC_MSG_NOTICE([  SDB:      $have_sdb])
 
 
 dnl ===========================================================================

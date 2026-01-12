@@ -16,8 +16,6 @@ libgwlib_la_SOURCES = \
 	dbpool_oracle.c \
 	dbpool_pgsql.c \
 	dbpool_redis.c \
-	dbpool_sdb.c \
-	dbpool_sqlite.c \
 	dbpool_sqlite3.c \
 	dict.c \
 	fdset.c \

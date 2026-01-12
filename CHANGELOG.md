@@ -2,6 +2,17 @@
 
 All notable changes to Kamex (formerly Kannel) will be documented in this file.
 
+## [1.7.7] - 2026-01-12
+
+### Removed
+- **SQLite2 support** - Removed obsolete SQLite 2.x database backend (use SQLite3)
+- **libsdb support** - Removed dead libsdb database abstraction library
+- Removed ~500 lines of dead code from gwlib, gw, and sqlbox
+
+### Changed
+- Cleaned up database pool enum and initialization code
+- Updated test_dbpool.c to remove SQLite2 tests
+
 ## [1.7.6] - 2026-01-12
 
 ### Added

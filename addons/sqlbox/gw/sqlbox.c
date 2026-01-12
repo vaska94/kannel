@@ -89,8 +89,8 @@ static long limit_per_cycle;
 static int save_mo, save_mt, save_dlr;
 
 #if !defined(HAVE_MSSQL) && !defined(HAVE_MYSQL) && !defined(HAVE_PGSQL) && !defined(HAVE_SDB) && \
-    !defined(HAVE_SQLITE) && !defined(HAVE_SQLITE3) && !defined(HAVE_ORACLE)
-#error You need support for at least one DB engine. Please recompile Kannel.
+    !defined(HAVE_SQLITE3) && !defined(HAVE_ORACLE)
+#error You need support for at least one DB engine. Please recompile Kamex.
 #endif
 Octstr *sqlbox_id;
 

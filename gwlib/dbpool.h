@@ -64,8 +64,7 @@
 #ifndef GWDBPOOL_H
 #define GWDBPOOL_H
 
-#if defined(HAVE_MYSQL) || defined(HAVE_SDB) || \
-    defined(HAVE_ORACLE) || defined(HAVE_SQLITE) || \
+#if defined(HAVE_MYSQL) || defined(HAVE_ORACLE) || \
     defined(HAVE_PGSQL) || defined(HAVE_SQLITE3) || \
     defined(HAVE_MSSQL) || defined(HAVE_REDIS) || \
     defined(HAVE_CASS)
@@ -74,7 +73,7 @@
 
 /* supported databases for connection pools */
 enum db_type {
-    DBPOOL_MYSQL, DBPOOL_SDB, DBPOOL_ORACLE, DBPOOL_SQLITE, DBPOOL_PGSQL,
+    DBPOOL_MYSQL, DBPOOL_ORACLE, DBPOOL_PGSQL,
     DBPOOL_SQLITE3, DBPOOL_MSSQL, DBPOOL_REDIS, DBPOOL_CASS
 };
 

@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 
 Name:           kamex
-Version:        1.7.6
+Version:        1.7.7
 Release:        1%{?dist}
 Summary:        High-performance SMS gateway (Kannel fork)
 License:        MIT and Kannel
@@ -120,6 +120,10 @@ exit 0
 %{_libdir}/libgw.so
 
 %changelog
+* Mon Jan 12 2026 Kamex Team <dev@kamex.dev> - 1.7.7-1
+- Removed SQLite2 and libsdb database backends (obsolete)
+- Cleaned up ~500 lines of dead code
+
 * Mon Jan 12 2026 Kamex Team <dev@kamex.dev> - 1.7.6-1
 - Fixed systemd service namespace compatibility
 - Added RuntimeDirectory/StateDirectory/LogsDirectory

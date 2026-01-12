@@ -18,7 +18,6 @@ libgw_la_SOURCES = \
 	dlr_oracle.c \
 	dlr_pgsql.c \
 	dlr_redis.c \
-	dlr_sdb.c \
 	dlr_spool.c \
 	dlr_sqlite3.c \
 	heartbeat.c \

@@ -567,10 +567,7 @@ Octstr *version_report_string(const char *boxname)
 #ifdef HAVE_PGSQL
              "Compiled with PostgreSQL %s.\n"
 #endif
-#ifdef HAVE_SDB
-             "Using LibSDB %s.\n"
-#endif
-#if defined(HAVE_SQLITE) || defined(HAVE_SQLITE3)
+#ifdef HAVE_SQLITE3
              "Using SQLite %s.\n"
 #endif
 #ifdef HAVE_ORACLE
@@ -603,10 +600,7 @@ Octstr *version_report_string(const char *boxname)
 #ifdef HAVE_PGSQL
              PG_VERSION,
 #endif
-#ifdef HAVE_SDB
-             LIBSDB_VERSION,
-#endif
-#if defined(HAVE_SQLITE) || defined(HAVE_SQLITE3)
+#ifdef HAVE_SQLITE3
              SQLITE_VERSION,
 #endif
 #ifdef HAVE_ORACLE
