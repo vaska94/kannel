@@ -80,6 +80,7 @@ Use `admin-password` for full control, `status-password` for view-only access.
 | [SMS Gateway Setup](doc/sms-gateway.md) | HTTP API and message routing |
 | [SMSC Types](doc/smsc-types.md) | Protocol-specific configuration |
 | [Delivery Reports](doc/dlr.md) | DLR storage backends |
+| [Addons](doc/addons.md) | Building SQLBox and OpenSMPPBox |
 | [Examples](doc/examples/) | Sample configuration files |
 
 ## Supported SMSC Protocols

@@ -172,6 +172,13 @@ else
     print_warning "Failed to install kamex-sqlbox.service (optional - install kamex-sqlbox package)"
 fi
 
+# Install opensmppbox service (optional - only if opensmppbox is installed)
+if get_file "kamex-opensmppbox.service" "/etc/systemd/system/kamex-opensmppbox.service"; then
+    print_status "Installed kamex-opensmppbox.service"
+else
+    print_warning "Failed to install kamex-opensmppbox.service (optional - install kamex-opensmppbox package)"
+fi
+
 # Install status script
 if get_file "kamex-status.sh" "/usr/local/bin/kamex-status.sh"; then
     chmod +x /usr/local/bin/kamex-status.sh
