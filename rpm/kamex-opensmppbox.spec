@@ -73,7 +73,7 @@ exit 0
 %systemd_postun_with_restart kamex-opensmppbox.service
 
 %files
-%license addons/opensmppbox/COPYING addons/opensmppbox/KannelLICENSE
+%license addons/opensmppbox/COPYING addons/opensmppbox/LICENSE.kannel
 %doc addons/opensmppbox/README addons/opensmppbox/ChangeLog addons/opensmppbox/AUTHORS
 %config(noreplace) %attr(0640, kamex, kamex) %{_sysconfdir}/kamex/opensmppbox.conf
 %config(noreplace) %attr(0640, kamex, kamex) %{_sysconfdir}/kamex/smpplogins.txt
