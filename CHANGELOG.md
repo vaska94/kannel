@@ -43,6 +43,10 @@ All notable changes to Kamex (formerly Kannel) will be documented in this file.
   - Mixed content supported: `host = smsc.${ENV}.example.com`
   - Enables Docker/K8s secrets injection without config changes
   - See `doc/configuration.md` for usage examples
+- **SBOM** - CycloneDX 1.7 Software Bill of Materials (`sbom.json`)
+  - Runtime dependencies with exact versions from UBI 10
+  - Package URLs (PURLs) for vulnerability scanning
+  - For security compliance and supply chain verification
 
 ## [1.8.0] - 2026-01-12
 

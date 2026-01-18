@@ -1,0 +1,94 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "serialNumber": "urn:uuid:976ed9bd-1110-49d6-b774-fa81f37a9c08",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-01-18T22:31:52Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "sbom-generator",
+          "version": "1.0.0",
+          "manufacturer": {
+            "name": "Kamex Project"
+          },
+          "description": "Manual SBOM generation from Docker image inspection"
+        }
+      ]
+    },
+    "component": {
+      "type": "application",
+      "name": "kamex",
+      "version": "1.8.1",
+      "description": "High-performance SMS gateway",
+      "purl": "pkg:github/vaska94/Kamex@1.8.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "glibc",
+      "version": "2.39-58.el10_1.2",
+      "purl": "pkg:rpm/redhat/glibc@2.39-58.el10_1.2?arch=x86_64",
+      "description": "GNU C Library"
+    },
+    {
+      "type": "library",
+      "name": "openssl-libs",
+      "version": "3.5.1-5.el10_1",
+      "purl": "pkg:rpm/redhat/openssl-libs@3.5.1-5.el10_1?arch=x86_64",
+      "description": "OpenSSL cryptographic library"
+    },
+    {
+      "type": "library",
+      "name": "hiredis",
+      "version": "1.2.0-5.el10_0",
+      "purl": "pkg:rpm/redhat/hiredis@1.2.0-5.el10_0?arch=x86_64",
+      "description": "Minimalistic C client for Redis"
+    },
+    {
+      "type": "library",
+      "name": "libpq",
+      "version": "16.8-2.el10_0",
+      "purl": "pkg:rpm/redhat/libpq@16.8-2.el10_0?arch=x86_64",
+      "description": "PostgreSQL client library"
+    },
+    {
+      "type": "library",
+      "name": "mariadb-connector-c",
+      "version": "3.4.4-1.el10",
+      "purl": "pkg:rpm/redhat/mariadb-connector-c@3.4.4-1.el10?arch=x86_64",
+      "description": "MariaDB/MySQL client library"
+    },
+    {
+      "type": "library",
+      "name": "sqlite-libs",
+      "version": "3.46.1-5.el10_1",
+      "purl": "pkg:rpm/redhat/sqlite-libs@3.46.1-5.el10_1?arch=x86_64",
+      "description": "SQLite shared library"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:github/vaska94/Kamex@1.8.1",
+      "dependsOn": [
+        "pkg:rpm/redhat/glibc@2.39-58.el10_1.2?arch=x86_64",
+        "pkg:rpm/redhat/openssl-libs@3.5.1-5.el10_1?arch=x86_64",
+        "pkg:rpm/redhat/hiredis@1.2.0-5.el10_0?arch=x86_64",
+        "pkg:rpm/redhat/libpq@16.8-2.el10_0?arch=x86_64",
+        "pkg:rpm/redhat/mariadb-connector-c@3.4.4-1.el10?arch=x86_64",
+        "pkg:rpm/redhat/sqlite-libs@3.46.1-5.el10_1?arch=x86_64"
+      ]
+    }
+  ]
+}
