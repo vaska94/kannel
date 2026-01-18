@@ -11,6 +11,10 @@ All notable changes to Kamex (formerly Kannel) will be documented in this file.
   - Rates: `kamex_sms_sent_rate`, `kamex_sms_received_rate` (per second)
   - Log queue metrics: `kamex_log_queue_depth`, `kamex_log_dropped_total`
   - No authentication required (standard for metrics endpoints)
+- **OpenAPI specification** - Complete API documentation in `doc/openapi.yaml`
+  - Admin API endpoints (monitoring, control, SMSC management)
+  - SMS API endpoints (sendsms with all parameters)
+  - Compatible with Swagger UI and code generators
 - **Reproducible builds** - Enterprise-grade build verification and compliance
   - Supports `SOURCE_DATE_EPOCH` for deterministic timestamps
   - `--enable-reproducible` configure flag (auto-enabled with SOURCE_DATE_EPOCH)

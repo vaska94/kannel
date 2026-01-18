@@ -1,0 +1,695 @@
+openapi: 3.0.3
+info:
+  title: Kamex SMS Gateway API
+  description: |
+    REST API for the Kamex SMS Gateway.
+
+    Kamex exposes two HTTP interfaces:
+    - **Admin API** (default port 13000) - Gateway management and monitoring
+    - **SMS API** (default port 13013) - Send and receive SMS messages
+  version: 1.8.1
+  contact:
+    name: Kamex Project
+    url: https://github.com/vaska94/Kamex
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:13000
+    description: Admin API (bearerbox)
+  - url: http://localhost:13013
+    description: SMS API (smsbox)
+
+tags:
+  - name: Monitoring
+    description: Health checks and metrics
+  - name: Status
+    description: Gateway status information
+  - name: Control
+    description: Gateway control operations (require admin password)
+  - name: SMSC
+    description: SMSC connection management (require admin password)
+  - name: SMS
+    description: Send SMS messages
+
+paths:
+  # ============ Monitoring Endpoints ============
+  /health:
+    get:
+      tags: [Monitoring]
+      summary: Health check
+      description: |
+        Returns gateway health status. No authentication required.
+        - Returns HTTP 200 for healthy/warn states
+        - Returns HTTP 503 for unhealthy state
+      responses:
+        '200':
+          description: Gateway is healthy or has warnings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                healthy:
+                  summary: Healthy gateway
+                  value:
+                    status: running
+                    health: healthy
+                    uptime_seconds: 86400
+                    smscs:
+                      total: 3
+                      online: 3
+                    queued_messages: 0
+                    logging:
+                      queue_depth: 0
+                      queue_max: 131072
+                      dropped_total: 0
+                warn:
+                  summary: Gateway with warnings
+                  value:
+                    status: running
+                    health: warn
+                    warnings: ["log queue at 85% (111411/131072)"]
+                    uptime_seconds: 86400
+                    smscs:
+                      total: 3
+                      online: 3
+                    queued_messages: 100
+                    logging:
+                      queue_depth: 111411
+                      queue_max: 131072
+                      dropped_total: 0
+        '503':
+          description: Gateway is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /metrics:
+    get:
+      tags: [Monitoring]
+      summary: Prometheus metrics
+      description: |
+        Returns gateway metrics in Prometheus text exposition format.
+        No authentication required.
+      responses:
+        '200':
+          description: Prometheus metrics
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: |
+                # HELP kamex_sms_sent_total Total SMS messages sent
+                # TYPE kamex_sms_sent_total counter
+                kamex_sms_sent_total 54321
+
+                # HELP kamex_smsc_online Online SMSCs
+                # TYPE kamex_smsc_online gauge
+                kamex_smsc_online 3
+
+  # ============ Status Endpoints ============
+  /status.json:
+    get:
+      tags: [Status]
+      summary: Gateway status (JSON)
+      description: Returns detailed gateway status in JSON format.
+      parameters:
+        - $ref: '#/components/parameters/StatusPassword'
+      responses:
+        '200':
+          description: Gateway status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+        '403':
+          description: Authentication failed
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Denied
+
+  /status:
+    get:
+      tags: [Status]
+      summary: Gateway status
+      description: Returns gateway status in various formats based on Accept header or file extension.
+      parameters:
+        - $ref: '#/components/parameters/StatusPassword'
+      responses:
+        '200':
+          description: Gateway status
+          content:
+            text/html:
+              schema:
+                type: string
+            text/plain:
+              schema:
+                type: string
+            application/xml:
+              schema:
+                type: string
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+
+  /store-status:
+    get:
+      tags: [Status]
+      summary: Message store status
+      description: Returns status of the persistent message store.
+      parameters:
+        - $ref: '#/components/parameters/StatusPassword'
+      responses:
+        '200':
+          description: Store status
+          content:
+            application/json:
+              schema:
+                type: object
+
+  # ============ Control Endpoints ============
+  /suspend:
+    get:
+      tags: [Control]
+      summary: Suspend gateway
+      description: Suspends message processing. Messages are queued but not delivered.
+      parameters:
+        - $ref: '#/components/parameters/AdminPassword'
+      responses:
+        '200':
+          description: Gateway suspended
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Kamex suspended
+        '403':
+          description: Authentication failed
+
+  /resume:
+    get:
+      tags: [Control]
+      summary: Resume gateway
+      description: Resumes message processing after suspend.
+      parameters:
+        - $ref: '#/components/parameters/AdminPassword'
+      responses:
+        '200':
+          description: Gateway resumed
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Running resumed
+        '403':
+          description: Authentication failed
+
+  /isolate:
+    get:
+      tags: [Control]
+      summary: Isolate gateway
+      description: Stops receiving new messages but continues processing queued messages.
+      parameters:
+        - $ref: '#/components/parameters/AdminPassword'
+      responses:
+        '200':
+          description: Gateway isolated
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Kamex isolated from message providers
+        '403':
+          description: Authentication failed
+
+  /shutdown:
+    get:
+      tags: [Control]
+      summary: Shutdown gateway
+      description: Initiates graceful shutdown of the gateway.
+      parameters:
+        - $ref: '#/components/parameters/AdminPassword'
+      responses:
+        '200':
+          description: Shutdown initiated
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Bringing system down
+        '403':
+          description: Authentication failed
+
+  /restart:
+    get:
+      tags: [Control]
+      summary: Restart gateway
+      description: Restarts the gateway.
+      parameters:
+        - $ref: '#/components/parameters/AdminPassword'
+      responses:
+        '200':
+          description: Restart initiated
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Restarting.....
+        '403':
+          description: Authentication failed
+
+  /flush-dlr:
+    get:
+      tags: [Control]
+      summary: Flush DLR queue
+      description: Flushes pending delivery reports. Gateway must be suspended first.
+      parameters:
+        - $ref: '#/components/parameters/AdminPassword'
+      responses:
+        '200':
+          description: DLR queue flushed
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: DLR queue flushed
+        '403':
+          description: Authentication failed
+
+  /log-level:
+    get:
+      tags: [Control]
+      summary: Set log level
+      description: |
+        Changes the runtime log level.
+        - 0 = DEBUG
+        - 1 = INFO
+        - 2 = WARNING
+        - 3 = ERROR
+        - 4 = PANIC
+      parameters:
+        - $ref: '#/components/parameters/AdminPassword'
+        - name: level
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 4
+          description: New log level (0=DEBUG, 4=PANIC)
+      responses:
+        '200':
+          description: Log level changed
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: log-level set to 1
+        '403':
+          description: Authentication failed
+
+  /reload-lists:
+    get:
+      tags: [Control]
+      summary: Reload blacklists
+      description: Reloads black/white lists from configuration.
+      parameters:
+        - $ref: '#/components/parameters/AdminPassword'
+      responses:
+        '200':
+          description: Lists reloaded
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Black/white lists re-loaded
+        '403':
+          description: Authentication failed
+
+  # ============ SMSC Management ============
+  /stop-smsc:
+    get:
+      tags: [SMSC]
+      summary: Stop SMSC
+      description: Stops a specific SMSC connection.
+      parameters:
+        - $ref: '#/components/parameters/AdminPassword'
+        - name: smsc
+          in: query
+          required: true
+          schema:
+            type: string
+          description: SMSC ID to stop
+      responses:
+        '200':
+          description: SMSC stopped
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: SMSC 'smsc1' shut down
+        '403':
+          description: Authentication failed
+
+  /start-smsc:
+    get:
+      tags: [SMSC]
+      summary: Start SMSC
+      description: Starts/restarts a specific SMSC connection.
+      parameters:
+        - $ref: '#/components/parameters/AdminPassword'
+        - name: smsc
+          in: query
+          required: true
+          schema:
+            type: string
+          description: SMSC ID to start
+      responses:
+        '200':
+          description: SMSC started
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: SMSC 'smsc1' re-started
+        '403':
+          description: Authentication failed
+
+  /add-smsc:
+    get:
+      tags: [SMSC]
+      summary: Add SMSC
+      description: Adds a new SMSC connection from configuration.
+      parameters:
+        - $ref: '#/components/parameters/AdminPassword'
+        - name: smsc
+          in: query
+          required: true
+          schema:
+            type: string
+          description: SMSC ID to add
+      responses:
+        '200':
+          description: SMSC added
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: SMSC 'smsc1' added
+        '403':
+          description: Authentication failed
+
+  /remove-smsc:
+    get:
+      tags: [SMSC]
+      summary: Remove SMSC
+      description: Removes an SMSC connection.
+      parameters:
+        - $ref: '#/components/parameters/AdminPassword'
+        - name: smsc
+          in: query
+          required: true
+          schema:
+            type: string
+          description: SMSC ID to remove
+      responses:
+        '200':
+          description: SMSC removed
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: SMSC 'smsc1' removed
+        '403':
+          description: Authentication failed
+
+  # ============ SMS Endpoints (smsbox) ============
+  /cgi-bin/sendsms:
+    get:
+      tags: [SMS]
+      summary: Send SMS (GET)
+      description: Send an SMS message using query parameters.
+      servers:
+        - url: http://localhost:13013
+      parameters:
+        - name: user
+          in: query
+          schema:
+            type: string
+          description: Username for authentication
+        - name: pass
+          in: query
+          schema:
+            type: string
+          description: Password for authentication
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Destination phone number (E.164 format recommended)
+          example: "+1234567890"
+        - name: from
+          in: query
+          schema:
+            type: string
+          description: Sender ID (phone number or alphanumeric)
+          example: "Kamex"
+        - name: text
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Message text (URL encoded)
+        - name: dlr-mask
+          in: query
+          schema:
+            type: integer
+          description: |
+            DLR bitmask:
+            - 1 = Delivered
+            - 2 = Failed
+            - 4 = Buffered
+            - 8 = Submitted
+            - 16 = Rejected
+          example: 31
+        - name: dlr-url
+          in: query
+          schema:
+            type: string
+            format: uri
+          description: URL for delivery report callback
+      responses:
+        '202':
+          description: SMS accepted
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "0: Accepted for delivery"
+        '403':
+          description: Authentication failed
+
+    post:
+      tags: [SMS]
+      summary: Send SMS (POST)
+      description: Send an SMS message using form data or JSON body.
+      servers:
+        - url: http://localhost:13013
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SendSmsRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendSmsRequest'
+      parameters:
+        - name: X-API-Key
+          in: header
+          schema:
+            type: string
+          description: API token (alternative to user/pass)
+      responses:
+        '202':
+          description: SMS accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendSmsResponse'
+        '403':
+          description: Authentication failed
+
+components:
+  parameters:
+    AdminPassword:
+      name: password
+      in: query
+      required: true
+      schema:
+        type: string
+      description: Admin password (from admin-password config)
+
+    StatusPassword:
+      name: password
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Status password (admin-password or status-password)
+
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - health
+      properties:
+        status:
+          type: string
+          enum: [running, isolated, suspended, queue_full, shutting_down]
+          description: Gateway operational status
+        health:
+          type: string
+          enum: [healthy, warn, unhealthy]
+          description: Overall health status
+        warnings:
+          type: array
+          items:
+            type: string
+          description: Warning messages (present when health=warn)
+        uptime_seconds:
+          type: integer
+          description: Gateway uptime in seconds
+        smscs:
+          type: object
+          properties:
+            total:
+              type: integer
+            online:
+              type: integer
+        queued_messages:
+          type: integer
+        logging:
+          type: object
+          properties:
+            queue_depth:
+              type: integer
+            queue_max:
+              type: integer
+            dropped_total:
+              type: integer
+
+    StatusResponse:
+      type: object
+      properties:
+        version:
+          type: string
+          example: "Kamex 1.8.1"
+        status:
+          type: string
+          enum: [running, isolated, suspended, queue_full, shutting_down]
+        uptime:
+          type: object
+          properties:
+            days:
+              type: integer
+            hours:
+              type: integer
+            minutes:
+              type: integer
+            seconds:
+              type: integer
+        sms:
+          type: object
+          properties:
+            received:
+              type: object
+              properties:
+                total:
+                  type: integer
+                queued:
+                  type: integer
+            sent:
+              type: object
+              properties:
+                total:
+                  type: integer
+                queued:
+                  type: integer
+            inbound_rate:
+              type: array
+              items:
+                type: number
+              description: "[1sec, 1min, 5min] rates"
+            outbound_rate:
+              type: array
+              items:
+                type: number
+        dlr:
+          type: object
+          properties:
+            received:
+              type: integer
+            sent:
+              type: integer
+            queued:
+              type: integer
+            storage:
+              type: string
+        boxes:
+          type: array
+          items:
+            type: object
+        smscs:
+          type: array
+          items:
+            type: object
+
+    SendSmsRequest:
+      type: object
+      required:
+        - to
+        - text
+      properties:
+        user:
+          type: string
+          description: Username
+        pass:
+          type: string
+          description: Password
+        to:
+          type: string
+          description: Destination number
+          example: "+1234567890"
+        from:
+          type: string
+          description: Sender ID
+          example: "Kamex"
+        text:
+          type: string
+          description: Message text
+          example: "Hello World"
+        dlr-mask:
+          type: integer
+          description: DLR bitmask
+          example: 31
+        dlr-url:
+          type: string
+          format: uri
+          description: DLR callback URL
+
+    SendSmsResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "accepted"
+        message_id:
+          type: string
+          example: "abc123-def456"

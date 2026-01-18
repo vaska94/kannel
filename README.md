@@ -147,6 +147,7 @@ Use `admin-password` for full control, `status-password` for view-only access.
 | [Delivery Reports](doc/dlr.md) | DLR storage backends |
 | [Logging](doc/logging.md) | Async logging architecture |
 | [Metrics](doc/metrics.md) | Prometheus monitoring setup |
+| [OpenAPI](doc/openapi.yaml) | API specification (Swagger) |
 | [Docker](doc/docker.md) | Docker deployment guide |
 | [Addons](doc/addons.md) | Building SQLBox and OpenSMPPBox |
 | [Examples](doc/examples/) | Sample configuration files |
