@@ -23,6 +23,12 @@ All notable changes to Kamex (formerly Kannel) will be documented in this file.
   - Docker images: pinned base image digest and EPEL version
   - GitHub Actions CI sets `SOURCE_DATE_EPOCH` automatically
   - Addons (SQLBox, OpenSMPPBox) support reproducible builds
+- **Config validation** - Validate configuration files without starting services (nginx-style)
+  - `bearerbox -t /etc/kamex/kamex.conf` - test bearerbox config
+  - `smsbox -t /etc/kamex/kamex.conf` - test smsbox config
+  - Clean output: `bearerbox: configuration file ... test is successful`
+  - Returns exit code 0 on success, 1 on failure
+  - Useful for CI/CD pipelines and deployment automation
 
 ## [1.8.0] - 2026-01-12
 

@@ -113,6 +113,7 @@ static Octstr *api_sendsms_url = NULL;
 static Octstr *bb_host;
 static Octstr *accepted_chars = NULL;
 static int only_try_http = 0;
+static int test_config_only = 0;
 static URLTranslationList *translations = NULL;
 static long sms_max_length = MAX_SMS_OCTETS;
 static char *sendsms_number_chars;
@@ -3351,6 +3352,8 @@ static Cfg *init_smsbox(Cfg *cfg)
 static int check_args(int i, int argc, char **argv) {
     if (strcmp(argv[i], "-H")==0 || strcmp(argv[i], "--tryhttp")==0) {
 	only_try_http = 1;
+    } else if (strcmp(argv[i], "-t")==0 || strcmp(argv[i], "--test")==0) {
+	test_config_only = 1;
     } else
 	return -1;
 
@@ -3361,10 +3364,24 @@ static int check_args(int i, int argc, char **argv) {
 int main(int argc, char **argv)
 {
     int cf_index;
+    int i;
     Octstr *filename;
     double heartbeat_freq = DEFAULT_HEARTBEAT;
 
+    /* Check for -t/--test before gwlib_init to skip async logging */
+    for (i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--test") == 0) {
+            test_config_only = 1;
+            log_set_skip_async();
+            break;
+        }
+    }
+
     gwlib_init();
+
+    if (test_config_only)
+        log_set_output_level(GW_WARNING);
+
     cf_index = get_and_set_debugs(argc, argv, check_args);
     
     setup_signal_handlers();
@@ -3378,25 +3395,34 @@ int main(int argc, char **argv)
     if (cfg_read(cfg) == -1)
 	panic(0, "Couldn't read configuration from `%s'.", octstr_get_cstr(filename));
 
+    if (test_config_only) {
+        printf("smsbox: configuration file %s syntax is ok\n", octstr_get_cstr(filename));
+        printf("smsbox: configuration file %s test is successful\n", octstr_get_cstr(filename));
+        cfg_destroy(cfg);
+        octstr_destroy(filename);
+        gwlib_shutdown();
+        return 0;
+    }
+
     octstr_destroy(filename);
 
     report_versions("smsbox");
 
     init_smsbox(cfg);
 
-    if (max_http_retries > 0) {
-        info(0, "Using HTTP request queueing with %ld retries, %lds delay.", 
-                max_http_retries, http_queue_delay);
-    }
-
-    debug("sms", 0, "----------------------------------------------");
-    debug("sms", 0, GW_NAME " smsbox version %s starting", GW_VERSION);
-
     translations = urltrans_create();
     if (translations == NULL)
 	panic(0, "urltrans_create failed");
     if (urltrans_add_cfg(translations, cfg) == -1)
 	panic(0, "urltrans_add_cfg failed");
+
+    if (max_http_retries > 0) {
+        info(0, "Using HTTP request queueing with %ld retries, %lds delay.",
+                max_http_retries, http_queue_delay);
+    }
+
+    debug("sms", 0, "----------------------------------------------");
+    debug("sms", 0, GW_NAME " smsbox version %s starting", GW_VERSION);
 
     client_dict = dict_create(32, NULL);
     sendsms_reply_hdrs = http_create_empty_headers();

@@ -194,6 +194,16 @@ static volatile sig_atomic_t log_writer_running = 0;
 static volatile long dropped_count = 0;
 
 /*
+ * Skip async logging - for config test mode (-t).
+ */
+static int skip_async_log = 0;
+
+void log_set_skip_async(void)
+{
+    skip_async_log = 1;
+}
+
+/*
  * Async log writer thread.
  * Consumes log entries from the queue and writes them to files.
  */
@@ -269,6 +279,10 @@ void log_init(void)
     }
 
     add_stderr();
+
+    /* Skip async logging for config test mode */
+    if (skip_async_log)
+        return;
 
     /* Start async log writer thread */
     log_queue = gwlist_create();

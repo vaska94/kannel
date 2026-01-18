@@ -143,6 +143,7 @@ static volatile sig_atomic_t bb_todo = 0;
 static Mutex *status_mutex;
 static time_t start_time;
 volatile sig_atomic_t restart = 0;
+static int test_config_only = 0;
 
 
 /* to avoid copied code */
@@ -287,12 +288,14 @@ static int check_config(Cfg *cfg)
 /*
  * check our own variables
  */
-static int check_args(int i, int argc, char **argv) 
+static int check_args(int i, int argc, char **argv)
 {
     if (strcmp(argv[i], "-S")==0 || strcmp(argv[i], "--suspended")==0)
         bb_status = BB_SUSPENDED;
     else if (strcmp(argv[i], "-I")==0 || strcmp(argv[i], "--isolated")==0)
         bb_status = BB_ISOLATED;
+    else if (strcmp(argv[i], "-t")==0 || strcmp(argv[i], "--test")==0)
+        test_config_only = 1;
     else
         return -1;
 
@@ -587,11 +590,25 @@ static void dispatch_into_queue(Msg *msg)
 int main(int argc, char **argv)
 {
     int cf_index;
+    int i;
     Cfg *cfg;
 
     bb_status = BB_RUNNING;
-    
+
+    /* Check for -t/--test before gwlib_init to skip async logging */
+    for (i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--test") == 0) {
+            test_config_only = 1;
+            log_set_skip_async();
+            break;
+        }
+    }
+
     gwlib_init();
+
+    if (test_config_only)
+        log_set_output_level(GW_WARNING);
+
     start_time = time(NULL);
 
     suspended = gwlist_create();
@@ -609,6 +626,17 @@ int main(int argc, char **argv)
     
     if (cfg_read(cfg) == -1)
         panic(0, "Couldn't read configuration from `%s'.", octstr_get_cstr(cfg_filename));
+
+    if (test_config_only) {
+        printf("bearerbox: configuration file %s syntax is ok\n", octstr_get_cstr(cfg_filename));
+        printf("bearerbox: configuration file %s test is successful\n", octstr_get_cstr(cfg_filename));
+        cfg_destroy(cfg);
+        octstr_destroy(cfg_filename);
+        gwlist_destroy(suspended, NULL);
+        gwlist_destroy(isolated, NULL);
+        gwlib_shutdown();
+        return 0;
+    }
 
     dlr_init(cfg);
     

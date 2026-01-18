@@ -77,6 +77,9 @@ enum excl_state {
 /* Initialize the log file module */
 void log_init(void);
 
+/* Skip async log writer (call before log_init for config test mode) */
+void log_set_skip_async(void);
+
 /* Shutdown the log file module */
 void log_shutdown(void);
 
