@@ -61,7 +61,7 @@
  */
 
 #include <errno.h>
-#include <sys/unistd.h>
+#include <unistd.h>
 
 #include "gwlib/gwlib.h"
 #include "shared.h"
