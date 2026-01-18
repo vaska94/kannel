@@ -11,16 +11,25 @@ mkdir kamex && cd kamex
 docker compose up -d
 ```
 
-## Image
+## Images
 
-Official image: `ghcr.io/vaska94/kamex:latest`
+| Image | Base | Size | Use Case |
+|-------|------|------|----------|
+| `ghcr.io/vaska94/kamex:latest` | UBI10 | ~150MB | Enterprise/RHEL environments |
+| `ghcr.io/vaska94/kamex:alpine` | Alpine 3.23 | ~20MB | Cloud-native/Kubernetes |
 
-Based on Red Hat UBI10 minimal. Includes all database backends (MySQL, PostgreSQL, SQLite, Redis).
+Both images include all database backends (MySQL, PostgreSQL, SQLite, Redis).
 
 ```bash
 # Check version
 docker run --rm ghcr.io/vaska94/kamex:latest --version
+docker run --rm ghcr.io/vaska94/kamex:alpine --version
 ```
+
+### Version Tags
+
+- `:latest` / `:alpine` - latest release
+- `:1.8.1` / `:1.8.1-alpine` - specific version
 
 ## Docker Compose
 

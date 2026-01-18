@@ -1,0 +1,60 @@
+# Alpine multi-stage build for minimal image size
+# Results in ~20MB image vs ~150MB for UBI
+
+# Stage 1: Build
+FROM alpine:3.23 AS builder
+
+# For reproducible builds, pass SOURCE_DATE_EPOCH:
+#   docker build --build-arg SOURCE_DATE_EPOCH=$(git log -1 --format=%ct) .
+ARG SOURCE_DATE_EPOCH
+ENV SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}
+
+RUN apk add --no-cache \
+    build-base autoconf automake libtool git gettext-dev \
+    openssl-dev mariadb-connector-c-dev postgresql-dev sqlite-dev hiredis-dev
+
+WORKDIR /build
+COPY . .
+
+RUN autoreconf -fi && \
+    ./configure \
+        --prefix=/usr \
+        --sysconfdir=/etc/kamex \
+        --localstatedir=/var \
+        --enable-ssl \
+        --with-mysql \
+        --with-pgsql \
+        --with-sqlite3 \
+        --with-redis && \
+    make -j$(nproc) && \
+    make DESTDIR=/install install-strip
+
+# Stage 2: Runtime
+FROM alpine:3.23
+
+RUN apk add --no-cache \
+    openssl \
+    mariadb-connector-c \
+    libpq \
+    sqlite-libs \
+    hiredis \
+    curl \
+    && addgroup -S kamex \
+    && adduser -S -G kamex kamex
+
+COPY --from=builder /install/usr/sbin/bearerbox /usr/sbin/
+COPY --from=builder /install/usr/sbin/smsbox /usr/sbin/
+COPY --from=builder /install/usr/lib/libgwlib.so* /usr/lib/
+COPY --from=builder /install/usr/lib/libgw.so* /usr/lib/
+
+RUN mkdir -p /var/log/kamex /var/spool/kamex /var/run/kamex /etc/kamex && \
+    chown -R kamex:kamex /var/log/kamex /var/spool/kamex /var/run/kamex
+
+USER kamex
+EXPOSE 13000 13013
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
+    CMD curl -sf http://localhost:13000/health || exit 1
+
+ENTRYPOINT ["/usr/sbin/bearerbox"]
+CMD ["/etc/kamex/kamex.conf"]
