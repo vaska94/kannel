@@ -582,11 +582,17 @@ Octstr *version_report_string(const char *boxname)
 #endif
              "Using %s malloc.\n",
              boxname, GW_VERSION,
-#ifdef __GNUC__ 
-             (__DATE__ " " __TIME__) ,
+#ifdef BUILD_TIMESTAMP
+             BUILD_TIMESTAMP,
+#elif defined(__GNUC__)
+             (__DATE__ " " __TIME__),
+#else
+             "unknown",
+#endif
+#ifdef __GNUC__
              __VERSION__,
-#else 
-             "unknown" , "unknown",
+#else
+             "unknown",
 #endif 
              u.sysname, u.release, u.version, u.machine,
              octstr_get_cstr(get_official_name()),

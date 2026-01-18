@@ -1,6 +1,6 @@
 # Kamex SMS Gateway
 
-[![Version](https://img.shields.io/badge/version-1.8.0-blue.svg)](https://github.com/vaska94/Kamex/releases)
+[![Version](https://img.shields.io/badge/version-1.8.1-blue.svg)](https://github.com/vaska94/Kamex/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Linux-lightgrey.svg)]()
 [![Docker](https://img.shields.io/badge/docker-ghcr.io-blue.svg)](https://ghcr.io/vaska94/kamex)
@@ -97,6 +97,7 @@ sudo make install-strip
 | `--with-cassandra` | Cassandra support |
 | `--with-oracle` | Oracle support (untested) |
 | `--with-mssql` | MSSQL support (untested) |
+| `--enable-reproducible` | Reproducible builds (auto if SOURCE_DATE_EPOCH set) |
 
 ### 3. Configure and Run
 
@@ -207,6 +208,21 @@ Includes bearerbox, smsbox, and Valkey for DLR storage. See [Docker Guide](doc/d
 sudo ./contrib/systemd/setup-kamex-user.sh
 sudo systemctl enable kamex-bearerbox kamex-smsbox
 sudo systemctl start kamex-bearerbox kamex-smsbox
+```
+
+## Reproducible Builds
+
+Kamex supports [reproducible builds](https://reproducible-builds.org/) for enterprise verification and compliance.
+
+```bash
+# Build with fixed timestamp from git commit
+export SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)
+autoreconf -fi
+./configure --enable-ssl --with-redis
+make
+
+# Verify reproducibility - all binaries have identical hashes
+sha256sum gw/.libs/bearerbox gw/.libs/smsbox gwlib/.libs/libgwlib.so
 ```
 
 ## Contributing

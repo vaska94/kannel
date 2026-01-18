@@ -87,6 +87,16 @@ AC_DEFINE_UNQUOTED([GW_NAME], ["Kamex"], [Gateway name])
 AC_DEFINE_UNQUOTED([GW_VERSION], ["$VERSION"], [Gateway version])
 AC_SUBST([GW_VERSION], [$VERSION])
 
+dnl Reproducible builds support (SOURCE_DATE_EPOCH)
+AC_MSG_CHECKING([for SOURCE_DATE_EPOCH])
+if test -n "$SOURCE_DATE_EPOCH"; then
+    BUILD_TIMESTAMP=`date -u -d "@$SOURCE_DATE_EPOCH" "+%b %d %Y %H:%M:%S" 2>/dev/null || date -u -r "$SOURCE_DATE_EPOCH" "+%b %d %Y %H:%M:%S" 2>/dev/null || echo "reproducible"`
+    AC_DEFINE_UNQUOTED([BUILD_TIMESTAMP], ["$BUILD_TIMESTAMP"], [Build timestamp for reproducible builds])
+    AC_MSG_RESULT([$SOURCE_DATE_EPOCH -> $BUILD_TIMESTAMP])
+else
+    AC_MSG_RESULT([not set, using compiler __DATE__ __TIME__])
+fi
+
 AC_CONFIG_SECTION([Configuring for Kamex gateway version $VERSION])
 
 AM_INIT_AUTOMAKE([foreign -Wall])
@@ -376,6 +386,29 @@ AC_ARG_ENABLE(warnings,
   fi
 ])
 
+dnl Implement --enable-reproducible option for reproducible builds.
+
+AC_ARG_ENABLE(reproducible,
+[  --enable-reproducible   enable reproducible builds @<:@auto@:>@], [
+  enable_reproducible=$enableval
+], [
+  dnl Auto-enable if SOURCE_DATE_EPOCH is set
+  if test -n "$SOURCE_DATE_EPOCH"; then
+    enable_reproducible=yes
+  else
+    enable_reproducible=no
+  fi
+])
+
+if test "x$enable_reproducible" = "xyes"; then
+  echo "enabling reproducible builds"
+  if test -n "$GCC"; then
+    dnl Strip absolute paths from __FILE__ macros
+    CFLAGS="$CFLAGS -ffile-prefix-map=$PWD=."
+    dnl Also strip debug info paths
+    CFLAGS="$CFLAGS -fdebug-prefix-map=$PWD=."
+  fi
+fi
 
 AC_CONFIG_SECTION([Configuring parameters])
 

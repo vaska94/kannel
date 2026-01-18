@@ -4,7 +4,7 @@ dnl Originally by Rene Kluwen, Martin Conte, Alejandro Guerrieri, Stipe Tolj
 dnl Modernized for Kamex project
 
 AC_PREREQ([2.69])
-AC_INIT([kamex-sqlbox], [1.7.8], [dev@kamex.dev])
+AC_INIT([kamex-sqlbox], [1.8.1], [dev@kamex.dev])
 AC_CONFIG_SRCDIR([gw/sqlbox.c])
 AC_CONFIG_AUX_DIR([autotools])
 AC_CONFIG_HEADERS([sb-config.h])
@@ -56,6 +56,17 @@ AC_ARG_WITH(libs,
 [  --with-libs=FLAGS       use FLAGS for extra libraries],
 LIBS="$LIBS $withval")
 
+dnl Reproducible builds support
+AC_ARG_ENABLE(reproducible,
+[  --enable-reproducible   enable reproducible builds [auto]],
+[ enable_reproducible=$enableval ],
+[ if test -n "$SOURCE_DATE_EPOCH"; then enable_reproducible=yes; else enable_reproducible=no; fi ])
+
+if test "x$enable_reproducible" = "xyes"; then
+  if test -n "$GCC"; then
+    CFLAGS="$CFLAGS -ffile-prefix-map=$PWD=. -fdebug-prefix-map=$PWD=."
+  fi
+fi
 
 dnl ===========================================================================
 dnl OpenSSL support

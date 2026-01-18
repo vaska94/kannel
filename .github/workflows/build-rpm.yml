@@ -40,6 +40,10 @@ jobs:
       - name: Fix git ownership
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
+      - name: Set SOURCE_DATE_EPOCH for reproducible builds
+        run: |
+          echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> $GITHUB_ENV
+
       - name: Setup rpmbuild tree
         run: |
           mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
@@ -143,17 +147,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get version
+      - name: Get version and SOURCE_DATE_EPOCH
         id: version
         run: |
           VERSION=$(grep 'Version:' rpm/kamex.spec | awk '{print $2}')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "source_date_epoch=$(git log -1 --format=%ct)" >> $GITHUB_OUTPUT
 
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: docker/
           push: ${{ startsWith(github.ref, 'refs/tags/v') }}
+          build-args: |
+            SOURCE_DATE_EPOCH=${{ steps.version.outputs.source_date_epoch }}
           tags: |
             ghcr.io/${{ github.repository_owner }}/kamex:latest
             ghcr.io/${{ github.repository_owner }}/kamex:${{ steps.version.outputs.version }}

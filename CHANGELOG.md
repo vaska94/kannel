@@ -2,6 +2,18 @@
 
 All notable changes to Kamex (formerly Kannel) will be documented in this file.
 
+## [1.8.1] - 2026-01-18
+
+### Added
+- **Reproducible builds** - Enterprise-grade build verification and compliance
+  - Supports `SOURCE_DATE_EPOCH` for deterministic timestamps
+  - `--enable-reproducible` configure flag (auto-enabled with SOURCE_DATE_EPOCH)
+  - Strips absolute paths from binaries with `-ffile-prefix-map`
+  - Identical SHA256 hashes for same source + environment
+  - Docker images: pinned base image digest and EPEL version
+  - GitHub Actions CI sets `SOURCE_DATE_EPOCH` automatically
+  - Addons (SQLBox, OpenSMPPBox) support reproducible builds
+
 ## [1.8.0] - 2026-01-12
 
 ### Added
