@@ -18,6 +18,7 @@ Modern, high-performance SMS gateway with built-in admin panel. Supports SMPP, E
 - **Web Admin Panel** - Built-in dashboard at `/` with real-time monitoring
 - **JSON API** - Modern `/status.json` and `/api/sendsms` endpoints
 - **Health Checks** - `/health` endpoint for load balancers and Kubernetes
+- **Config Hot-Reload** - `SIGHUP` reloads config, adds/removes SMSCs without restart
 - **Redis/Valkey** - Native support for DLR and message store
 - **Reproducible Builds** - Enterprise-grade build verification with `SOURCE_DATE_EPOCH`
 - **Removed Legacy** - Dropped RADIUS, WAP, libxml2, and dead SMSC protocols
@@ -142,6 +143,7 @@ Use `admin-password` for full control, `status-password` for view-only access.
 | Document | Description |
 |----------|-------------|
 | [Configuration Guide](doc/configuration.md) | Core configuration options |
+| [CLI Usage](doc/cli.md) | Command-line options, signals, hot-reload |
 | [SMS Gateway Setup](doc/sms-gateway.md) | HTTP API and message routing |
 | [SMSC Types](doc/smsc-types.md) | Protocol-specific configuration |
 | [Delivery Reports](doc/dlr.md) | DLR storage backends |

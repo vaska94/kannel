@@ -105,6 +105,74 @@ This is useful for CI/CD pipelines:
 bearerbox -t /etc/kamex/kamex.conf && smsbox -t /etc/kamex/kamex.conf
 ```
 
+## Signals (Hot-Reload)
+
+Bearerbox supports runtime signals for zero-downtime operations:
+
+| Signal | Effect |
+|--------|--------|
+| `SIGHUP` | Hot-reload configuration and re-open logs |
+| `SIGUSR2` | Re-open log files only (for logrotate) |
+| `SIGQUIT` | Report memory usage (debug) |
+| `SIGTERM` | Graceful shutdown |
+| `SIGINT` | Graceful shutdown |
+
+### SIGHUP - Config Hot-Reload
+
+Reload configuration without restarting:
+
+```bash
+# Send SIGHUP to bearerbox
+kill -HUP $(cat /var/run/kamex/bearerbox.pid)
+
+# Or using systemctl
+systemctl reload kamex-bearerbox
+```
+
+What gets reloaded:
+- **SMSC connections** - New SMSCs added, removed SMSCs stopped, changed SMSCs restarted
+- **Routing rules** - Updated without restarting unchanged SMSCs
+- **Black/white lists** - Reloaded from files
+- **Log files** - Re-opened (for logrotate)
+
+What does NOT change (requires restart):
+- Listen ports (admin-port, smsbox-port)
+- SSL certificates
+- Core settings (store-type, etc.)
+
+### SIGUSR2 - Log Rotation
+
+Re-open log files without config reload:
+
+```bash
+kill -USR2 $(cat /var/run/kamex/bearerbox.pid)
+```
+
+Use with logrotate:
+
+```
+/var/log/kamex/*.log {
+    daily
+    rotate 7
+    compress
+    postrotate
+        kill -USR2 $(cat /var/run/kamex/bearerbox.pid) 2>/dev/null || true
+    endscript
+}
+```
+
+### Systemd Integration
+
+The systemd service file supports reload:
+
+```bash
+# Reload config (sends SIGHUP)
+systemctl reload kamex-bearerbox
+
+# Check status
+systemctl status kamex-bearerbox
+```
+
 ## Debug Places
 
 The `-D` flag enables debug output for specific code areas:
