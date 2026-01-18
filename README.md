@@ -13,13 +13,14 @@ Modern, high-performance SMS gateway with built-in admin panel. Supports SMPP, E
 
 ## What's New in Kamex
 
+- **Prometheus Metrics** - Native `/metrics` endpoint for Prometheus/Grafana monitoring
 - **Async Logging** - Non-blocking logging with dedicated writer thread (~10x throughput)
 - **Web Admin Panel** - Built-in dashboard at `/` with real-time monitoring
 - **JSON API** - Modern `/status.json` and `/api/sendsms` endpoints
 - **Health Checks** - `/health` endpoint for load balancers and Kubernetes
 - **Redis/Valkey** - Native support for DLR and message store
+- **Reproducible Builds** - Enterprise-grade build verification with `SOURCE_DATE_EPOCH`
 - **Removed Legacy** - Dropped RADIUS, WAP, libxml2, and dead SMSC protocols
-- **Active Development** - Bug fixes and new features
 
 ## Features
 
@@ -31,6 +32,7 @@ Modern, high-performance SMS gateway with built-in admin panel. Supports SMPP, E
 - **Database support**: MySQL, PostgreSQL, SQLite3, Redis/Valkey, Cassandra, Oracle*, MSSQL*
   <br><sub>*untested</sub>
 - **Health check endpoint**: `/health` for load balancers and Kubernetes
+- **Prometheus metrics**: `/metrics` endpoint for monitoring with Prometheus/Grafana
 - **Production ready**: Battle-tested SMS gateway since 2000
 
 ## Installation
@@ -144,6 +146,7 @@ Use `admin-password` for full control, `status-password` for view-only access.
 | [SMSC Types](doc/smsc-types.md) | Protocol-specific configuration |
 | [Delivery Reports](doc/dlr.md) | DLR storage backends |
 | [Logging](doc/logging.md) | Async logging architecture |
+| [Metrics](doc/metrics.md) | Prometheus monitoring setup |
 | [Docker](doc/docker.md) | Docker deployment guide |
 | [Addons](doc/addons.md) | Building SQLBox and OpenSMPPBox |
 | [Examples](doc/examples/) | Sample configuration files |

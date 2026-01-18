@@ -5,6 +5,12 @@ All notable changes to Kamex (formerly Kannel) will be documented in this file.
 ## [1.8.1] - 2026-01-18
 
 ### Added
+- **Prometheus /metrics endpoint** - Native Prometheus monitoring support
+  - Counters: `kamex_sms_sent_total`, `kamex_sms_received_total`, `kamex_dlr_*_total`
+  - Gauges: `kamex_uptime_seconds`, `kamex_smsc_online`, `kamex_sms_queue_*`
+  - Rates: `kamex_sms_sent_rate`, `kamex_sms_received_rate` (per second)
+  - Log queue metrics: `kamex_log_queue_depth`, `kamex_log_dropped_total`
+  - No authentication required (standard for metrics endpoints)
 - **Reproducible builds** - Enterprise-grade build verification and compliance
   - Supports `SOURCE_DATE_EPOCH` for deterministic timestamps
   - `--enable-reproducible` configure flag (auto-enabled with SOURCE_DATE_EPOCH)

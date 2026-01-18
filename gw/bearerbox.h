@@ -213,6 +213,9 @@ Octstr *bb_print_status(int status_type);
 /* return JSON health status for health check endpoint */
 Octstr *bb_health_status(int *is_healthy);
 
+/* return Prometheus metrics in text exposition format */
+Octstr *bb_prometheus_metrics(void);
+
 
 /*----------------------------------------------------------------
  * common function to all (in bearerbox.c)

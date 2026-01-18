@@ -430,6 +430,24 @@ static void httpd_serve_health(HTTPClient *client, List *headers)
     http_destroy_headers(response_headers);
 }
 
+static void httpd_serve_metrics(HTTPClient *client, List *headers)
+{
+    Octstr *reply;
+    List *response_headers;
+
+    reply = bb_prometheus_metrics();
+
+    http_destroy_headers(headers);
+    response_headers = gwlist_create();
+    http_header_add(response_headers, "Content-Type",
+                    "text/plain; version=0.0.4; charset=utf-8");
+
+    http_send_reply(client, HTTP_OK, response_headers, reply);
+
+    octstr_destroy(reply);
+    http_destroy_headers(response_headers);
+}
+
 
 static void httpd_serve(HTTPClient *client, Octstr *ourl, List *headers,
     	    	    	Octstr *body, List *cgivars)
@@ -503,6 +521,16 @@ static void httpd_serve(HTTPClient *client, Octstr *ourl, List *headers,
         octstr_destroy(body);
         http_destroy_cgiargs(cgivars);
         httpd_serve_health(client, headers);
+        return;
+    }
+
+    /* Handle /metrics endpoint - Prometheus metrics, no auth required */
+    if (octstr_str_compare(url, "metrics") == 0) {
+        octstr_destroy(url);
+        octstr_destroy(ourl);
+        octstr_destroy(body);
+        http_destroy_cgiargs(cgivars);
+        httpd_serve_metrics(client, headers);
         return;
     }
 

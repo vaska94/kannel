@@ -1152,3 +1152,135 @@ Octstr *bb_health_status(int *is_healthy)
         log_status.queue_max,
         log_status.dropped_total);
 }
+
+
+Octstr *bb_prometheus_metrics(void)
+{
+    Octstr *out;
+    time_t t;
+    int smsc_total, smsc_online;
+    LogQueueStatus log_status;
+
+    out = octstr_create("");
+    t = time(NULL) - start_time;
+
+    /* Get SMSC counts */
+    smsc2_status_counts(&smsc_total, &smsc_online);
+
+    /* Get log queue status */
+    log_queue_status(&log_status);
+
+    /* Counters - monotonically increasing */
+    octstr_format_append(out,
+        "# HELP kamex_sms_received_total Total SMS messages received\n"
+        "# TYPE kamex_sms_received_total counter\n"
+        "kamex_sms_received_total %ld\n\n",
+        counter_value(incoming_sms_counter));
+
+    octstr_format_append(out,
+        "# HELP kamex_sms_sent_total Total SMS messages sent\n"
+        "# TYPE kamex_sms_sent_total counter\n"
+        "kamex_sms_sent_total %ld\n\n",
+        counter_value(outgoing_sms_counter));
+
+    octstr_format_append(out,
+        "# HELP kamex_dlr_received_total Total DLRs received\n"
+        "# TYPE kamex_dlr_received_total counter\n"
+        "kamex_dlr_received_total %ld\n\n",
+        counter_value(incoming_dlr_counter));
+
+    octstr_format_append(out,
+        "# HELP kamex_dlr_sent_total Total DLRs sent\n"
+        "# TYPE kamex_dlr_sent_total counter\n"
+        "kamex_dlr_sent_total %ld\n\n",
+        counter_value(outgoing_dlr_counter));
+
+    /* Gauges - current values */
+    octstr_format_append(out,
+        "# HELP kamex_uptime_seconds Gateway uptime in seconds\n"
+        "# TYPE kamex_uptime_seconds gauge\n"
+        "kamex_uptime_seconds %ld\n\n",
+        (long)t);
+
+    octstr_format_append(out,
+        "# HELP kamex_sms_queue_incoming Queued incoming SMS\n"
+        "# TYPE kamex_sms_queue_incoming gauge\n"
+        "kamex_sms_queue_incoming %ld\n\n",
+        gwlist_len(incoming_sms));
+
+    octstr_format_append(out,
+        "# HELP kamex_sms_queue_outgoing Queued outgoing SMS\n"
+        "# TYPE kamex_sms_queue_outgoing gauge\n"
+        "kamex_sms_queue_outgoing %ld\n\n",
+        gwlist_len(outgoing_sms));
+
+    octstr_format_append(out,
+        "# HELP kamex_store_messages Messages in persistent store\n"
+        "# TYPE kamex_store_messages gauge\n"
+        "kamex_store_messages %ld\n\n",
+        store_messages());
+
+    octstr_format_append(out,
+        "# HELP kamex_dlr_queue DLRs in queue\n"
+        "# TYPE kamex_dlr_queue gauge\n"
+        "kamex_dlr_queue %ld\n\n",
+        dlr_messages());
+
+    octstr_format_append(out,
+        "# HELP kamex_smsc_total Total SMSCs configured\n"
+        "# TYPE kamex_smsc_total gauge\n"
+        "kamex_smsc_total %d\n\n",
+        smsc_total);
+
+    octstr_format_append(out,
+        "# HELP kamex_smsc_online Online SMSCs\n"
+        "# TYPE kamex_smsc_online gauge\n"
+        "kamex_smsc_online %d\n\n",
+        smsc_online);
+
+    /* Rates - per second */
+    octstr_format_append(out,
+        "# HELP kamex_sms_received_rate Inbound SMS per second\n"
+        "# TYPE kamex_sms_received_rate gauge\n"
+        "kamex_sms_received_rate %.2f\n\n",
+        load_get(incoming_sms_load, 0));
+
+    octstr_format_append(out,
+        "# HELP kamex_sms_sent_rate Outbound SMS per second\n"
+        "# TYPE kamex_sms_sent_rate gauge\n"
+        "kamex_sms_sent_rate %.2f\n\n",
+        load_get(outgoing_sms_load, 0));
+
+    octstr_format_append(out,
+        "# HELP kamex_dlr_received_rate Inbound DLR per second\n"
+        "# TYPE kamex_dlr_received_rate gauge\n"
+        "kamex_dlr_received_rate %.2f\n\n",
+        load_get(incoming_dlr_load, 0));
+
+    octstr_format_append(out,
+        "# HELP kamex_dlr_sent_rate Outbound DLR per second\n"
+        "# TYPE kamex_dlr_sent_rate gauge\n"
+        "kamex_dlr_sent_rate %.2f\n\n",
+        load_get(outgoing_dlr_load, 0));
+
+    /* Log queue metrics */
+    octstr_format_append(out,
+        "# HELP kamex_log_queue_depth Async log queue depth\n"
+        "# TYPE kamex_log_queue_depth gauge\n"
+        "kamex_log_queue_depth %ld\n\n",
+        log_status.queue_depth);
+
+    octstr_format_append(out,
+        "# HELP kamex_log_queue_max Async log queue max capacity\n"
+        "# TYPE kamex_log_queue_max gauge\n"
+        "kamex_log_queue_max %ld\n\n",
+        log_status.queue_max);
+
+    octstr_format_append(out,
+        "# HELP kamex_log_dropped_total Log messages dropped\n"
+        "# TYPE kamex_log_dropped_total counter\n"
+        "kamex_log_dropped_total %ld\n",
+        log_status.dropped_total);
+
+    return out;
+}
