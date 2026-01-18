@@ -38,6 +38,11 @@ All notable changes to Kamex (formerly Kannel) will be documented in this file.
   - Output: `{"ts":"...","level":"info","pid":123,"tid":0,"msg":"..."}`
   - Compatible with ELK, Loki, Splunk, Fluentd, and other log systems
   - See `doc/logging.md` for examples with jq
+- **Environment variable expansion** - Reference env vars in config with `${VAR}` syntax
+  - `admin-password = ${ADMIN_PASSWORD}` expands from environment
+  - Mixed content supported: `host = smsc.${ENV}.example.com`
+  - Enables Docker/K8s secrets injection without config changes
+  - See `doc/configuration.md` for usage examples
 
 ## [1.8.0] - 2026-01-12
 

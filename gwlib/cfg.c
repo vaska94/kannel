@@ -69,6 +69,68 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <errno.h>
+#include <stdlib.h>
+
+/*
+ * Expand environment variables in config values.
+ * Supports ${VAR} syntax. Returns new Octstr with expansions.
+ * If VAR is not set, ${VAR} is replaced with empty string.
+ */
+static Octstr *expand_env_vars(Octstr *value)
+{
+    Octstr *result;
+    long pos, start, end;
+
+    if (value == NULL)
+        return NULL;
+
+    /* Quick check - if no ${ then nothing to expand */
+    if (octstr_search(value, octstr_imm("${"), 0) < 0)
+        return octstr_duplicate(value);
+
+    result = octstr_create("");
+    pos = 0;
+
+    while (pos < octstr_len(value)) {
+        start = octstr_search(value, octstr_imm("${"), pos);
+        if (start < 0) {
+            /* No more variables, append rest of string */
+            octstr_append(result, octstr_copy(value, pos, octstr_len(value) - pos));
+            break;
+        }
+
+        /* Append text before ${ */
+        if (start > pos) {
+            Octstr *prefix = octstr_copy(value, pos, start - pos);
+            octstr_append(result, prefix);
+            octstr_destroy(prefix);
+        }
+
+        /* Find closing } */
+        end = octstr_search_char(value, '}', start + 2);
+        if (end < 0) {
+            /* No closing }, append rest literally */
+            Octstr *rest = octstr_copy(value, start, octstr_len(value) - start);
+            octstr_append(result, rest);
+            octstr_destroy(rest);
+            break;
+        }
+
+        /* Extract variable name */
+        Octstr *varname = octstr_copy(value, start + 2, end - start - 2);
+        const char *env_val = getenv(octstr_get_cstr(varname));
+
+        if (env_val != NULL) {
+            octstr_append_cstr(result, env_val);
+        }
+        /* If env var not set, we just skip it (replace with empty) */
+
+        octstr_destroy(varname);
+        pos = end + 1;
+    }
+
+    return result;
+}
 
 struct CfgGroup {
     Octstr *name;
@@ -719,12 +781,12 @@ Octstr *cfg_get_configfile(CfgGroup *grp)
 }
 
 
-Octstr *cfg_get_real(CfgGroup *grp, Octstr *varname, const char *file, 
+Octstr *cfg_get_real(CfgGroup *grp, Octstr *varname, const char *file,
     	    	     long line, const char *func)
 {
-    Octstr *os;
+    Octstr *os, *expanded;
 
-    if(grp == NULL) 
+    if(grp == NULL)
     	panic(0, "Trying to fetch variable `%s' in non-existing group",
 	      octstr_get_cstr(varname));
 
@@ -735,7 +797,10 @@ Octstr *cfg_get_real(CfgGroup *grp, Octstr *varname, const char *file,
     os = dict_get(grp->vars, varname);
     if (os == NULL)
     	return NULL;
-    return gw_claim_area_for(octstr_duplicate(os), file, line, func);
+
+    /* Expand environment variables like ${VAR} */
+    expanded = expand_env_vars(os);
+    return gw_claim_area_for(expanded, file, line, func);
 }
 
 

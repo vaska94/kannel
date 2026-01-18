@@ -11,6 +11,34 @@ directive = value
 another-directive = "value with spaces"
 ```
 
+## Environment Variables
+
+Config values can reference environment variables using `${VAR}` syntax:
+
+```ini
+group = core
+admin-password = ${ADMIN_PASSWORD}
+
+group = smsc
+smsc-password = ${SMSC_PASSWORD}
+host = smsc.${ENVIRONMENT}.example.com
+```
+
+**Behavior:**
+- `${VAR}` is replaced with the environment variable value at startup
+- Unset variables expand to empty string
+- Mixed content works: `prefix_${VAR}_suffix`
+
+**Use cases:**
+- Docker/Kubernetes secrets injection
+- CI/CD pipelines with different credentials per environment
+- Avoid committing passwords to version control
+
+**Example Docker usage:**
+```bash
+docker run -e ADMIN_PASSWORD=secret -e SMSC_PASSWORD=pass123 kamex
+```
+
 ## Core Group (Required)
 
 The `core` group configures the bearerbox daemon.

@@ -20,6 +20,7 @@ Modern, high-performance SMS gateway with built-in admin panel. Supports SMPP, E
 - **JSON API** - Modern `/status.json` and `/api/sendsms` endpoints
 - **Health Checks** - `/health` endpoint for load balancers and Kubernetes
 - **Config Hot-Reload** - `SIGHUP` reloads config, adds/removes SMSCs without restart
+- **Environment Variables** - Use `${VAR}` in config for Docker/K8s secrets
 - **Redis/Valkey** - Native support for DLR and message store
 - **Reproducible Builds** - Enterprise-grade build verification with `SOURCE_DATE_EPOCH`
 - **Removed Legacy** - Dropped RADIUS, WAP, libxml2, and dead SMSC protocols
