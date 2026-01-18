@@ -285,12 +285,40 @@ static int check_config(Cfg *cfg)
 }
 
 
+static void print_usage(const char *name)
+{
+    printf("Usage: %s [OPTIONS] [config-file]\n\n", name);
+    printf("Kamex bearerbox - SMS gateway core daemon\n\n");
+    printf("Options:\n");
+    printf("  -t, --test           Test configuration and exit\n");
+    printf("  -S, --suspended      Start in suspended mode\n");
+    printf("  -I, --isolated       Start in isolated mode\n");
+    printf("  -v, --verbosity N    Console log level (0=debug, 4=panic)\n");
+    printf("  -F, --logfile FILE   Log to file\n");
+    printf("  -V, --fileverbosity  Log file verbosity level\n");
+    printf("  -d, --daemonize      Run as daemon\n");
+    printf("  -p, --pid-file FILE  PID file path\n");
+    printf("  -u, --user USER      Run as user\n");
+    printf("  -P, --parachute      Restart on crash\n");
+    printf("  -D, --debug PLACE    Enable debug for place\n");
+    printf("      --version        Show version and exit\n");
+    printf("  -h, --help           Show this help\n");
+    printf("\nExamples:\n");
+    printf("  %s -t /etc/kamex/kamex.conf    # Test config\n", name);
+    printf("  %s -d /etc/kamex/kamex.conf    # Run as daemon\n", name);
+    printf("  %s -S /etc/kamex/kamex.conf    # Start suspended\n", name);
+}
+
 /*
  * check our own variables
  */
 static int check_args(int i, int argc, char **argv)
 {
-    if (strcmp(argv[i], "-S")==0 || strcmp(argv[i], "--suspended")==0)
+    if (strcmp(argv[i], "-h")==0 || strcmp(argv[i], "--help")==0) {
+        print_usage("bearerbox");
+        exit(0);
+    }
+    else if (strcmp(argv[i], "-S")==0 || strcmp(argv[i], "--suspended")==0)
         bb_status = BB_SUSPENDED;
     else if (strcmp(argv[i], "-I")==0 || strcmp(argv[i], "--isolated")==0)
         bb_status = BB_ISOLATED;
@@ -595,12 +623,15 @@ int main(int argc, char **argv)
 
     bb_status = BB_RUNNING;
 
-    /* Check for -t/--test before gwlib_init to skip async logging */
+    /* Check for -h/--help before gwlib_init */
     for (i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+            print_usage("bearerbox");
+            return 0;
+        }
         if (strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--test") == 0) {
             test_config_only = 1;
             log_set_skip_async();
-            break;
         }
     }
 

@@ -29,6 +29,10 @@ All notable changes to Kamex (formerly Kannel) will be documented in this file.
   - Clean output: `bearerbox: configuration file ... test is successful`
   - Returns exit code 0 on success, 1 on failure
   - Useful for CI/CD pipelines and deployment automation
+- **Command-line help** - `bearerbox --help` and `smsbox --help` now work
+  - Full usage information with all options
+  - Examples for common operations
+  - See `doc/cli.md` for complete documentation
 
 ## [1.8.0] - 2026-01-12
 
