@@ -63,7 +63,7 @@
  * exists, it will define poll() and struct pollfd for us. */
 #ifdef HAVE_SYS_POLL_H
 
-#include <sys/poll.h>
+#include <poll.h>
 
 /* Most systems accept any negative timeout value as meaning infinite
  * timeout.  FreeBSD explicitly wants INFTIM, however.  Other systems

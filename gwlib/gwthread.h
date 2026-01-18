@@ -70,7 +70,7 @@
 
 #include "gw-config.h"
 #ifdef HAVE_SYS_POLL_H
-#include <sys/poll.h>
+#include <poll.h>
 #endif
 
 /* gwthread_self() must return this value for the main thread. */
