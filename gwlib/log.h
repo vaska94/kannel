@@ -80,6 +80,10 @@ void log_init(void);
 /* Skip async log writer (call before log_init for config test mode) */
 void log_set_skip_async(void);
 
+/* Enable/disable JSON log format for structured logging */
+void log_set_json(int enabled);
+int log_get_json(void);
+
 /* Shutdown the log file module */
 void log_shutdown(void);
 

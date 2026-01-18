@@ -68,9 +68,53 @@ Returns `warn` status (HTTP 200) when:
 |--------|---------|-------------|
 | `log-file` | stdout | Main log file path |
 | `log-level` | 0 | 0=DEBUG, 1=INFO, 2=WARNING, 3=ERROR, 4=PANIC |
+| `log-format` | text | Log format: `text` (default) or `json` |
 | `access-log` | none | HTTP access log (smsbox) |
 
 Note: Log levels are inverted from common convention (0 = most verbose).
+
+## Structured JSON Logging
+
+Enable JSON format for structured logging, log aggregation (ELK, Loki, etc.), and machine parsing:
+
+```
+group = core
+log-format = json
+```
+
+### JSON Output Format
+
+```json
+{"timestamp":"2024-01-15T10:30:45Z","level":"INFO","pid":12345,"tid":1,"message":"SMS received from +1234567890"}
+{"timestamp":"2024-01-15T10:30:45Z","level":"ERROR","pid":12345,"tid":2,"message":"SMSC connection failed: timeout"}
+```
+
+### Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `timestamp` | string | ISO 8601 UTC timestamp |
+| `level` | string | DEBUG, INFO, WARNING, ERROR, PANIC |
+| `pid` | number | Process ID |
+| `tid` | number | Thread ID |
+| `message` | string | Log message (JSON-escaped) |
+
+### Use Cases
+
+- **Log aggregation**: Direct ingestion into Elasticsearch, Loki, Splunk
+- **Kubernetes**: Works with fluentd, filebeat, promtail sidecars
+- **Filtering**: Easy to filter by level, grep by field
+- **Alerting**: Parse and alert on specific error patterns
+
+### Example with jq
+
+```bash
+# Filter errors only
+tail -f /var/log/kamex/bearerbox.log | jq 'select(.level == "ERROR")'
+
+# Count messages by level
+cat bearerbox.log | jq -s 'group_by(.level) | map({level: .[0].level, count: length})'
+```
 
 ## Performance
 

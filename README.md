@@ -15,6 +15,7 @@ Modern, high-performance SMS gateway with built-in admin panel. Supports SMPP, E
 
 - **Prometheus Metrics** - Native `/metrics` endpoint for Prometheus/Grafana monitoring
 - **Async Logging** - Non-blocking logging with dedicated writer thread (~10x throughput)
+- **JSON Logs** - Structured JSON logging for ELK, Loki, Splunk integration
 - **Web Admin Panel** - Built-in dashboard at `/` with real-time monitoring
 - **JSON API** - Modern `/status.json` and `/api/sendsms` endpoints
 - **Health Checks** - `/health` endpoint for load balancers and Kubernetes

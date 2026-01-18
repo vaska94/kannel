@@ -362,6 +362,13 @@ static Cfg *init_bearerbox(Cfg *cfg)
         log_open(octstr_get_cstr(log), loglevel, GW_NON_EXCL);
         octstr_destroy(log);
     }
+    if ((val = cfg_get(grp, octstr_imm("log-format"))) != NULL) {
+        if (octstr_case_compare(val, octstr_imm("json")) == 0) {
+            log_set_json(1);
+            info(0, "Structured JSON logging enabled");
+        }
+        octstr_destroy(val);
+    }
     if ((val = cfg_get(grp, octstr_imm("syslog-level"))) != NULL) {
         long level;
         Octstr *facility;

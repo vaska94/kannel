@@ -204,6 +204,21 @@ void log_set_skip_async(void)
 }
 
 /*
+ * JSON log format - for structured logging.
+ */
+static int log_json_format = 0;
+
+void log_set_json(int enabled)
+{
+    log_json_format = enabled;
+}
+
+int log_get_json(void)
+{
+    return log_json_format;
+}
+
+/*
  * Async log writer thread.
  * Consumes log entries from the queue and writes them to files.
  */
@@ -505,6 +520,41 @@ int log_open(char *filename, int level, enum excl_state excl)
 
 
 #define FORMAT_SIZE (1024)
+
+/*
+ * Escape a string for JSON output.
+ * Returns pointer to static buffer - not thread-safe but format() is called
+ * with a lock held.
+ */
+static const char *json_escape(const char *src, char *dest, size_t dest_size)
+{
+    const char *s = src;
+    char *d = dest;
+    char *end = dest + dest_size - 1;
+
+    while (*s && d < end) {
+        switch (*s) {
+            case '"':  if (d + 2 <= end) { *d++ = '\\'; *d++ = '"'; } break;
+            case '\\': if (d + 2 <= end) { *d++ = '\\'; *d++ = '\\'; } break;
+            case '\b': if (d + 2 <= end) { *d++ = '\\'; *d++ = 'b'; } break;
+            case '\f': if (d + 2 <= end) { *d++ = '\\'; *d++ = 'f'; } break;
+            case '\n': if (d + 2 <= end) { *d++ = '\\'; *d++ = 'n'; } break;
+            case '\r': if (d + 2 <= end) { *d++ = '\\'; *d++ = 'r'; } break;
+            case '\t': if (d + 2 <= end) { *d++ = '\\'; *d++ = 't'; } break;
+            default:
+                if ((unsigned char)*s < 32) {
+                    /* Skip other control characters */
+                } else {
+                    *d++ = *s;
+                }
+                break;
+        }
+        s++;
+    }
+    *d = '\0';
+    return dest;
+}
+
 static void format(char *buf, int level, const char *place, int e,
 		   const char *fmt, int with_timestamp_and_pid)
 {
@@ -516,12 +566,72 @@ static void format(char *buf, int level, const char *place, int e,
         "PANIC: ",
         "LOG: "
     };
+    static char *tab_json[] = {
+        "debug",
+        "info",
+        "warning",
+        "error",
+        "panic",
+        "log"
+    };
     static int tab_size = sizeof(tab) / sizeof(tab[0]);
     time_t t;
     struct tm tm;
     char *p, prefix[1024];
     long tid, pid;
-    
+
+    /* JSON format output */
+    if (log_json_format && with_timestamp_and_pid) {
+        char escaped_fmt[FORMAT_SIZE];
+        const char *level_str;
+
+        time(&t);
+        tm = gw_gmtime(t);  /* Always UTC for JSON */
+        gwthread_self_ids(&tid, &pid);
+
+        level_str = (level >= 0 && level < tab_size) ? tab_json[level] : "unknown";
+        json_escape(fmt, escaped_fmt, sizeof(escaped_fmt));
+
+        if (place != NULL && *place != '\0') {
+            char escaped_place[256];
+            json_escape(place, escaped_place, sizeof(escaped_place));
+            if (e == 0) {
+                snprintf(buf, FORMAT_SIZE,
+                    "{\"ts\":\"%04d-%02d-%02dT%02d:%02d:%02dZ\",\"level\":\"%s\","
+                    "\"pid\":%ld,\"tid\":%ld,\"place\":\"%s\",\"msg\":\"%s\"}\n",
+                    tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+                    tm.tm_hour, tm.tm_min, tm.tm_sec,
+                    level_str, pid, tid, escaped_place, escaped_fmt);
+            } else {
+                snprintf(buf, FORMAT_SIZE,
+                    "{\"ts\":\"%04d-%02d-%02dT%02d:%02d:%02dZ\",\"level\":\"%s\","
+                    "\"pid\":%ld,\"tid\":%ld,\"place\":\"%s\",\"msg\":\"%s\","
+                    "\"errno\":%d,\"error\":\"%s\"}\n",
+                    tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+                    tm.tm_hour, tm.tm_min, tm.tm_sec,
+                    level_str, pid, tid, escaped_place, escaped_fmt, e, strerror(e));
+            }
+        } else {
+            if (e == 0) {
+                snprintf(buf, FORMAT_SIZE,
+                    "{\"ts\":\"%04d-%02d-%02dT%02d:%02d:%02dZ\",\"level\":\"%s\","
+                    "\"pid\":%ld,\"tid\":%ld,\"msg\":\"%s\"}\n",
+                    tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+                    tm.tm_hour, tm.tm_min, tm.tm_sec,
+                    level_str, pid, tid, escaped_fmt);
+            } else {
+                snprintf(buf, FORMAT_SIZE,
+                    "{\"ts\":\"%04d-%02d-%02dT%02d:%02d:%02dZ\",\"level\":\"%s\","
+                    "\"pid\":%ld,\"tid\":%ld,\"msg\":\"%s\","
+                    "\"errno\":%d,\"error\":\"%s\"}\n",
+                    tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+                    tm.tm_hour, tm.tm_min, tm.tm_sec,
+                    level_str, pid, tid, escaped_fmt, e, strerror(e));
+            }
+        }
+        return;
+    }
+
     p = prefix;
 
     if (with_timestamp_and_pid) {
@@ -555,7 +665,7 @@ static void format(char *buf, int level, const char *place, int e,
     p = strchr(p, '\0');
     if (place != NULL && *place != '\0')
         sprintf(p, "%s: ", place);
-    
+
     if (strlen(prefix) + strlen(fmt) > FORMAT_SIZE / 2) {
         sprintf(buf, "%s <OUTPUT message too long>\n", prefix);
         return;

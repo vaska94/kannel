@@ -33,6 +33,11 @@ All notable changes to Kamex (formerly Kannel) will be documented in this file.
   - Full usage information with all options
   - Examples for common operations
   - See `doc/cli.md` for complete documentation
+- **Structured JSON logging** - Machine-readable log format for log aggregation
+  - Enable with `log-format = json` in core or smsbox groups
+  - Output: `{"ts":"...","level":"info","pid":123,"tid":0,"msg":"..."}`
+  - Compatible with ELK, Loki, Splunk, Fluentd, and other log systems
+  - See `doc/logging.md` for examples with jq
 
 ## [1.8.0] - 2026-01-12
 

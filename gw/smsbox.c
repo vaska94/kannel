@@ -3277,6 +3277,13 @@ static Cfg *init_smsbox(Cfg *cfg)
     } else {
         log_set_syslog(NULL, 0);
     }
+    if ((p = cfg_get(grp, octstr_imm("log-format"))) != NULL) {
+        if (octstr_case_compare(p, octstr_imm("json")) == 0) {
+            log_set_json(1);
+            info(0, "Structured JSON logging enabled");
+        }
+        octstr_destroy(p);
+    }
     if (global_sender != NULL) {
 	info(0, "Service global sender set as '%s'", 
 	     octstr_get_cstr(global_sender));
