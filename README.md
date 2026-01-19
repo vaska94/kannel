@@ -34,8 +34,7 @@ Modern, high-performance SMS gateway with built-in admin panel. Supports SMPP, E
 - **HTTP API**: Simple REST-like interface for sending/receiving SMS
 - **Web Admin Panel**: Real-time dashboard, SMSC control, message queue viewer
 - **Delivery reports**: Configurable DLR with multiple storage backends
-- **Database support**: MySQL, PostgreSQL, SQLite3, Redis/Valkey, Cassandra, Oracle*, MSSQL*
-  <br><sub>*untested</sub>
+- **Database support**: MySQL, PostgreSQL, SQLite3, Redis/Valkey, Cassandra, Oracle, MSSQL
 - **Health check endpoint**: `/health` for load balancers and Kubernetes
 - **Prometheus metrics**: `/metrics` endpoint for monitoring with Prometheus/Grafana
 - **Config hot-reload**: `SIGHUP` reloads config, adds/removes SMSCs without restart
@@ -103,8 +102,8 @@ sudo make install-strip
 | `--with-sqlite3` | SQLite3 support |
 | `--with-redis` | Redis/Valkey support |
 | `--with-cassandra` | Cassandra support |
-| `--with-oracle` | Oracle support (untested) |
-| `--with-mssql` | MSSQL support (untested) |
+| `--with-oracle` | Oracle support (requires [Instant Client](https://www.oracle.com/database/technologies/instant-client.html)) |
+| `--with-mssql` | MSSQL support (requires [FreeTDS](https://www.freetds.org/)) |
 | `--enable-reproducible` | Reproducible builds (auto if SOURCE_DATE_EPOCH set) |
 
 ### 3. Configure and Run

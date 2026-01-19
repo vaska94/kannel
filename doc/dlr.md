@@ -171,6 +171,120 @@ table = dlr
 
 Redis stores DLR as hash keys with TTL.
 
+### Oracle
+
+Requires [Oracle Instant Client](https://www.oracle.com/database/technologies/instant-client.html) (Basic + SDK).
+
+Build:
+```bash
+./configure --with-oracle \
+    --with-oracle-includes=/path/to/instantclient/sdk/include \
+    --with-oracle-libs=/path/to/instantclient
+```
+
+Config:
+```ini
+group = core
+dlr-storage = oracle
+
+group = oracle-connection
+id = dlr
+username = system
+password = secret
+tnsname = localhost:1521/FREEPDB1
+max-connections = 5
+
+group = dlr-db
+id = dlr
+table = dlr
+field-smsc = smsc
+field-timestamp = ts
+field-source = source
+field-destination = destination
+field-service = service
+field-url = url
+field-mask = mask
+field-status = status
+field-boxc-id = boxc
+```
+
+Create table:
+```sql
+CREATE TABLE dlr (
+    smsc VARCHAR2(40),
+    ts VARCHAR2(40),
+    source VARCHAR2(40),
+    destination VARCHAR2(40),
+    service VARCHAR2(40),
+    url VARCHAR2(255),
+    mask NUMBER,
+    status NUMBER,
+    boxc VARCHAR2(40)
+);
+CREATE INDEX dlr_idx ON dlr(smsc, ts, destination);
+```
+
+### MSSQL (SQL Server)
+
+Requires [FreeTDS](https://www.freetds.org/) library.
+
+Build:
+```bash
+# Install FreeTDS (Arch: pacman -S freetds, RHEL: dnf install freetds-devel)
+./configure --with-mssql=/usr
+```
+
+Add server to `/etc/freetds/freetds.conf`:
+```ini
+[myserver]
+    host = sqlserver.example.com
+    port = 1433
+    tds version = 7.4
+```
+
+Config:
+```ini
+group = core
+dlr-storage = mssql
+
+group = mssql-connection
+id = dlr
+server = myserver
+username = sa
+password = secret
+database = kamex
+max-connections = 5
+
+group = dlr-db
+id = dlr
+table = dlr
+field-smsc = smsc
+field-timestamp = ts
+field-source = source
+field-destination = destination
+field-service = service
+field-url = url
+field-mask = mask
+field-status = status
+field-boxc-id = boxc
+```
+
+Create table:
+```sql
+CREATE TABLE dlr (
+    smsc VARCHAR(40),
+    ts VARCHAR(40),
+    source VARCHAR(40),
+    destination VARCHAR(40),
+    service VARCHAR(40),
+    url VARCHAR(255),
+    mask INT,
+    status INT,
+    boxc VARCHAR(40)
+);
+CREATE INDEX dlr_idx ON dlr(smsc, ts, destination);
+```
+
 ## DLR Database Fields
 
 You can customize field names:
