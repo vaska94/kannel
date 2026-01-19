@@ -452,7 +452,7 @@ static void run_sqlbox(void *arg)
     Boxc *newconn;
     long sender;
 
-    fd = (int)arg;
+    fd = (intptr_t)arg;
     newconn = accept_boxc(fd, sqlbox_port_ssl);
     if (newconn == NULL) {
         panic(0, "Socket accept failed");
@@ -492,7 +492,7 @@ static void wait_for_connections(int fd, void (*function) (void *arg),
         }
 
         if (ret > 0) {
-            gwthread_create(function, (void *)fd);
+            gwthread_create(function, (void *)(intptr_t)fd);
             gwthread_sleep(1.0);
         } else if (ret < 0) {
             if(errno==EINTR) continue;
@@ -698,7 +698,7 @@ static void sqlboxc_run(void *arg)
     /* we will use one thread for SQL sms injections */
     gwthread_create(sql_to_bearerbox, NULL);
 
-    port = (int)arg;
+    port = (intptr_t)arg;
 
     fd = make_server_socket(port, NULL);
         /* XXX add interface_name if required */
@@ -890,7 +890,7 @@ int main(int argc, char **argv)
 
     init_sqlbox(cfg);
 
-    sqlboxc_run((void *)sqlbox_port);
+    sqlboxc_run((void *)(intptr_t)sqlbox_port);
 
     cfg_destroy(cfg);
     if (restart_sqlbox) {

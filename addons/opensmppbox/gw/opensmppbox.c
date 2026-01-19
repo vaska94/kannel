@@ -2116,7 +2116,7 @@ static void run_smppbox(void *arg)
     Boxc *newconn;
     long sender;
 
-    fd = (int)arg;
+    fd = (intptr_t)arg;
     newconn = accept_smpp(fd, 0);
     if (newconn == NULL) {
 	    panic(0, "Socket accept failed");
@@ -2173,7 +2173,7 @@ static void wait_for_connections(int fd, void (*function) (void *arg),
 	    }
 
 	    if (ret > 0) {
-	        gwthread_create(function, (void *)fd);
+	        gwthread_create(function, (void *)(intptr_t)fd);
 	        gwthread_sleep(1.0);
 	    } else if (ret < 0) {
 	        if(errno==EINTR) continue;
@@ -2188,7 +2188,7 @@ static void smppboxc_run(void *arg)
     int fd;
     int port;
 
-    port = (int)arg;
+    port = (intptr_t)arg;
     
     fd = make_server_socket(port, NULL); 
     	/* XXX add interface_name if required */
@@ -2651,7 +2651,7 @@ int main(int argc, char **argv)
 
 	init_smppbox(cfg);
 
-	smppboxc_run((void *)smppbox_port);
+	smppboxc_run((void *)(intptr_t)smppbox_port);
 
 	/* shutdown dlr storage */
 	heartbeat_stop(ALL_HEARTBEATS);
