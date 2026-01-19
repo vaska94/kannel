@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 
 Name:           kamex
-Version:        1.8.1
+Version:        1.8.2
 Release:        1%{?dist}
 Summary:        High-performance SMS gateway (Kannel fork)
 License:        MIT and Kannel
@@ -19,11 +19,13 @@ BuildRequires:  mariadb-devel
 BuildRequires:  libpq-devel
 BuildRequires:  libsqlite3x-devel
 BuildRequires:  hiredis-devel
+BuildRequires:  freetds-devel
 BuildRequires:  gettext-devel
 BuildRequires:  systemd-rpm-macros
 
 Requires:       openssl
 Recommends:     hiredis
+Recommends:     freetds-libs
 
 %description
 Kamex is a modern, high-performance SMS gateway with built-in admin panel.
@@ -49,6 +51,7 @@ autoreconf -fi
     --with-pgsql \
     --with-sqlite3 \
     --with-redis \
+    --with-mssql \
     --docdir=%{_docdir}/%{name}
 
 %make_build

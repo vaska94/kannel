@@ -11,7 +11,7 @@ ENV SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}
 
 RUN apk add --no-cache \
     build-base autoconf automake libtool git gettext-dev \
-    openssl-dev mariadb-connector-c-dev postgresql-dev sqlite-dev hiredis-dev
+    openssl-dev mariadb-connector-c-dev postgresql-dev sqlite-dev hiredis-dev freetds-dev
 
 WORKDIR /build
 COPY . .
@@ -25,7 +25,8 @@ RUN autoreconf -fi && \
         --with-mysql \
         --with-pgsql \
         --with-sqlite3 \
-        --with-redis && \
+        --with-redis \
+        --with-mssql && \
     make -j$(nproc) && \
     make DESTDIR=/install install-strip
 
@@ -38,6 +39,7 @@ RUN apk add --no-cache \
     libpq \
     sqlite-libs \
     hiredis \
+    freetds \
     curl \
     && addgroup -S kamex \
     && adduser -S -G kamex kamex
