@@ -19,10 +19,12 @@ Modern, high-performance SMS gateway with built-in admin panel. Supports SMPP, E
 - **Web Admin Panel** - Built-in dashboard at `/` with real-time monitoring
 - **JSON API** - Modern `/status.json` and `/api/sendsms` endpoints
 - **Health Checks** - `/health` endpoint for load balancers and Kubernetes
-- **Config Hot-Reload** - `SIGHUP` reloads config, adds/removes SMSCs without restart
 - **Environment Variables** - Use `${VAR}` in config for Docker/K8s secrets
 - **Redis/Valkey** - Native support for DLR and message store
 - **Reproducible Builds** - Enterprise-grade build verification with `SOURCE_DATE_EPOCH`
+- **SBOM** - CycloneDX 1.7 Software Bill of Materials for supply chain compliance
+- **Config Validation** - `bearerbox -t config.conf` to validate without starting
+- **Alpine Support** - Lightweight ~20MB Docker image alongside UBI
 - **Removed Legacy** - Dropped RADIUS, WAP, libxml2, and dead SMSC protocols
 
 ## Features
@@ -36,7 +38,8 @@ Modern, high-performance SMS gateway with built-in admin panel. Supports SMPP, E
   <br><sub>*untested</sub>
 - **Health check endpoint**: `/health` for load balancers and Kubernetes
 - **Prometheus metrics**: `/metrics` endpoint for monitoring with Prometheus/Grafana
-- **Production ready**: Battle-tested SMS gateway since 2000
+- **Config hot-reload**: `SIGHUP` reloads config, adds/removes SMSCs without restart
+- **Production ready**: Powers [SENDER.GE](https://sender.ge) in production
 
 ## Installation
 
@@ -199,7 +202,10 @@ make ssl-certs  # Required for benchmarks
 
 ## Docker
 
-No build required - just create two files and run:
+| Image | Base | Size |
+|-------|------|------|
+| `ghcr.io/vaska94/kamex:latest` | UBI 10 | ~150MB |
+| `ghcr.io/vaska94/kamex:alpine` | Alpine | ~20MB |
 
 ```bash
 mkdir kamex && cd kamex
@@ -207,7 +213,7 @@ mkdir kamex && cd kamex
 docker compose up -d
 ```
 
-Includes bearerbox, smsbox, and Valkey for DLR storage. See [Docker Guide](doc/docker.md) for full setup.
+See [Docker Guide](doc/docker.md) for full setup with Valkey for DLR storage.
 
 ## systemd Integration
 
