@@ -9,8 +9,8 @@
 #define RMQ_CONNECTION_H
 
 #include "gwlib/gwlib.h"
-#include <amqp.h>
-#include <amqp_tcp_socket.h>
+#include <rabbitmq-c/amqp.h>
+#include <rabbitmq-c/tcp_socket.h>
 
 /* RabbitMQ connection state */
 typedef struct {
@@ -20,12 +20,12 @@ typedef struct {
 
     /* Connection parameters */
     Octstr *host;
-    int port;
+    long port;
     Octstr *vhost;
     Octstr *username;
     Octstr *password;
-    int heartbeat;
-    int prefetch;
+    long heartbeat;
+    long prefetch;
 
     /* TLS/SSL */
     int use_ssl;

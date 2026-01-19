@@ -1,0 +1,19 @@
+# Build artifacts
+Makefile
+Makefile.in
+aclocal.m4
+autom4te.cache/
+autotools/
+config.log
+config.status
+configure
+libtool
+m4/
+rmq-config.h
+rmq-config.h.in
+gw/Makefile
+gw/Makefile.in
+gw/.deps/
+gw/.libs/
+gw/*.o
+gw/rabbitmqbox

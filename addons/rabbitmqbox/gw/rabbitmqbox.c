@@ -26,8 +26,8 @@
 #define RABBITMQBOX_VERSION "1.0.0"
 
 /* Status */
-static volatile sig_atomic_t running = 1;
-static volatile sig_atomic_t restart_box = 0;
+static volatile sig_atomic_t box_running = 1;
+static volatile sig_atomic_t box_restart = 0;
 
 /* Configuration */
 static Cfg *cfg;
@@ -66,11 +66,11 @@ static void signal_handler(int signum)
 {
     if (signum == SIGINT || signum == SIGTERM) {
         info(0, "Received signal %d, shutting down...", signum);
-        running = 0;
+        box_running = 0;
     } else if (signum == SIGHUP) {
         info(0, "Received SIGHUP, will restart...");
-        restart_box = 1;
-        running = 0;
+        box_restart = 1;
+        box_running = 0;
     }
 }
 
@@ -331,8 +331,12 @@ static Msg *json_to_msg(Octstr *json_str)
     msg->sms.priority = priority;
 
     if (udh != NULL) {
-        msg->sms.udhdata = octstr_hex_to_binary(udh);
-        octstr_destroy(udh);
+        if (octstr_hex_to_binary(udh) == 0) {
+            msg->sms.udhdata = udh;
+        } else {
+            warning(0, "Invalid UDH hex string, ignoring");
+            octstr_destroy(udh);
+        }
     }
 
     if (charset != NULL) {
@@ -413,7 +417,7 @@ static void consumer_thread(void *arg)
 
     info(0, "Consumer thread started");
 
-    while (running) {
+    while (box_running) {
         /* Check RabbitMQ connection */
         if (!rmq_is_connected(rmq)) {
             warning(0, "RabbitMQ disconnected, reconnecting...");
@@ -491,14 +495,14 @@ static void reader_thread(void *arg)
 
     info(0, "Reader thread started");
 
-    while (running) {
+    while (box_running) {
         /* Read from bearerbox */
         ret = read_from_bearerbox(&msg, 1.0);  /* 1 second timeout */
 
         if (ret == -1) {
             /* Connection error */
             error(0, "Connection to bearerbox lost");
-            running = 0;
+            box_running = 0;
             break;
         }
 
@@ -560,11 +564,11 @@ static void reader_thread(void *arg)
             /* Admin message from bearerbox */
             if (msg->admin.command == cmd_shutdown) {
                 info(0, "Bearerbox requested shutdown");
-                running = 0;
+                box_running = 0;
             } else if (msg->admin.command == cmd_restart) {
                 info(0, "Bearerbox requested restart");
-                restart_box = 1;
-                running = 0;
+                box_restart = 1;
+                box_running = 0;
             }
         }
 
@@ -740,8 +744,8 @@ int main(int argc, char **argv)
     setup_signals();
 
 restart:
-    running = 1;
-    restart_box = 0;
+    box_running = 1;
+    box_restart = 0;
 
     /* Read configuration */
     if (read_config(cfg_filename) < 0) {
@@ -781,7 +785,7 @@ restart:
     close_connection_to_bearerbox();
     rmq_disconnect(rmq);
 
-    if (restart_box) {
+    if (box_restart) {
         info(0, "Restarting...");
         rmq_connection_destroy(rmq);
         rmq = NULL;
