@@ -587,6 +587,14 @@ void octstr_url_encode(Octstr *ostr);
 
 
 /*
+ * Shell escape the argument string in place for safe use in shell commands.
+ * Wraps the string in single quotes and escapes any embedded single quotes.
+ * For example: "it's" becomes "'it'\''s'"
+ */
+void octstr_shell_escape(Octstr *ostr);
+
+
+/*
  * Treat the octstr as an unsigned array of bits, most significant bit
  * first, and return the indicated bit range as an integer.  numbits
  * must not be larger than 32.  Bits beyond the end of the string will

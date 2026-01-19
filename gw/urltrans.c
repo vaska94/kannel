@@ -342,6 +342,25 @@ static void strip_keyword(Msg *request)
 
 Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
 {
+    return urltrans_fill_escape_codes_ex(pattern, request, URLTRANS_ESCAPE_URL);
+}
+
+
+/*
+ * Helper macro for escape encoding based on type.
+ * For shell escaping, we wrap values in single quotes for safety.
+ */
+#define DO_ESCAPE(ostr, escape_type) \
+    do { \
+        if ((escape_type) == URLTRANS_ESCAPE_SHELL) \
+            octstr_shell_escape(ostr); \
+        else \
+            octstr_url_encode(ostr); \
+    } while (0)
+
+
+Octstr *urltrans_fill_escape_codes_ex(Octstr *pattern, Msg *request, int escape_type)
+{
     Octstr *enc;
     Octstr *meta_group, *meta_param;
     int nextarg, j;
@@ -384,7 +403,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
     case 'a':
         for (j = 0; j < num_words; ++j) {
         enc = octstr_duplicate(gwlist_get(word_list, j));
-        octstr_url_encode(enc);
+        DO_ESCAPE(enc, escape_type);
         if (j > 0)
             octstr_append_char(result, '+');
         octstr_append(result, enc);
@@ -395,7 +414,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
     case 'A':
         if (request->sms.msgdata) {
         enc = octstr_duplicate(request->sms.msgdata);
-        octstr_url_encode(enc);
+        DO_ESCAPE(enc, escape_type);
         octstr_append(result, enc);
         octstr_destroy(enc);
         }
@@ -403,7 +422,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
 
     case 'b':   /* message payload, URL-encoded */
         enc = octstr_duplicate(request->sms.msgdata);
-        octstr_url_encode(enc);
+        DO_ESCAPE(enc, escape_type);
         octstr_append(result, enc);
         octstr_destroy(enc);
         break;
@@ -411,7 +430,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
     case 'B':  /* billing identifier/information */
         if (octstr_len(request->sms.binfo)) {
             enc = octstr_duplicate(request->sms.binfo);
-            octstr_url_encode(enc);
+            DO_ESCAPE(enc, escape_type);
             octstr_append(result, enc);
             octstr_destroy(enc);
         }
@@ -443,7 +462,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
     case 'd':
         enc = octstr_create("");
         octstr_append_decimal(enc, request->sms.dlr_mask);
-        octstr_url_encode(enc);
+        DO_ESCAPE(enc, escape_type);
         octstr_append(result, enc);
         octstr_destroy(enc);
         break;
@@ -451,7 +470,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
     case 'D': /* meta_data */
         if (octstr_len(request->sms.meta_data)) {
             enc = octstr_duplicate(request->sms.meta_data);
-            octstr_url_encode(enc);
+            DO_ESCAPE(enc, escape_type);
             octstr_append(result, enc);
             octstr_destroy(enc);
         }
@@ -469,7 +488,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
     case 'f':  /* smsc number*/
         if (octstr_len(request->sms.smsc_number)) {
             enc = octstr_duplicate(request->sms.smsc_number);
-            octstr_url_encode(enc);
+            DO_ESCAPE(enc, escape_type);
             octstr_append(result, enc);
             octstr_destroy(enc);
         }
@@ -479,7 +498,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
         if (request->sms.foreign_id == NULL)
             break;
         enc = octstr_duplicate(request->sms.foreign_id);
-        octstr_url_encode(enc);
+        DO_ESCAPE(enc, escape_type);
         octstr_append(result, enc);
         octstr_destroy(enc);
         break;
@@ -488,7 +507,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
         if (request->sms.smsc_id == NULL)
         break;
         enc = octstr_duplicate(request->sms.smsc_id);
-        octstr_url_encode(enc);
+        DO_ESCAPE(enc, escape_type);
         octstr_append(result, enc);
         octstr_destroy(enc);
         break;
@@ -505,7 +524,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
         if (num_words <= 0)
         break;
         enc = octstr_duplicate(gwlist_get(word_list, 0));
-        octstr_url_encode(enc);
+        DO_ESCAPE(enc, escape_type);
         octstr_append(result, enc);
         octstr_destroy(enc);
         break;
@@ -513,7 +532,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
     case 'm':  /* mclass - message class */
         enc = octstr_create("");
         octstr_append_decimal(enc, request->sms.mclass);
-        octstr_url_encode(enc);
+        DO_ESCAPE(enc, escape_type);
         octstr_append(result, enc);
         octstr_destroy(enc);
         break;
@@ -521,7 +540,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
     case 'M':  /* mwi - message waiting indicator */
         enc = octstr_create("");
         octstr_append_decimal(enc, request->sms.mwi);
-        octstr_url_encode(enc);
+        DO_ESCAPE(enc, escape_type);
         octstr_append(result, enc);
         octstr_destroy(enc);
         break;
@@ -530,7 +549,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
         if (request->sms.service == NULL)
             break;
         enc = octstr_duplicate(request->sms.service);
-        octstr_url_encode(enc);
+        DO_ESCAPE(enc, escape_type);
         octstr_append(result, enc);
         octstr_destroy(enc);
         break;
@@ -538,7 +557,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
     case 'o':  /* account information (may be operator id for aggregators */
         if (octstr_len(request->sms.account)) {
             enc = octstr_duplicate(request->sms.account);
-            octstr_url_encode(enc);
+            DO_ESCAPE(enc, escape_type);
             octstr_append(result, enc);
             octstr_destroy(enc);
         }
@@ -558,14 +577,14 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
      */
     case 'P':
         enc = octstr_duplicate(request->sms.sender);
-        octstr_url_encode(enc);
+        DO_ESCAPE(enc, escape_type);
         octstr_append(result, enc);
         octstr_destroy(enc);
         break;
 
     case 'p':
         enc = octstr_duplicate(request->sms.receiver);
-        octstr_url_encode(enc);
+        DO_ESCAPE(enc, escape_type);
         octstr_append(result, enc);
         octstr_destroy(enc);
         break;
@@ -574,12 +593,12 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
         if (strncmp(octstr_get_cstr(request->sms.receiver),"00",2)==0) {
         enc = octstr_copy(request->sms.receiver, 2, 
                           octstr_len(request->sms.receiver));
-        octstr_url_encode(enc);
+        DO_ESCAPE(enc, escape_type);
         octstr_format_append(result, "%%2B%S", enc);
         octstr_destroy(enc);
         } else {
         enc = octstr_duplicate(request->sms.receiver);
-        octstr_url_encode(enc);
+        DO_ESCAPE(enc, escape_type);
         octstr_append(result, enc);
         octstr_destroy(enc);
         }
@@ -589,12 +608,12 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
         if (strncmp(octstr_get_cstr(request->sms.sender), "00", 2) == 0) {
         enc = octstr_copy(request->sms.sender, 2, 
                           octstr_len(request->sms.sender));
-        octstr_url_encode(enc);
+        DO_ESCAPE(enc, escape_type);
         octstr_format_append(result, "%%2B%S", enc);
         octstr_destroy(enc);
         } else {
         enc = octstr_duplicate(request->sms.sender);
-                octstr_url_encode(enc);
+                DO_ESCAPE(enc, escape_type);
         octstr_append(result, enc);
         octstr_destroy(enc);
         }
@@ -603,7 +622,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
     case 'r':
         for (j = nextarg; j < num_words; ++j) {
         enc = octstr_duplicate(gwlist_get(word_list, j));
-        octstr_url_encode(enc);
+        DO_ESCAPE(enc, escape_type);
         if (j != nextarg)
             octstr_append_char(result, '+');
         octstr_append(result, enc);
@@ -614,7 +633,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
     case 'R': /* dlr_url */
         if (octstr_len(request->sms.dlr_url)) {
             enc = octstr_duplicate(request->sms.dlr_url);
-            octstr_url_encode(enc);
+            DO_ESCAPE(enc, escape_type);
             octstr_append(result, enc);
             octstr_destroy(enc);
         }
@@ -624,7 +643,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
         if (nextarg >= num_words)
         	break;
         enc = octstr_duplicate(gwlist_get(word_list, nextarg));
-        octstr_url_encode(enc);
+        DO_ESCAPE(enc, escape_type);
         octstr_append(result, enc);
         octstr_destroy(enc);
         ++nextarg;
@@ -663,7 +682,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
     case 'u': /* UDH, URL-encoded */
         if(octstr_len(request->sms.udhdata)) {
             enc = octstr_duplicate(request->sms.udhdata);
-            octstr_url_encode(enc);
+            DO_ESCAPE(enc, escape_type);
             octstr_append(result, enc);
             octstr_destroy(enc);
         }
@@ -693,7 +712,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
     case 'y':   /* message priority */
         enc = octstr_create("");
         octstr_append_decimal(enc, request->sms.priority);
-        octstr_url_encode(enc);
+        DO_ESCAPE(enc, escape_type);
         octstr_append(result, enc);
         octstr_destroy(enc);
         break;
@@ -701,7 +720,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
     case 'x':  /* smsbox-id */
         if (octstr_len(request->sms.boxc_id)) {
             enc = octstr_duplicate(request->sms.boxc_id);
-            octstr_url_encode(enc);
+            DO_ESCAPE(enc, escape_type);
             octstr_append(result, enc);
             octstr_destroy(enc);
         }
@@ -727,7 +746,7 @@ Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request)
                 if (request->sms.meta_data != NULL) {
                     enc = meta_data_get_value(request->sms.meta_data,
                             octstr_get_cstr(meta_group), meta_param);
-                    octstr_url_encode(enc);
+                    DO_ESCAPE(enc, escape_type);
                     octstr_append(result, enc);
                     octstr_destroy(enc);
                 }
@@ -793,10 +812,14 @@ Octstr *urltrans_get_pattern(URLTranslation *t, Msg *request)
         }
     }
 
-    /* We have pulled this out into an own exported function. This 
+    /* We have pulled this out into an own exported function. This
      * gives other modules the chance to use the same escape code
-     * semantics for Msgs. */
-    result = urltrans_fill_escape_codes(pattern, request);
+     * semantics for Msgs.
+     * Use shell escaping for EXECUTE type to prevent command injection. */
+    if (t && t->type == TRANSTYPE_EXECUTE)
+        result = urltrans_fill_escape_codes_ex(pattern, request, URLTRANS_ESCAPE_SHELL);
+    else
+        result = urltrans_fill_escape_codes(pattern, request);
 
     /*
      * this SHOULD be done in smsbox, not here, but well,

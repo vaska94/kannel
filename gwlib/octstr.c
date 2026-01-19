@@ -1743,6 +1743,62 @@ void octstr_url_encode(Octstr *ostr)
 }
 
 
+void octstr_shell_escape(Octstr *ostr)
+{
+    long i, n, len;
+    unsigned char c, *str, *str2, *res;
+
+    if (ostr == NULL)
+        return;
+
+    seems_valid(ostr);
+    gw_assert(!ostr->immutable);
+
+    if (ostr->len == 0) {
+        /* Empty string becomes '' */
+        octstr_insert_data(ostr, 0, "''", 2);
+        return;
+    }
+
+    /* Count single quotes to calculate new length */
+    for (i = n = 0, str = ostr->data; i < ostr->len; i++) {
+        if (*str++ == '\'')
+            n++;
+    }
+
+    /*
+     * New length: original + 2 (for wrapping quotes) + 3*n (each ' becomes '\'' which adds 3 chars)
+     */
+    len = ostr->len + 2 + 3 * n + 1;
+    res = str2 = gw_malloc(len);
+
+    *str2++ = '\'';  /* Opening quote */
+
+    for (i = 0, str = ostr->data; i < ostr->len; i++) {
+        c = *str++;
+        if (c == '\'') {
+            /* End quote, escaped quote, start quote */
+            *str2++ = '\'';
+            *str2++ = '\\';
+            *str2++ = '\'';
+            *str2++ = '\'';
+        } else {
+            *str2++ = c;
+        }
+    }
+
+    *str2++ = '\'';  /* Closing quote */
+    *str2 = '\0';
+
+    gw_free(ostr->data);
+    ostr->data = res;
+    ostr->size = len;
+    ostr->len = len - 1;
+
+    seems_valid(ostr);
+}
+
+
 int octstr_url_decode(Octstr *ostr)
 {
     unsigned char *string;

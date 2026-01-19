@@ -195,8 +195,18 @@ URLTranslation *urltrans_find_username(URLTranslationList *trans,
  * urtrans_get_pattern() uses this internally, but we want to provide
  * this function also to the external calling space for use of the
  * defined escape codes for Msg values.
+ *
+ * Escape type for pattern substitution:
+ *   URLTRANS_ESCAPE_URL   - URL encoding (default, for HTTP)
+ *   URLTRANS_ESCAPE_SHELL - Shell escaping (for EXECUTE type)
  */
+enum {
+    URLTRANS_ESCAPE_URL = 0,
+    URLTRANS_ESCAPE_SHELL = 1
+};
+
 Octstr *urltrans_fill_escape_codes(Octstr *pattern, Msg *request);
+Octstr *urltrans_fill_escape_codes_ex(Octstr *pattern, Msg *request, int escape_type);
 
 
 /*
