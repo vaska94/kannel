@@ -4,7 +4,7 @@ dnl Originally by Rene Kluwen, Martin Conte, Alejandro Guerrieri, Stipe Tolj
 dnl Modernized for Kamex project
 
 AC_PREREQ([2.69])
-AC_INIT([kamex-sqlbox], [1.8.2], [dev@kamex.dev])
+AC_INIT([kamex-sqlbox], [1.8.3], [dev@kamex.dev])
 AC_CONFIG_SRCDIR([gw/sqlbox.c])
 AC_CONFIG_AUX_DIR([autotools])
 AC_CONFIG_HEADERS([sb-config.h])

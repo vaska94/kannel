@@ -4,7 +4,7 @@ dnl Originally by Rene Kluwen, Alejandro Guerrieri
 dnl Modernized for Kamex project
 
 AC_PREREQ([2.69])
-AC_INIT([kamex-opensmppbox], [1.8.2], [dev@kamex.dev])
+AC_INIT([kamex-opensmppbox], [1.8.3], [dev@kamex.dev])
 AC_CONFIG_SRCDIR([gw/opensmppbox.c])
 AC_CONFIG_AUX_DIR([autotools])
 AC_CONFIG_HEADERS([sb-config.h])
