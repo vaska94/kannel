@@ -1,0 +1,120 @@
+#
+# rabbitmqbox configuration example
+#
+# This box connects to Kamex bearerbox and RabbitMQ server,
+# allowing SMS messages to be sent via RabbitMQ queue and
+# receiving MO/DLR via RabbitMQ queues.
+#
+
+group = core
+admin-port = 13015
+admin-password = secret
+log-file = "/var/log/kamex/rabbitmqbox.log"
+log-level = 0
+
+group = rabbitmqbox
+
+# Bearerbox connection
+bearerbox-host = 127.0.0.1
+bearerbox-port = 13001
+box-id = rabbitmqbox
+
+# Default SMSC routing (optional)
+# Messages without smsc-id will be routed to this SMSC
+#route-to-smsc = my-smsc
+
+# Allowed senders file (optional)
+# If set, only senders listed in this file can send SMS
+#allowed-senders = /etc/kamex/rabbitmq-senders.txt
+
+# Message store for persistence (optional)
+# Messages that fail to deliver are stored here and retried on restart
+#store-file = /var/spool/kamex/rabbitmqbox.store
+
+# RabbitMQ connection
+rabbitmq-host = 127.0.0.1
+rabbitmq-port = 5672
+rabbitmq-vhost = /
+rabbitmq-user = guest
+rabbitmq-pass = guest
+rabbitmq-heartbeat = 60
+rabbitmq-prefetch = 100
+
+# TLS/SSL options (optional)
+# Enable SSL (port defaults to 5671 when enabled)
+#rabbitmq-ssl = true
+#rabbitmq-ssl-cacert = /etc/ssl/certs/ca-certificates.crt
+#rabbitmq-ssl-cert = /etc/kamex/rabbitmq-client.crt
+#rabbitmq-ssl-key = /etc/kamex/rabbitmq-client.key
+#rabbitmq-ssl-verify = true
+
+# Queue names
+# queue-send: messages consumed from this queue are sent as SMS
+# queue-mo: incoming SMS (MO) are published to this queue
+# queue-dlr: delivery reports are published to this queue
+# queue-failed: failed messages are published to this queue
+queue-send = sms.send
+queue-mo = sms.mo
+queue-dlr = sms.dlr
+queue-failed = sms.failed
+
+# Optional: Exchange configuration
+# If set, messages will be published to exchange with queue name as routing key
+#exchange = sms.exchange
+#exchange-type = direct
+
+#
+# Message format for queue-send (JSON):
+# {
+#   "to": "+1234567890",
+#   "from": "MyService",
+#   "text": "Hello World",
+#   "charset": "UTF-8",
+#   "dlr-mask": 31,
+#   "dlr-url": "http://example.com/dlr"
+# }
+#
+# Fields:
+#   to        - Destination phone number (required)
+#   from      - Sender ID (required)
+#   text      - Message text (required)
+#   charset   - Character set (optional, default: UTF-8)
+#   dlr-mask  - DLR request mask (optional, default: 0)
+#   dlr-url   - DLR callback URL (optional)
+#   udh       - User Data Header in hex (optional)
+#   mclass    - Message class (optional)
+#   mwi       - Message Waiting Indicator (optional)
+#   coding    - Data Coding Scheme (optional)
+#   validity  - Validity period in minutes (optional)
+#   deferred  - Deferred delivery in minutes (optional)
+#   priority  - Message priority 0-3 (optional)
+#   meta-data - Metadata string (optional)
+#
+# Message format for queue-mo (JSON):
+# {
+#   "type": "mo",
+#   "from": "+1234567890",
+#   "to": "12345",
+#   "text": "Hello",
+#   "smsc": "smsc-id",
+#   "timestamp": "2024-01-15T10:30:00Z"
+# }
+#
+# Message format for queue-dlr (JSON):
+# {
+#   "type": "dlr",
+#   "msgid": "abc123",
+#   "from": "+1234567890",
+#   "to": "MyService",
+#   "status": 1,
+#   "smsc": "smsc-id",
+#   "timestamp": "2024-01-15T10:30:00Z"
+# }
+#
+# DLR status codes:
+#   1 - Delivered to phone
+#   2 - Non-delivered to phone
+#   4 - Queued on SMSC
+#   8 - Delivered to SMSC
+#   16 - Non-delivered to SMSC
+#

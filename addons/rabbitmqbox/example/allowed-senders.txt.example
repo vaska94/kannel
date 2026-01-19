@@ -1,0 +1,18 @@
+# Allowed senders for rabbitmqbox
+# One sender ID per line
+# Lines starting with # are comments
+#
+# This file restricts which sender IDs can be used to send SMS
+# via the RabbitMQ queue. Messages with unauthorized senders
+# are rejected and published to the failed queue.
+
+# Example sender IDs:
+MyCompany
+MyApp
+AlertSystem
++1234567890
+12345
+
+# Alphanumeric senders (max 11 characters)
+MYSERVICE
+NOTIFY
