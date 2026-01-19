@@ -81,6 +81,15 @@
 #include "gw/meta_data.h"
 #include "gw/bb_store.h"
 
+/* Undefine conflicting macros before including sb-config.h */
+#undef PACKAGE
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_URL
+#undef PACKAGE_VERSION
+#undef VERSION
 #undef GW_NAME
 #undef GW_VERSION
 #include "../sb-config.h"
