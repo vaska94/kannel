@@ -171,6 +171,67 @@ table = dlr
 
 Redis stores DLR as hash keys with TTL.
 
+### Cassandra
+
+Requires [Apache Cassandra C/C++ Driver](https://github.com/apache/cassandra-cpp-driver).
+
+Build on Arch Linux:
+```bash
+# Build cpp-driver from source
+git clone https://github.com/apache/cassandra-cpp-driver.git
+cd cassandra-cpp-driver && mkdir build && cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=/usr && make && sudo make install
+
+# Build Kamex
+./configure --with-cassandra
+```
+
+Config:
+```ini
+group = core
+dlr-storage = cassandra
+
+group = cassandra-connection
+id = dlr
+host = localhost
+#username = cassandra
+#password = cassandra
+max-connections = 1
+
+group = dlr-db
+id = dlr
+table = kannel.dlr
+field-smsc = smsc
+field-timestamp = ts
+field-source = source
+field-destination = destination
+field-service = service
+field-url = url
+field-mask = mask
+field-status = status
+field-boxc-id = boxc
+ttl = 604800
+```
+
+Create keyspace and table:
+```sql
+CREATE KEYSPACE kannel
+  WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
+
+CREATE TABLE kannel.dlr (
+    smsc text,
+    ts text,
+    destination text,
+    source text,
+    service text,
+    url text,
+    mask text,
+    status int,
+    boxc text,
+    PRIMARY KEY (smsc, ts)
+);
+```
+
 ### Oracle
 
 Requires [Oracle Instant Client](https://www.oracle.com/database/technologies/instant-client.html) (Basic + SDK).
