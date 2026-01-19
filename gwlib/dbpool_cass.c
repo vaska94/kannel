@@ -73,23 +73,32 @@ typedef struct CassInstance CassInstance;
 
 static void cass_log(const CassLogMessage *message, void *data)
 {
+    /*
+     * Use fprintf instead of Kamex logging functions because the Cassandra
+     * driver calls this callback from its internal event loop threads,
+     * which can cause mutex deadlocks with the async log queue.
+     */
+    const char *level;
+
     switch (message->severity) {
-
-#define CASS_LEVEL(e, f) \
-    case e: \
-        f(0, "Cassandra: (%s:%d:%s): %s", \
-          message->file, message->line, message->function, \
-          message->message); \
+    case CASS_LOG_INFO:
+        level = "INFO";
         break;
-
-    CASS_LEVEL(CASS_LOG_INFO, info)
-    CASS_LEVEL(CASS_LOG_WARN, warning)
-    CASS_LEVEL(CASS_LOG_ERROR, error)
-    CASS_LEVEL(CASS_LOG_CRITICAL, panic)
-
+    case CASS_LOG_WARN:
+        level = "WARNING";
+        break;
+    case CASS_LOG_ERROR:
+        level = "ERROR";
+        break;
+    case CASS_LOG_CRITICAL:
+        level = "CRITICAL";
+        break;
     default:
-        break;
+        return; /* ignore debug/trace */
     }
+
+    fprintf(stderr, "Cassandra %s: %s\n", level, message->message);
+    fflush(stderr);
 }
 
 
