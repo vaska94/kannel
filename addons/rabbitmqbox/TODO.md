@@ -5,11 +5,12 @@ Remaining features to implement, based on opensmppbox feature parity.
 ## High Priority
 
 ### Multi-part SMS Support
-- [ ] Concatenation assembly for incoming long messages
-- [ ] Auto-split outgoing messages that exceed 160 chars (GSM) / 70 chars (UCS-2)
-- [ ] UDH handling for concatenated message parts
-- [ ] Reference-based message assembly (by receiver + reference)
-- [ ] Config option: `disable-multipart-catenation`
+- [x] Concatenation assembly for incoming long messages
+- [x] Auto-split outgoing messages that exceed 160 chars (GSM) / 70 chars (UCS-2)
+- [x] UDH handling for concatenated message parts
+- [x] Reference-based message assembly (by sender + reference)
+- [x] Config option: `disable-multipart-catenation`
+- [x] Config option: `multipart-timeout`
 
 ### Advanced Routing
 - [ ] Route by receiver number (smsc-by-receiver)
@@ -110,3 +111,6 @@ Remaining features to implement, based on opensmppbox feature parity.
 - [x] Allowed senders authentication
 - [x] Message persistence (store-file)
 - [x] README documentation
+- [x] Multi-part SMS support (split outgoing, assemble incoming)
+- [x] UDH concatenation handling (8-bit and 16-bit references)
+- [x] Multipart timeout and cleanup

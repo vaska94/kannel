@@ -31,6 +31,13 @@ box-id = rabbitmqbox
 # Messages that fail to deliver are stored here and retried on restart
 #store-file = /var/spool/kamex/rabbitmqbox.store
 
+# Multipart SMS handling (optional)
+# Disable automatic splitting of long outgoing messages and
+# assembly of incoming multipart messages
+#disable-multipart-catenation = false
+# Timeout in seconds to wait for all parts of a multipart message (default: 300)
+#multipart-timeout = 300
+
 # RabbitMQ connection
 rabbitmq-host = 127.0.0.1
 rabbitmq-port = 5672

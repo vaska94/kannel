@@ -56,6 +56,17 @@ static Octstr *store_file;
 static List *pending_msgs;
 static Mutex *store_lock;
 
+/* Multipart SMS handling */
+static int disable_multipart_catenation;
+static Dict *multipart_store;      /* Key: "receiver-reference", Value: List of Msg */
+static Mutex *multipart_lock;
+static long multipart_timeout = 300;  /* Seconds to wait for all parts (default 5 min) */
+
+/* Message splitting settings */
+#define SMS_MAX_OCTETS 140         /* Max bytes per SMS part */
+#define SMS_MAX_CHARS_GSM 160      /* Max chars for GSM 7-bit */
+#define SMS_MAX_CHARS_UCS2 70      /* Max chars for UCS-2 */
+
 /* Reconnect delay */
 #define RECONNECT_DELAY 5.0
 
@@ -89,6 +100,193 @@ static void setup_signals(void)
     /* Ignore SIGPIPE */
     act.sa_handler = SIG_IGN;
     sigaction(SIGPIPE, &act, NULL);
+}
+
+/*
+ * Multipart SMS helpers
+ */
+
+/* Structure to hold partial message parts with timestamp */
+typedef struct {
+    List *parts;
+    time_t created;
+    int total;
+} MultipartMsg;
+
+static void multipart_msg_destroy(void *item)
+{
+    MultipartMsg *mp = item;
+    if (mp) {
+        if (mp->parts) {
+            gwlist_destroy(mp->parts, msg_destroy_item);
+        }
+        gw_free(mp);
+    }
+}
+
+/* Check if message has concatenation UDH (8-bit reference) */
+static int has_concat_udh(Msg *msg, int *ref, int *total, int *part)
+{
+    if (msg->sms.udhdata == NULL)
+        return 0;
+
+    /* Check for 8-bit concat UDH: 05 00 03 XX YY ZZ */
+    if (octstr_len(msg->sms.udhdata) >= 6 &&
+        octstr_get_char(msg->sms.udhdata, 0) == 0x05 &&
+        octstr_get_char(msg->sms.udhdata, 1) == 0x00 &&
+        octstr_get_char(msg->sms.udhdata, 2) == 0x03) {
+        *ref = octstr_get_char(msg->sms.udhdata, 3);
+        *total = octstr_get_char(msg->sms.udhdata, 4);
+        *part = octstr_get_char(msg->sms.udhdata, 5);
+        return 1;
+    }
+
+    /* Check for 16-bit concat UDH: 06 08 04 XX XX YY ZZ */
+    if (octstr_len(msg->sms.udhdata) >= 7 &&
+        octstr_get_char(msg->sms.udhdata, 0) == 0x06 &&
+        octstr_get_char(msg->sms.udhdata, 1) == 0x08 &&
+        octstr_get_char(msg->sms.udhdata, 2) == 0x04) {
+        *ref = (octstr_get_char(msg->sms.udhdata, 3) << 8) |
+                octstr_get_char(msg->sms.udhdata, 4);
+        *total = octstr_get_char(msg->sms.udhdata, 5);
+        *part = octstr_get_char(msg->sms.udhdata, 6);
+        return 1;
+    }
+
+    return 0;
+}
+
+/* Assemble multipart message from collected parts */
+static Msg *assemble_multipart(MultipartMsg *mp)
+{
+    Msg *assembled, *part;
+    int i, current_part;
+    int found[256] = {0};
+
+    if (mp == NULL || mp->parts == NULL || gwlist_len(mp->parts) == 0)
+        return NULL;
+
+    /* Create assembled message from first part */
+    assembled = msg_duplicate(gwlist_get(mp->parts, 0));
+    uuid_generate(assembled->sms.id);
+
+    /* Clear UDH and message data */
+    octstr_destroy(assembled->sms.udhdata);
+    assembled->sms.udhdata = NULL;
+    octstr_truncate(assembled->sms.msgdata, 0);
+
+    /* Assemble parts in order */
+    for (current_part = 1; current_part <= mp->total; current_part++) {
+        int found_part = 0;
+        for (i = 0; i < gwlist_len(mp->parts); i++) {
+            int ref, total, part_num;
+            part = gwlist_get(mp->parts, i);
+            if (has_concat_udh(part, &ref, &total, &part_num)) {
+                if (part_num == current_part) {
+                    octstr_append(assembled->sms.msgdata, part->sms.msgdata);
+                    found_part = 1;
+                    break;
+                }
+            }
+        }
+        if (!found_part) {
+            warning(0, "Missing part %d of %d in multipart message",
+                    current_part, mp->total);
+            msg_destroy(assembled);
+            return NULL;
+        }
+    }
+
+    debug("rabbitmqbox", 0, "Assembled multipart message, total length: %ld",
+          octstr_len(assembled->sms.msgdata));
+
+    return assembled;
+}
+
+/* Handle incoming multipart message - returns assembled msg or NULL if still waiting */
+static Msg *handle_multipart_mo(Msg *msg)
+{
+    int ref, total, part;
+    Octstr *key;
+    MultipartMsg *mp;
+    Msg *assembled = NULL;
+
+    if (disable_multipart_catenation)
+        return msg_duplicate(msg);
+
+    if (!has_concat_udh(msg, &ref, &total, &part)) {
+        /* Not a multipart message */
+        return msg_duplicate(msg);
+    }
+
+    debug("rabbitmqbox", 0, "Multipart MO: ref=%d part=%d/%d from=%s",
+          ref, part, total, octstr_get_cstr(msg->sms.sender));
+
+    /* Create key from sender + reference */
+    key = octstr_format("%S-%d", msg->sms.sender, ref);
+
+    mutex_lock(multipart_lock);
+
+    mp = dict_get(multipart_store, key);
+    if (mp == NULL) {
+        /* First part of a new multipart message */
+        mp = gw_malloc(sizeof(MultipartMsg));
+        mp->parts = gwlist_create();
+        mp->created = time(NULL);
+        mp->total = total;
+        dict_put(multipart_store, key, mp);
+    }
+
+    /* Add this part */
+    gwlist_append(mp->parts, msg_duplicate(msg));
+
+    debug("rabbitmqbox", 0, "Collected %ld of %d parts",
+          gwlist_len(mp->parts), mp->total);
+
+    /* Check if we have all parts */
+    if (gwlist_len(mp->parts) == mp->total) {
+        assembled = assemble_multipart(mp);
+        dict_remove(multipart_store, key);
+    }
+
+    mutex_unlock(multipart_lock);
+    octstr_destroy(key);
+
+    return assembled;
+}
+
+/* Clean up expired multipart messages */
+static void cleanup_expired_multipart(void)
+{
+    List *keys;
+    Octstr *key;
+    MultipartMsg *mp;
+    time_t now = time(NULL);
+    int cleaned = 0;
+
+    if (multipart_store == NULL)
+        return;
+
+    mutex_lock(multipart_lock);
+
+    keys = dict_keys(multipart_store);
+    while ((key = gwlist_extract_first(keys)) != NULL) {
+        mp = dict_get(multipart_store, key);
+        if (mp && (now - mp->created) > multipart_timeout) {
+            warning(0, "Expired incomplete multipart message: %s (%ld/%d parts)",
+                    octstr_get_cstr(key), gwlist_len(mp->parts), mp->total);
+            dict_remove(multipart_store, key);
+            cleaned++;
+        }
+        octstr_destroy(key);
+    }
+    gwlist_destroy(keys, NULL);
+
+    mutex_unlock(multipart_lock);
+
+    if (cleaned > 0) {
+        info(0, "Cleaned up %d expired multipart messages", cleaned);
+    }
 }
 
 /*
@@ -467,16 +665,57 @@ static void consumer_thread(void *arg)
         if (box_id)
             msg->sms.boxc_id = octstr_duplicate(box_id);
 
-        /* Send to bearerbox */
-        if (deliver_to_bearerbox(msg) < 0) {
-            error(0, "Failed to deliver message to bearerbox");
-            /* Store for retry if persistence enabled */
-            if (store_file != NULL) {
-                store_pending_msg(msg);
+        /* Check if message needs splitting (long message) */
+        if (!disable_multipart_catenation && msg->sms.msgdata &&
+            octstr_len(msg->sms.msgdata) > SMS_MAX_CHARS_GSM &&
+            msg->sms.udhdata == NULL) {
+
+            /* Use sms_split to split the message with concatenation UDH */
+            static unsigned long msg_sequence = 0;
+            List *parts;
+            Msg *part;
+            int max_parts = 255;
+
+            msg_sequence = (msg_sequence + 1) % 256;
+
+            parts = sms_split(msg, NULL, NULL, NULL, NULL, 1,
+                              msg_sequence, max_parts, SMS_MAX_OCTETS);
+
+            if (parts != NULL && gwlist_len(parts) > 0) {
+                debug("rabbitmqbox", 0, "Split message into %ld parts",
+                      gwlist_len(parts));
+
+                while ((part = gwlist_extract_first(parts)) != NULL) {
+                    if (deliver_to_bearerbox(part) < 0) {
+                        error(0, "Failed to deliver message part to bearerbox");
+                        if (store_file != NULL) {
+                            store_pending_msg(part);
+                        }
+                        msg_destroy(part);
+                    }
+                }
+                gwlist_destroy(parts, NULL);
+                msg_destroy(msg);
+            } else {
+                /* Splitting failed, send as-is */
+                warning(0, "Message splitting failed, sending as single message");
+                if (parts)
+                    gwlist_destroy(parts, msg_destroy_item);
+                goto send_single;
             }
-            msg_destroy(msg);
         } else {
-            debug("rabbitmqbox", 0, "Message sent to bearerbox");
+send_single:
+            /* Send single message to bearerbox */
+            if (deliver_to_bearerbox(msg) < 0) {
+                error(0, "Failed to deliver message to bearerbox");
+                /* Store for retry if persistence enabled */
+                if (store_file != NULL) {
+                    store_pending_msg(msg);
+                }
+                msg_destroy(msg);
+            } else {
+                debug("rabbitmqbox", 0, "Message sent to bearerbox");
+            }
         }
     }
 
@@ -507,7 +746,8 @@ static void reader_thread(void *arg)
         }
 
         if (ret == 1) {
-            /* Timeout */
+            /* Timeout - use this opportunity to clean up expired multipart messages */
+            cleanup_expired_multipart();
             continue;
         }
 
@@ -519,11 +759,23 @@ static void reader_thread(void *arg)
         if (msg_type(msg) == sms) {
             if (msg->sms.sms_type == mo) {
                 /* Mobile Originated - incoming SMS */
+                Msg *assembled;
+
                 debug("rabbitmqbox", 0, "Received MO from %s",
                       octstr_get_cstr(msg->sms.sender));
 
-                json = msg_to_json(msg, "mo");
+                /* Handle multipart assembly */
+                assembled = handle_multipart_mo(msg);
+                if (assembled == NULL) {
+                    /* Still waiting for more parts */
+                    debug("rabbitmqbox", 0, "Waiting for more multipart parts");
+                    msg_destroy(msg);
+                    continue;
+                }
+
+                json = msg_to_json(assembled, "mo");
                 queue = rmq->queue_mo;
+                msg_destroy(assembled);
 
             } else if (msg->sms.sms_type == report_mo) {
                 /* Delivery Report */
@@ -671,6 +923,19 @@ static int read_config(Octstr *filename)
         info(0, "Message store enabled: %s", octstr_get_cstr(store_file));
         store_lock = mutex_create();
         load_pending_msgs();
+    }
+
+    /* Multipart SMS handling */
+    cfg_get_bool(&disable_multipart_catenation, grp, octstr_imm("disable-multipart-catenation"));
+    if (cfg_get_integer(&multipart_timeout, grp, octstr_imm("multipart-timeout")) == -1)
+        multipart_timeout = 300;
+
+    if (!disable_multipart_catenation) {
+        multipart_store = dict_create(64, multipart_msg_destroy);
+        multipart_lock = mutex_create();
+        info(0, "Multipart SMS assembly enabled (timeout: %ld seconds)", multipart_timeout);
+    } else {
+        info(0, "Multipart SMS assembly disabled");
     }
 
     /* Create RabbitMQ connection from config */
