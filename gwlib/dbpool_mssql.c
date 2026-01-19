@@ -58,7 +58,7 @@
  * dbpool_mssql.c - implement MS SQL operations for generic database connection pool
  *
  * Alejandro Guerrieri <aguerrieri at kannel dot org>
- * 
+ * Updated 2026: Added proper error handling for FreeTDS CT-Lib
  */
 
 #ifdef HAVE_MSSQL
@@ -86,6 +86,37 @@ struct mssql_conn {
     CS_COMMAND *command;
 };
 
+/*
+ * CT-Lib error callback - called when server or client errors occur
+ */
+static CS_RETCODE mssql_clientmsg_cb(CS_CONTEXT *context, CS_CONNECTION *connection, CS_CLIENTMSG *errmsg)
+{
+    error(0, "MSSQL Client Message: severity(%ld) number(%ld) origin(%ld) layer(%ld)",
+          (long)CS_SEVERITY(errmsg->msgnumber),
+          (long)CS_NUMBER(errmsg->msgnumber),
+          (long)CS_ORIGIN(errmsg->msgnumber),
+          (long)CS_LAYER(errmsg->msgnumber));
+    if (errmsg->msgstring)
+        error(0, "MSSQL Client: %s", errmsg->msgstring);
+    return CS_SUCCEED;
+}
+
+static CS_RETCODE mssql_servermsg_cb(CS_CONTEXT *context, CS_CONNECTION *connection, CS_SERVERMSG *srvmsg)
+{
+    /* Ignore "Changed database context" messages (5701) and "Changed language" (5703) */
+    if (srvmsg->msgnumber == 5701 || srvmsg->msgnumber == 5703)
+        return CS_SUCCEED;
+
+    if (srvmsg->severity > 0) {
+        error(0, "MSSQL Server Message: number(%ld) severity(%ld) state(%ld) line(%ld)",
+              (long)srvmsg->msgnumber, (long)srvmsg->severity,
+              (long)srvmsg->state, (long)srvmsg->line);
+        if (srvmsg->text)
+            error(0, "MSSQL Server: %s", srvmsg->text);
+    }
+    return CS_SUCCEED;
+}
+
 static void mssql_checkerr(int err)
 {
     switch (err) {
@@ -94,17 +125,38 @@ static void mssql_checkerr(int err)
         case CS_END_RESULTS:
             break;
         case CS_CMD_FAIL:
-            error(0, "Command Failed");
+            error(0, "MSSQL: Command failed");
+            break;
+        case CS_FAIL:
+            error(0, "MSSQL: General failure");
             break;
         default:
-            error(0, "Unknown Command Error");
+            error(0, "MSSQL: Unknown error code %d", err);
     }
+}
+
+static void mssql_destroy_conn(struct mssql_conn *conn)
+{
+    if (conn == NULL)
+        return;
+    if (conn->command)
+        ct_cmd_drop(conn->command);
+    if (conn->connection) {
+        ct_close(conn->connection, CS_FORCE_CLOSE);
+        ct_con_drop(conn->connection);
+    }
+    if (conn->context) {
+        ct_exit(conn->context, CS_FORCE_EXIT);
+        cs_ctx_drop(conn->context);
+    }
+    gw_free(conn);
 }
 
 static void* mssql_open_conn(const DBConf *db_conf)
 {
     Octstr *sql;
     int ret;
+    CS_RETCODE status;
 
     MSSQLConf *cfg = db_conf->mssql;
     struct mssql_conn *conn = gw_malloc(sizeof(struct mssql_conn));
@@ -112,38 +164,105 @@ static void* mssql_open_conn(const DBConf *db_conf)
     gw_assert(conn != NULL);
     memset(conn, 0, sizeof(struct mssql_conn));
 
-    cs_ctx_alloc(CS_VERSION_100, &conn->context);
+    /* Allocate context - use CS_VERSION_125 for better FreeTDS compatibility */
+    status = cs_ctx_alloc(CS_VERSION_125, &conn->context);
+    if (status != CS_SUCCEED) {
+        error(0, "MSSQL: cs_ctx_alloc() failed with status %d", status);
+        gw_free(conn);
+        return NULL;
+    }
 
-    ct_init(conn->context, CS_VERSION_100); 
+    /* Initialize CT-Lib */
+    status = ct_init(conn->context, CS_VERSION_125);
+    if (status != CS_SUCCEED) {
+        error(0, "MSSQL: ct_init() failed with status %d", status);
+        cs_ctx_drop(conn->context);
+        gw_free(conn);
+        return NULL;
+    }
 
-    ct_con_alloc(conn->context, &conn->connection); 
-    ct_con_props(conn->connection, CS_SET, CS_USERNAME, octstr_get_cstr(cfg->username),
-            CS_NULLTERM, NULL); 
-    ct_con_props(conn->connection, CS_SET, CS_PASSWORD, octstr_get_cstr(cfg->password), 
-            CS_NULLTERM, NULL);
+    /* Install callback handlers for error messages */
+    ct_callback(conn->context, NULL, CS_SET, CS_CLIENTMSG_CB, (CS_VOID *)mssql_clientmsg_cb);
+    ct_callback(conn->context, NULL, CS_SET, CS_SERVERMSG_CB, (CS_VOID *)mssql_servermsg_cb);
 
-    ct_connect(conn->connection, octstr_get_cstr(cfg->server), CS_NULLTERM);
-    ct_cmd_alloc(conn->connection, &conn->command);
+    /* Allocate connection structure */
+    status = ct_con_alloc(conn->context, &conn->connection);
+    if (status != CS_SUCCEED) {
+        error(0, "MSSQL: ct_con_alloc() failed with status %d", status);
+        ct_exit(conn->context, CS_FORCE_EXIT);
+        cs_ctx_drop(conn->context);
+        gw_free(conn);
+        return NULL;
+    }
 
+    /* Set connection properties */
+    status = ct_con_props(conn->connection, CS_SET, CS_USERNAME,
+                          (CS_VOID *)octstr_get_cstr(cfg->username), CS_NULLTERM, NULL);
+    if (status != CS_SUCCEED) {
+        error(0, "MSSQL: Failed to set username");
+        mssql_destroy_conn(conn);
+        return NULL;
+    }
+
+    status = ct_con_props(conn->connection, CS_SET, CS_PASSWORD,
+                          (CS_VOID *)octstr_get_cstr(cfg->password), CS_NULLTERM, NULL);
+    if (status != CS_SUCCEED) {
+        error(0, "MSSQL: Failed to set password");
+        mssql_destroy_conn(conn);
+        return NULL;
+    }
+
+    /* Connect to server */
+    status = ct_connect(conn->connection, (CS_CHAR *)octstr_get_cstr(cfg->server), CS_NULLTERM);
+    if (status != CS_SUCCEED) {
+        error(0, "MSSQL: ct_connect() to '%s' failed with status %d",
+              octstr_get_cstr(cfg->server), status);
+        mssql_destroy_conn(conn);
+        return NULL;
+    }
+
+    /* Allocate command structure */
+    status = ct_cmd_alloc(conn->connection, &conn->command);
+    if (status != CS_SUCCEED) {
+        error(0, "MSSQL: ct_cmd_alloc() failed with status %d", status);
+        mssql_destroy_conn(conn);
+        return NULL;
+    }
+
+    info(0, "MSSQL: Connected to server '%s'", octstr_get_cstr(cfg->server));
+
+    /* Select database */
     sql = octstr_format("USE %S", cfg->database);
     ret = mssql_update(conn, sql, NULL);
     octstr_destroy(sql);
-    if (ret < 0 )
-        error(0, "MSSQL: DB selection failed!");
+    if (ret < 0) {
+        error(0, "MSSQL: Failed to select database '%s'", octstr_get_cstr(cfg->database));
+        mssql_destroy_conn(conn);
+        return NULL;
+    }
+
+    info(0, "MSSQL: Using database '%s'", octstr_get_cstr(cfg->database));
     return conn;
 }
 
-void mssql_close_conn(void *theconn)
+static void mssql_close_conn(void *theconn)
 {
     struct mssql_conn *conn = (struct mssql_conn*) theconn;
 
-    gw_assert(conn != NULL);
+    if (conn == NULL)
+        return;
 
-    ct_cmd_drop(conn->command);
-    ct_close(conn->connection, CS_UNUSED);
-    ct_con_drop(conn->connection);
-    ct_exit(conn->context, CS_UNUSED);
-    cs_ctx_drop(conn->context);
+    if (conn->command)
+        ct_cmd_drop(conn->command);
+    if (conn->connection) {
+        ct_close(conn->connection, CS_UNUSED);
+        ct_con_drop(conn->connection);
+    }
+    if (conn->context) {
+        ct_exit(conn->context, CS_UNUSED);
+        cs_ctx_drop(conn->context);
+    }
+    gw_free(conn);
 }
 
 static int mssql_check_conn(void *theconn)
