@@ -26,7 +26,7 @@ RUN autoreconf -fi && \
         --with-pgsql \
         --with-sqlite3 \
         --with-redis \
-        --with-mssql && \
+        --with-mssql=/usr && \
     make -j$(nproc) && \
     make DESTDIR=/install install-strip
 

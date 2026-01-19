@@ -51,7 +51,7 @@ autoreconf -fi
     --with-pgsql \
     --with-sqlite3 \
     --with-redis \
-    --with-mssql \
+    --with-mssql=/usr \
     --docdir=%{_docdir}/%{name}
 
 %make_build
